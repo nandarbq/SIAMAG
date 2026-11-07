@@ -117,6 +117,9 @@
         @case('trending-down')
             <path stroke-linecap="round" stroke-linejoin="round" d="M2.25 6L9 12.75l4.286-4.286a11.948 11.948 0 014.306 6.43l.776 2.898m0 0l3.182-5.511m-3.182 5.51l-5.511-3.181" />
             @break
+        @case('refresh')
+            <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992V4.356m0 4.992l-3.181-3.182a8.25 8.25 0 00-11.667 0L3.985 8.35m0 0v4.992m0-4.992l3.182 3.182a8.25 8.25 0 0011.667 0l2.182-2.182" />
+            @break
         @default
             <circle cx="12" cy="12" r="8" />
     @endswitch
