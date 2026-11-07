@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaveAttachmentController;
 use App\Livewire\Admin\Attendances\Index as AttendanceIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
+use App\Livewire\Admin\Logbooks\Index as LogbookIndex;
 use App\Livewire\Admin\Students\Form as StudentForm;
 use App\Livewire\Admin\Students\Index as StudentIndex;
 use App\Livewire\Admin\Students\Show as StudentShow;
@@ -45,6 +46,8 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/students/{user}/edit', StudentForm::class)->name('students.edit');
 
         Route::get('/attendances', AttendanceIndex::class)->name('attendances');
+
+        Route::get('/logbooks', LogbookIndex::class)->name('logbooks');
     });
 
 Route::middleware(['auth', 'role:mahasiswa'])
