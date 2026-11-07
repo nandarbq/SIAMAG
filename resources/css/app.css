@@ -102,6 +102,14 @@
         @apply mb-1.5 block text-xs font-semibold uppercase tracking-wide text-slate-500;
     }
 
+    .form-label {
+        @apply mb-1.5 block text-xs font-semibold text-slate-700;
+    }
+
+    .form-error {
+        @apply mt-1 text-xs font-medium text-rose-600;
+    }
+
     .badge,
     .badge-green,
     .badge-amber,
@@ -145,6 +153,10 @@
 
     .table-td {
         @apply px-5 py-4 text-sm text-slate-600;
+    }
+
+    .page-eyebrow {
+        @apply text-xs font-bold uppercase tracking-[0.18em] text-brand-600;
     }
 
     .page-title {
