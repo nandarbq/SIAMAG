@@ -5,6 +5,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaveAttachmentController;
 use App\Livewire\Admin\Attendances\Index as AttendanceIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
+use App\Livewire\Admin\Holidays\Index as HolidayIndex;
 use App\Livewire\Admin\Leaves\Index as LeaveIndex;
 use App\Livewire\Admin\Logbooks\Index as LogbookIndex;
 use App\Livewire\Admin\Students\Form as StudentForm;
@@ -51,6 +52,8 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/logbooks', LogbookIndex::class)->name('logbooks');
 
         Route::get('/leaves', LeaveIndex::class)->name('leaves');
+
+        Route::get('/holidays', HolidayIndex::class)->name('holidays');
     });
 
 Route::middleware(['auth', 'role:mahasiswa'])
