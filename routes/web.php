@@ -6,7 +6,9 @@ use App\Livewire\Mahasiswa\Dashboard as MahasiswaDashboard;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return auth()->check()
+        ? redirect()->route(auth()->user()->dashboardRoute())
+        : redirect()->route('login');
 });
 
 Route::middleware('guest')->group(function () {
