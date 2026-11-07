@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
+use App\Livewire\Mahasiswa\Dashboard as MahasiswaDashboard;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -24,4 +25,11 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', AdminDashboard::class)->name('dashboard');
+    });
+
+Route::middleware(['auth', 'role:mahasiswa'])
+    ->prefix('mahasiswa')
+    ->name('mahasiswa.')
+    ->group(function () {
+        Route::get('/', MahasiswaDashboard::class)->name('dashboard');
     });
