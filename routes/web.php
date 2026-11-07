@@ -3,6 +3,7 @@
 use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaveAttachmentController;
+use App\Livewire\Admin\Attendances\Index as AttendanceIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Students\Form as StudentForm;
 use App\Livewire\Admin\Students\Index as StudentIndex;
@@ -42,6 +43,8 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/students/create', StudentForm::class)->name('students.create');
         Route::get('/students/{student}', StudentShow::class)->name('students.show');
         Route::get('/students/{user}/edit', StudentForm::class)->name('students.edit');
+
+        Route::get('/attendances', AttendanceIndex::class)->name('attendances');
     });
 
 Route::middleware(['auth', 'role:mahasiswa'])
