@@ -4,6 +4,9 @@ use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaveAttachmentController;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
+use App\Livewire\Admin\Students\Form as StudentForm;
+use App\Livewire\Admin\Students\Index as StudentIndex;
+use App\Livewire\Admin\Students\Show as StudentShow;
 use App\Livewire\Mahasiswa\Dashboard as MahasiswaDashboard;
 use Illuminate\Support\Facades\Route;
 
@@ -34,6 +37,11 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', AdminDashboard::class)->name('dashboard');
+
+        Route::get('/students', StudentIndex::class)->name('students');
+        Route::get('/students/create', StudentForm::class)->name('students.create');
+        Route::get('/students/{student}', StudentShow::class)->name('students.show');
+        Route::get('/students/{user}/edit', StudentForm::class)->name('students.edit');
     });
 
 Route::middleware(['auth', 'role:mahasiswa'])
