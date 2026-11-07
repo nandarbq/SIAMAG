@@ -1,6 +1,8 @@
 <?php
 
+use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\AuthController;
+use App\Http\Controllers\LeaveAttachmentController;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Mahasiswa\Dashboard as MahasiswaDashboard;
 use Illuminate\Support\Facades\Route;
@@ -21,6 +23,11 @@ Route::middleware('guest')->group(function () {
 Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
+
+Route::middleware('auth')->group(function () {
+    Route::get('/attendance/{attendance}/photo/{type}', AttendancePhotoController::class)->name('attendance.photo');
+    Route::get('/leaves/{leave}/attachment', LeaveAttachmentController::class)->name('leave.attachment');
+});
 
 Route::middleware(['auth', 'role:admin'])
     ->prefix('admin')
