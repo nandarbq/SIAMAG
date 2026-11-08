@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ReportExportController;
 use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaveAttachmentController;
@@ -63,6 +64,9 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/settings', SettingIndex::class)->name('settings');
 
         Route::get('/reports', ReportIndex::class)->name('reports');
+        Route::get('/reports/excel', [ReportExportController::class, 'excel'])->name('reports.excel');
+        Route::get('/reports/pdf', [ReportExportController::class, 'pdf'])->name('reports.pdf');
+        Route::get('/reports/word', [ReportExportController::class, 'word'])->name('reports.word');
     });
 
 Route::middleware(['auth', 'role:mahasiswa'])
