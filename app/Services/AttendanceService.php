@@ -35,6 +35,12 @@ class AttendanceService
             ]);
         }
 
+        if ($attendance && in_array($attendance->status, [AttendanceStatus::Izin, AttendanceStatus::Sakit, AttendanceStatus::Libur], true)) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Anda tercatat '.$attendance->status->label().' pada hari ini sehingga tidak perlu absen.',
+            ]);
+        }
+
         [$distance, $accuracy] = $this->validateLocation($data);
 
         $workStart = Carbon::parse($date->toDateString().' '.Setting::get('work_start', '07:30'));
