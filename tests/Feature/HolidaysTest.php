@@ -57,6 +57,19 @@ class HolidaysTest extends TestCase
         $this->assertSame('Hari Raya Natal', $holiday->fresh()->name);
     }
 
+    public function test_duplicate_holiday_dates_are_rejected(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Holiday::factory()->create(['date' => '2026-12-25']);
+
+        Livewire::actingAs($admin)
+            ->test(HolidayIndex::class)
+            ->set('date', '2026-12-25')
+            ->set('name', 'Natal')
+            ->call('save')
+            ->assertHasErrors(['date']);
+    }
+
     public function test_admin_can_delete_a_holiday(): void
     {
         $admin = User::factory()->admin()->create();
