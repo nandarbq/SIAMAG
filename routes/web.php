@@ -17,6 +17,7 @@ use App\Livewire\Admin\Students\Index as StudentIndex;
 use App\Livewire\Admin\Students\Show as StudentShow;
 use App\Livewire\Mahasiswa\Attendance\Index as StudentAttendance;
 use App\Livewire\Mahasiswa\Dashboard as MahasiswaDashboard;
+use App\Livewire\Mahasiswa\Logbooks\Index as StudentLogbook;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -77,4 +78,6 @@ Route::middleware(['auth', 'role:mahasiswa'])
         Route::get('/', MahasiswaDashboard::class)->name('dashboard');
 
         Route::get('/attendance', StudentAttendance::class)->name('attendance');
+
+        Route::get('/logbooks', StudentLogbook::class)->name('logbooks');
     });
