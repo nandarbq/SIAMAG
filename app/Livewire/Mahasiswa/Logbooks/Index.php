@@ -6,7 +6,6 @@ use App\Enums\LogbookStatus;
 use App\Models\Logbook;
 use App\Models\Setting;
 use Carbon\Carbon;
-use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -214,9 +213,17 @@ class Index extends Component
                         $fail('Tanggal logbook harus berada di dalam periode magang.');
                     }
                 },
-                Rule::unique('logbooks', 'date')
-                    ->where(fn ($query) => $query->where('user_id', $userId))
-                    ->ignore($this->logbookId),
+                function (string $attribute, mixed $value, \Closure $fail) use ($userId) {
+                    $exists = Logbook::query()
+                        ->where('user_id', $userId)
+                        ->whereDate('date', $value)
+                        ->when($this->logbookId, fn ($query) => $query->whereKeyNot($this->logbookId))
+                        ->exists();
+
+                    if ($exists) {
+                        $fail('Anda sudah memiliki logbook pada tanggal tersebut.');
+                    }
+                },
             ],
             'activity' => ['required', 'string', 'max:200'],
             'description' => ['nullable', 'string', 'max:2000'],
