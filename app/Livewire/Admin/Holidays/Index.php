@@ -3,7 +3,6 @@
 namespace App\Livewire\Admin\Holidays;
 
 use App\Models\Holiday;
-use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -55,7 +54,17 @@ class Index extends Component
     public function save(): void
     {
         $validated = $this->validate([
-            'date' => ['required', 'date', Rule::unique('holidays', 'date')->ignore($this->editingId)],
+            'date' => ['required', 'date', function (string $attribute, mixed $value, \Closure $fail) {
+                $query = Holiday::query()->whereDate('date', $value);
+
+                if ($this->editingId) {
+                    $query->whereKeyNot($this->editingId);
+                }
+
+                if ($query->exists()) {
+                    $fail('Tanggal tersebut sudah terdaftar sebagai hari libur.');
+                }
+            }],
             'name' => ['required', 'string', 'max:255'],
         ], [
             'date.required' => 'Tanggal wajib diisi.',

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\ReportExportController;
 use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaveAttachmentController;
@@ -9,11 +10,16 @@ use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Livewire\Admin\Holidays\Index as HolidayIndex;
 use App\Livewire\Admin\Leaves\Index as LeaveIndex;
 use App\Livewire\Admin\Logbooks\Index as LogbookIndex;
+use App\Livewire\Admin\Reports\Index as ReportIndex;
 use App\Livewire\Admin\Settings\Index as SettingIndex;
 use App\Livewire\Admin\Students\Form as StudentForm;
 use App\Livewire\Admin\Students\Index as StudentIndex;
 use App\Livewire\Admin\Students\Show as StudentShow;
+use App\Livewire\Mahasiswa\Attendance\Index as StudentAttendance;
 use App\Livewire\Mahasiswa\Dashboard as MahasiswaDashboard;
+use App\Livewire\Mahasiswa\Leaves\Index as StudentLeave;
+use App\Livewire\Mahasiswa\Logbooks\Index as StudentLogbook;
+use App\Livewire\Mahasiswa\Profile as StudentProfile;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -60,6 +66,11 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/announcements', AnnouncementIndex::class)->name('announcements');
 
         Route::get('/settings', SettingIndex::class)->name('settings');
+
+        Route::get('/reports', ReportIndex::class)->name('reports');
+        Route::get('/reports/excel', [ReportExportController::class, 'excel'])->name('reports.excel');
+        Route::get('/reports/pdf', [ReportExportController::class, 'pdf'])->name('reports.pdf');
+        Route::get('/reports/word', [ReportExportController::class, 'word'])->name('reports.word');
     });
 
 Route::middleware(['auth', 'role:mahasiswa'])
@@ -67,4 +78,12 @@ Route::middleware(['auth', 'role:mahasiswa'])
     ->name('mahasiswa.')
     ->group(function () {
         Route::get('/', MahasiswaDashboard::class)->name('dashboard');
+
+        Route::get('/attendance', StudentAttendance::class)->name('attendance');
+
+        Route::get('/logbooks', StudentLogbook::class)->name('logbooks');
+
+        Route::get('/leaves', StudentLeave::class)->name('leaves');
+
+        Route::get('/profile', StudentProfile::class)->name('profile');
     });

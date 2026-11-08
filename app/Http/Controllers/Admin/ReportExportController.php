@@ -30,7 +30,7 @@ class ReportExportController extends Controller
         $sheet->getStyle('A1')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
 
         $sheet->mergeCells('A2:J2');
-        $sheet->setCellValue('A2', $data['office_name'].' · '.$data['period_label']);
+        $sheet->setCellValue('A2', $data['office_name'].' - '.$data['period_label']);
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('A2')->getFont()->setItalic(true)->setSize(10);
 
@@ -114,7 +114,7 @@ class ReportExportController extends Controller
         ]);
 
         $section->addText('REKAP ABSENSI & LOGBOOK MAGANG', ['bold' => true, 'size' => 16], ['alignment' => Jc::CENTER]);
-        $section->addText($data['office_name'].' · '.$data['period_label'], ['italic' => true, 'size' => 10], ['alignment' => Jc::CENTER]);
+        $section->addText($data['office_name'].' - '.$data['period_label'], ['italic' => true, 'size' => 10], ['alignment' => Jc::CENTER]);
         $section->addTextBreak(1);
 
         $table = $section->addTable([
