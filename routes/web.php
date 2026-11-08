@@ -19,6 +19,7 @@ use App\Livewire\Mahasiswa\Attendance\Index as StudentAttendance;
 use App\Livewire\Mahasiswa\Dashboard as MahasiswaDashboard;
 use App\Livewire\Mahasiswa\Leaves\Index as StudentLeave;
 use App\Livewire\Mahasiswa\Logbooks\Index as StudentLogbook;
+use App\Livewire\Mahasiswa\Profile as StudentProfile;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -83,4 +84,6 @@ Route::middleware(['auth', 'role:mahasiswa'])
         Route::get('/logbooks', StudentLogbook::class)->name('logbooks');
 
         Route::get('/leaves', StudentLeave::class)->name('leaves');
+
+        Route::get('/profile', StudentProfile::class)->name('profile');
     });
