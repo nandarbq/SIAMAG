@@ -128,6 +128,96 @@ class LeaveTest extends TestCase
         }
     }
 
+    public function test_admin_must_add_a_note_when_rejecting_a_leave_request(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Izin,
+            'start_date' => '2026-11-10',
+            'end_date' => '2026-11-10',
+            'reason' => 'Kegiatan keluarga di luar kota.',
+            'status' => LeaveStatus::Pending,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminLeaveIndex::class)
+            ->call('openReview', $leave->id)
+            ->set('reviewNote', '')
+            ->call('reject', $leave->id)
+            ->assertHasErrors(['reviewNote']);
+
+        $this->assertSame(LeaveStatus::Pending, $leave->fresh()->status);
+    }
+
+    public function test_admin_can_reject_a_leave_request_with_a_note(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Izin,
+            'start_date' => '2026-11-10',
+            'end_date' => '2026-11-10',
+            'reason' => 'Kegiatan keluarga di luar kota.',
+            'status' => LeaveStatus::Pending,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminLeaveIndex::class)
+            ->call('openReview', $leave->id)
+            ->set('reviewNote', 'Lampiran surat belum lengkap.')
+            ->call('reject', $leave->id)
+            ->assertHasNoErrors();
+
+        $leave->refresh();
+
+        $this->assertSame(LeaveStatus::Rejected, $leave->status);
+        $this->assertSame('Lampiran surat belum lengkap.', $leave->review_note);
+        $this->assertSame($admin->id, $leave->reviewed_by);
+        $this->assertDatabaseHas('notifications', [
+            'notifiable_id' => $student->id,
+            'notifiable_type' => User::class,
+        ]);
+    }
+
+    public function test_student_cannot_delete_a_processed_leave_request(): void
+    {
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Izin,
+            'start_date' => '2026-11-10',
+            'end_date' => '2026-11-10',
+            'reason' => 'Kegiatan keluarga di luar kota.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('delete', $leave->id);
+
+        $this->assertDatabaseHas('leave_requests', ['id' => $leave->id]);
+    }
+
+    public function test_student_cannot_request_leave_outside_the_internship_period(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->set('type', LeaveType::Izin->value)
+            ->set('startDate', '2027-01-01')
+            ->set('endDate', '2027-01-02')
+            ->set('reason', 'Kegiatan keluarga di luar kota.')
+            ->call('submit')
+            ->assertHasErrors(['startDate']);
+    }
+
     public function test_student_cannot_check_in_on_an_approved_leave_day(): void
     {
         $student = $this->makeStudent();
