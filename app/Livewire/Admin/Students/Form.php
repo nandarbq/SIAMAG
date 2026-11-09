@@ -118,8 +118,8 @@ class Form extends Component
             $this->user->update($userData);
             $user = $this->user;
         } else {
-            $userData['email_verified_at'] = now();
             $user = User::query()->create($userData);
+            $user->forceFill(['email_verified_at' => now()])->save();
         }
 
         $user->internProfile()->updateOrCreate(
