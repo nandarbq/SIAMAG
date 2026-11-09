@@ -64,7 +64,7 @@ class Profile extends Component
     {
         $this->validate([
             'currentPassword' => ['required', 'current_password'],
-            'password' => ['required', 'confirmed', Password::min(8)],
+            'password' => ['required', 'confirmed:passwordConfirmation', Password::min(8)],
         ], [
             'currentPassword.required' => 'Password saat ini wajib diisi.',
             'currentPassword.current_password' => 'Password saat ini tidak sesuai.',
