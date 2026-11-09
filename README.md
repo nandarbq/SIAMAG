@@ -2,38 +2,69 @@
 
 **Sistem Informasi Absensi dan Logbook Magang BMKG Banyuwangi.**
 
-SIAMAG adalah aplikasi web untuk mengelola kegiatan magang di BMKG Banyuwangi, mulai dari absensi harian berbasis selfie dan GPS, pengisian logbook, pengajuan izin/sakit, hingga rekap laporan bulanan.
+SIAMAG adalah aplikasi web untuk mengelola kegiatan magang di BMKG Banyuwangi. Admin mengelola data mahasiswa, memantau absensi, mereview logbook, menyetujui izin/sakit, dan membuat laporan. Mahasiswa menggunakan aplikasi untuk absen, mengisi logbook, mengajukan izin, dan melihat profil magang.
+
+Aplikasi ini tidak memiliki halaman registrasi mandiri. Akun mahasiswa dibuat dan dikelola oleh admin.
+
+## Peran Pengguna
+
+| Peran | Akses utama |
+| --- | --- |
+| **Admin** | Mengelola mahasiswa, absensi, logbook, izin/sakit, hari libur, pengumuman, laporan, dan pengaturan kantor. |
+| **Mahasiswa** | Melakukan absensi, mengisi logbook, mengajukan izin/sakit, dan memperbarui profil. |
+
+Akun yang dinonaktifkan admin tidak dapat login atau mengakses halaman aplikasi.
+
+## Alur Penggunaan
+
+1. Admin membuat akun mahasiswa dan melengkapi profil magang: institusi, jurusan, semester, periode magang, dan pembimbing lapangan.
+2. Mahasiswa login, lalu melakukan absen masuk dan absen pulang dengan selfie serta validasi lokasi GPS.
+3. Mahasiswa mengisi logbook harian, menyimpannya sebagai draf, lalu mengirimkannya untuk direview.
+4. Admin menyetujui atau mengembalikan logbook untuk revisi. Catatan review terlihat oleh mahasiswa.
+5. Mahasiswa dapat mengajukan izin atau sakit. Jika disetujui, absensi pada hari kerja dalam periode pengajuan otomatis diperbarui.
+6. Admin memantau rekap bulanan dan mengekspor laporan ke PDF, Excel, atau Word.
 
 ## Fitur
 
-### Admin
+### Administrator
 
-- Dashboard ringkasan kehadiran, logbook, dan pengajuan izin.
-- Manajemen data mahasiswa beserta profil magang.
-- Monitoring absensi harian dan koreksi data absensi.
-- Review logbook: setujui atau kembalikan untuk revisi.
-- Persetujuan izin/sakit dengan pembaruan absensi otomatis.
-- Pengelolaan hari libur dan pengumuman.
-- Rekap bulanan per mahasiswa atau seluruh mahasiswa.
+- Dashboard berisi ringkasan kehadiran hari ini, statistik mahasiswa, logbook, dan pengajuan izin.
+- Manajemen mahasiswa: tambah, lihat detail, edit, aktif/nonaktifkan, dan hapus data.
+- Profil magang mahasiswa: institusi, jurusan, semester, tanggal mulai/selesai, pembimbing, dan nomor telepon pembimbing.
+- Monitoring absensi dengan filter tanggal, status, dan pencarian mahasiswa.
+- Melihat detail absensi, termasuk foto selfie, lokasi, jarak dari kantor, dan akurasi GPS.
+- Koreksi absensi: ubah status, jam masuk/pulang, dan tambahkan catatan.
+- Review logbook: setujui atau tolak dengan catatan revisi.
+- Persetujuan izin/sakit: setujui atau tolak dengan alasan.
+- Pengelolaan hari libur per tahun.
+- Pengelolaan pengumuman: tambah, edit, aktif/nonaktifkan, dan hapus.
+- Laporan bulanan per mahasiswa atau seluruh mahasiswa, lengkap dengan persentase kehadiran dan jumlah logbook disetujui.
 - Export laporan ke **PDF**, **Excel**, dan **Word**.
-- Pengaturan kantor: koordinat, radius geofence, akurasi GPS, jam kerja, dan toleransi keterlambatan.
+- Pengaturan kantor: nama, alamat, koordinat, radius geofence, batas akurasi GPS, jam kerja, toleransi keterlambatan, kewajiban selfie, dan kewajiban validasi lokasi.
 
 ### Mahasiswa
 
-- Dashboard progres magang dan ringkasan aktivitas.
-- Absensi masuk/pulang dengan selfie dan validasi lokasi (geofence).
-- Perhitungan otomatis status hadir, terlambat, izin, sakit, dan alpha.
-- Logbook harian: simpan draf, submit untuk review, dan revisi.
-- Pengajuan izin/sakit dengan lampiran.
-- Profil, nomor telepon, dan perubahan password.
-- Riwayat absensi, logbook, dan pengajuan izin.
+- Dashboard berisi progres magang, absensi hari ini, statistik bulan ini, logbook terakhir, dan pengumuman.
+- Absensi masuk/pulang dengan selfie dan validasi lokasi.
+- Status **hadir** atau **terlambat** dihitung otomatis berdasarkan jam kerja dan toleransi keterlambatan.
+- Riwayat absensi.
+- Logbook harian: simpan draf, kirim untuk review, dan perbaiki logbook yang dikembalikan admin.
+- Satu logbook per tanggal, tidak boleh untuk tanggal yang akan datang, dan harus berada di dalam periode magang.
+- Pengajuan izin/sakit dengan lampiran JPG, PNG, atau PDF maksimal 4 MB.
+- Melihat status pengajuan izin/sakit dan catatan dari admin.
+- Profil: ubah nama, email, dan nomor telepon; lihat data magang; serta ubah password.
 
-### Keamanan dan validasi
+### Aturan otomatis dan keamanan
 
-- Autentikasi berbasis role (`admin`, `mahasiswa`) dengan pembatasan akses per route.
-- Login dibatasi dengan rate limiting dan akun nonaktif tidak dapat masuk.
-- Foto absensi dan lampiran izin disimpan secara privat dan hanya dapat diakses pemilik data atau admin.
-- Validasi tanggal logbook/izin, rentang periode magang, dan benturan jadwal izin.
+- Login dibatasi maksimal 5 percobaan per menit.
+- Akses dibatasi berdasarkan role `admin` dan `mahasiswa`.
+- Akun nonaktif ditolak saat login dan diarahkan keluar saat membuka halaman admin/mahasiswa.
+- Absensi hanya dapat dilakukan pada hari kerja, di dalam periode magang, dan di dalam radius kantor.
+- Jika validasi lokasi aktif, GPS harus terdeteksi dan akurasi GPS harus memenuhi batas yang ditentukan.
+- Jika selfie wajib, mahasiswa harus mengunggah foto saat absen.
+- Persetujuan izin/sakit otomatis mengisi absensi pada hari kerja dalam rentang pengajuan, kecuali akhir pekan atau hari libur.
+- Foto absensi dan lampiran izin disimpan secara privat di disk `local`. Hanya pemilik data atau admin yang dapat mengaksesnya.
+- Nilai **alpha** pada laporan dihitung dari hari kerja yang tidak memiliki catatan absensi.
 
 ## Teknologi
 
@@ -41,90 +72,117 @@ SIAMAG adalah aplikasi web untuk mengelola kegiatan magang di BMKG Banyuwangi, m
 | --- | --- |
 | Framework | Laravel 13 |
 | Bahasa | PHP 8.3+ |
-| UI | Livewire 4, Blade, Tailwind CSS 4, Alpine.js |
+| UI | Livewire 4, Blade, Tailwind CSS 4, Alpine.js 3 |
 | Build tool | Vite 8 |
-| Database | MariaDB/MySQL |
-| Grafik | Chart.js |
+| Database | MariaDB/MySQL; SQLite didukung untuk pengembangan dan pengujian |
+| Grafik | Chart.js 4 |
 | Export | barryvdh/laravel-dompdf, maatwebsite/excel, phpoffice/phpword |
 | Pengolahan gambar | Intervention Image 4 |
 | Testing | PHPUnit 12 |
+| Format kode | Laravel Pint |
 
 ## Kebutuhan Sistem
 
-- PHP 8.3 atau lebih baru dengan ekstensi `gd`, `fileinfo`, `mbstring`, `openssl`, `pdo`, dan driver database.
+- PHP 8.3 atau lebih baru dengan ekstensi `gd`, `fileinfo`, `mbstring`, `openssl`, `pdo`, `zip`, `xml`, `dom`, dan `curl`.
 - Composer 2.
-- Node.js 20+ dan npm.
-- MariaDB/MySQL (disarankan). SQLite juga dapat digunakan untuk pengembangan lokal.
-- Web server lokal seperti `php artisan serve`.
+- Node.js 20.19+ atau 22.12+ dan npm.
+- MariaDB/MySQL (disarankan) atau SQLite.
+- Browser modern dengan izin kamera dan lokasi.
+
+Untuk penggunaan di server, aplikasi sebaiknya dijalankan melalui HTTPS. Browser umumnya hanya mengizinkan akses lokasi pada HTTPS atau `localhost`.
 
 ## Instalasi
 
-1. Clone repositori dan masuk ke direktori proyek.
-
-   ```bash
-   git clone https://github.com/nandarbq/SIAMAG.git
-   cd SIAMAG
-   ```
-
-2. Install dependensi PHP dan JavaScript.
-
-   ```bash
-   composer install
-   npm install
-   ```
-
-3. Salin konfigurasi environment dan buat application key.
-
-   ```bash
-   cp .env.example .env
-   php artisan key:generate
-   ```
-
-4. Buat database `siamag`, lalu sesuaikan koneksi di `.env`.
-
-   ```dotenv
-   DB_CONNECTION=mariadb
-   DB_HOST=127.0.0.1
-   DB_PORT=3306
-   DB_DATABASE=siamag
-   DB_USERNAME=root
-   DB_PASSWORD=
-   ```
-
-5. Jalankan migrasi dan seeder.
-
-   ```bash
-   php artisan migrate --seed
-   ```
-
-   Untuk mengulang dari awal (menghapus seluruh data):
-
-   ```bash
-   php artisan migrate:fresh --seed
-   ```
-
-6. Build asset frontend.
-
-   ```bash
-   npm run build
-   ```
-
-7. Jalankan aplikasi.
-
-   ```bash
-   php artisan serve
-   ```
-
-   Aplikasi tersedia di `http://localhost:8000`.
-
-### Mode pengembangan
-
-Gunakan dua terminal:
+### 1. Ambil proyek dan install dependensi
 
 ```bash
-npm run dev
+git clone https://github.com/nandarbq/SIAMAG.git
+cd SIAMAG
+composer install
+npm install
+```
+
+### 2. Siapkan file environment
+
+Windows PowerShell:
+
+```powershell
+Copy-Item .env.example .env
+php artisan key:generate
+```
+
+macOS/Linux:
+
+```bash
+cp .env.example .env
+php artisan key:generate
+```
+
+### 3. Siapkan database
+
+Buat database bernama `siamag`, lalu sesuaikan konfigurasi berikut di `.env`:
+
+```dotenv
+DB_CONNECTION=mariadb
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=siamag
+DB_USERNAME=root
+DB_PASSWORD=
+```
+
+Jika ingin memakai SQLite untuk pengembangan lokal:
+
+```dotenv
+DB_CONNECTION=sqlite
+```
+
+Lalu buat file `database/database.sqlite`.
+
+### 4. Jalankan migrasi dan seeder
+
+```bash
+php artisan migrate --seed
+```
+
+Perintah tersebut menjalankan `SettingSeeder`, `HolidaySeeder`, `UserSeeder`, `DemoDataSeeder`, dan `AnnouncementSeeder`, sehingga aplikasi langsung memiliki pengaturan awal, akun demo, serta data contoh.
+
+Untuk mengulang database dari awal:
+
+```bash
+php artisan migrate:fresh --seed
+```
+
+### 5. Build asset frontend
+
+```bash
+npm run build
+```
+
+### 6. Jalankan aplikasi
+
+```bash
 php artisan serve
 ```
+
+Buka `http://localhost:8000`.
+
+## Mode Pengembangan
+
+Satu perintah untuk menjalankan server Laravel, queue listener, dan Vite:
+
+```bash
+composer run dev
+```
+
+Alternatif dengan terminal terpisah:
+
+```bash
+php artisan serve
+npm run dev
+```
+
+Jika halaman tampil tanpa gaya atau JavaScript, pastikan `npm run dev` sedang berjalan atau jalankan `npm run build`.
 
 ## Akun Demo
 
@@ -135,52 +193,80 @@ Seeder membuat dua akun berikut:
 | Admin | `admin@bmkg.go.id` | `password` |
 | Mahasiswa | `mahasiswa@bmkg.go.id` | `password` |
 
-`DemoDataSeeder` juga membuat beberapa mahasiswa contoh, riwayat absensi, logbook, dan pengajuan izin agar dashboard langsung memiliki data.
+Kredensial demo sengaja tidak ditampilkan di halaman login. Gunakan tabel di atas untuk masuk.
+
+`DemoDataSeeder` juga membuat lima mahasiswa contoh tambahan, riwayat absensi, logbook, dan pengajuan izin agar dashboard langsung memiliki data.
+
+Akun demo hanya untuk pengembangan. Sebelum digunakan di lingkungan produksi:
+
+- Ganti password akun demo atau nonaktifkan akun tersebut.
+- Hapus `DemoDataSeeder` dari `database/seeders/DatabaseSeeder.php` jika tidak ingin data contoh ikut dibuat.
 
 ## Pengujian dan Pemeriksaan
 
 ```bash
 php artisan test
-npm run build
 ```
 
-Test menggunakan SQLite in-memory dan tidak mengubah database pengembangan. Cakupan test mencakup autentikasi, otorisasi, absensi, logbook, izin, pengaturan, pengumuman, hari libur, laporan/export, akses file privat, serta perhitungan geofence dan progres magang.
+Test menggunakan SQLite in-memory dan tidak mengubah database pengembangan. Cakupan test meliputi autentikasi, otorisasi, absensi, logbook, izin, pengaturan, pengumuman, hari libur, laporan/export, akses file privat, serta perhitungan geofence dan progres magang.
 
 Pemeriksaan format kode PHP:
 
 ```bash
-./vendor/bin/pint --test
+php vendor/bin/pint --test
 ```
 
-## Struktur Singkat
+Build frontend untuk memastikan asset dapat dikompilasi:
+
+```bash
+npm run build
+```
+
+## Struktur Proyek
 
 ```text
 app/
-  Enums/                  Status absensi, logbook, izin, dan role
-  Http/Controllers/       Autentikasi, file privat, export laporan
-  Livewire/Admin/         Komponen UI admin
-  Livewire/Mahasiswa/     Komponen UI mahasiswa
-  Models/                 Model Eloquent
-  Notifications/          Notifikasi database
-  Services/               AttendanceService, GeofenceService, ReportService
+  Enums/                       Status absensi, logbook, izin, dan role
+  Http/Controllers/
+    Admin/ReportExportController.php
+    AttendancePhotoController.php
+    AuthController.php
+    LeaveAttachmentController.php
+  Http/Middleware/EnsureRole.php
+  Livewire/Admin/              Komponen UI admin
+  Livewire/Mahasiswa/          Komponen UI mahasiswa
+  Models/                      Model Eloquent
+  Notifications/               Notifikasi database
+  Services/                    AttendanceService, GeofenceService, ReportService
 database/
-  migrations/             Skema database
-  seeders/                Data awal dan data demo
+  factories/                   Factory data uji dan data demo
+  migrations/                  Skema database
+  seeders/                     Data awal dan data demo
 resources/
-  css/                    Tailwind CSS
-  js/                     Alpine.js dan Chart.js
-  views/                  Blade dan komponen Livewire
-routes/web.php            Route admin, mahasiswa, dan file privat
-tests/                    Unit dan feature test
+  css/                         Tailwind CSS
+  js/                          Alpine.js dan Chart.js
+  views/                       Blade dan komponen Livewire
+routes/web.php                 Route admin, mahasiswa, dan file privat
+tests/                         Unit dan feature test
 ```
 
 ## Catatan Operasional
 
-- Zona waktu aplikasi diatur melalui `APP_TIMEZONE` (default `.env.example`: `Asia/Jakarta`).
-- Jam kerja, radius geofence, dan akurasi GPS dapat diubah dari menu **Pengaturan** admin.
-- Persetujuan izin/sakit otomatis mengisi absensi pada hari kerja dalam rentang pengajuan, kecuali hari libur atau akhir pekan.
-- Foto selfie dan lampiran izin disimpan di disk `local` (`storage/app/private`) dan disajikan melalui route terproteksi.
+- Zona waktu aplikasi diatur melalui `APP_TIMEZONE`. Nilai default di `.env.example` adalah `Asia/Jakarta`.
+- Jam kerja, radius geofence, batas akurasi GPS, dan toleransi keterlambatan dapat diubah dari menu **Pengaturan** admin.
+- Persetujuan izin/sakit tidak menimpa absensi yang sudah memiliki jam masuk.
+- Foto selfie dan lampiran izin disimpan di `storage/app/private` dan disajikan melalui route terproteksi. `php artisan storage:link` tidak diperlukan untuk file privat ini.
 - Export laporan mengikuti filter bulan, tahun, dan mahasiswa yang dipilih pada halaman laporan.
+- Setelah mengubah konfigurasi `.env`, jalankan `php artisan optimize:clear` agar konfigurasi dan cache diperbarui.
+- Pada server Linux, pastikan direktori `storage/` dan `bootstrap/cache/` dapat ditulis oleh web server.
+
+## Troubleshooting Singkat
+
+- **Absensi ditolak karena lokasi:** periksa izin lokasi browser, pastikan aplikasi diakses melalui HTTPS atau `localhost`, lalu cocokkan koordinat dan radius kantor di menu **Pengaturan**.
+- **Selfie tidak bisa diambil:** pastikan izin kamera diberikan dan browser mendukung akses kamera.
+- **Gaya halaman tidak muncul:** jalankan `npm run build`, atau gunakan `composer run dev` saat pengembangan.
+- **Data contoh tidak muncul:** pastikan migrasi dijalankan dengan `--seed` atau jalankan `php artisan db:seed`.
+- **Tidak bisa daftar akun:** memang tidak ada registrasi mandiri. Hubungi admin untuk pembuatan akun.
 
 ## Lisensi
 
