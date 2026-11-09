@@ -57,11 +57,6 @@
                     </div>
 
                     <div class="flex items-center gap-2 sm:gap-4">
-                        <div class="hidden items-center gap-2 rounded-full bg-emerald-50 px-3 py-1.5 text-xs font-semibold text-emerald-700 ring-1 ring-inset ring-emerald-600/10 sm:flex">
-                            <span class="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>
-                            Sistem aktif
-                        </div>
-
                         @if (auth()->user()->role === \App\Enums\UserRole::Mahasiswa)
                             <a href="{{ route('mahasiswa.dashboard') }}" class="btn-ghost relative px-2.5 py-2" aria-label="Pengumuman">
                                 <x-icon name="bell" class="h-5 w-5" />
