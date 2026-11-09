@@ -122,6 +122,48 @@ class LogbookTest extends TestCase
         ]);
     }
 
+    public function test_admin_must_add_a_note_when_rejecting_a_logbook(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = $this->makeStudent();
+
+        $logbook = Logbook::factory()->submitted()->for($student)->create([
+            'date' => '2026-11-09',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminLogbookIndex::class)
+            ->call('openReview', $logbook->id)
+            ->set('reviewNote', '')
+            ->call('reject', $logbook->id)
+            ->assertHasErrors(['reviewNote']);
+
+        $this->assertSame(LogbookStatus::Submitted, $logbook->fresh()->status);
+    }
+
+    public function test_admin_can_reject_a_logbook_with_a_revision_note(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = $this->makeStudent();
+
+        $logbook = Logbook::factory()->submitted()->for($student)->create([
+            'date' => '2026-11-09',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminLogbookIndex::class)
+            ->call('openReview', $logbook->id)
+            ->set('reviewNote', 'Tambahkan detail kegiatan.')
+            ->call('reject', $logbook->id)
+            ->assertHasNoErrors();
+
+        $logbook->refresh();
+
+        $this->assertSame(LogbookStatus::Rejected, $logbook->status);
+        $this->assertSame('Tambahkan detail kegiatan.', $logbook->review_note);
+        $this->assertSame($admin->id, $logbook->reviewed_by);
+    }
+
     private function makeStudent(): User
     {
         $student = User::factory()->mahasiswa()->create();
