@@ -2,9 +2,7 @@
     <div class="flex min-h-screen flex-col bg-slate-100">
         <header class="mx-auto flex w-full max-w-5xl items-center justify-between gap-4 px-5 py-6 sm:px-8">
             <div class="flex items-center gap-3">
-                <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-700 text-white">
-                    <x-icon name="building" class="h-5 w-5" />
-                </div>
+                <img src="{{ asset('images/logo-bmkg.png') }}" alt="Logo BMKG" class="h-10 w-auto">
                 <div>
                     <p class="text-sm font-bold tracking-tight text-slate-900">SIAMAG</p>
                     <p class="text-xs text-slate-500">BMKG Banyuwangi</p>
