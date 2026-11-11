@@ -8,6 +8,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpWord\IOFactory;
@@ -20,7 +21,7 @@ class ReportExportController extends Controller
     {
         $data = $this->reportData($request, $reportService);
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Rekap Absensi');
 
@@ -83,7 +84,7 @@ class ReportExportController extends Controller
         }
 
         $sheet->getStyle('A4:J'.$totalRow)->getBorders()->getAllBorders()->setBorderStyle(
-            \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN
+            Border::BORDER_THIN
         );
 
         $temp = tempnam(sys_get_temp_dir(), 'siamag').'.xlsx';
@@ -106,7 +107,7 @@ class ReportExportController extends Controller
     {
         $data = $this->reportData($request, $reportService);
 
-        $phpWord = new PhpWord();
+        $phpWord = new PhpWord;
         $section = $phpWord->addSection([
             'orientation' => 'landscape',
             'marginLeft' => 600,
