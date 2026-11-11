@@ -228,10 +228,16 @@ class AttendanceService
             ]);
         }
 
-        $accuracy = isset($data['accuracy']) ? (int) $data['accuracy'] : null;
+        if (! isset($data['accuracy']) || (int) $data['accuracy'] <= 0) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Akurasi GPS tidak terdeteksi. Aktifkan izin lokasi lalu coba lagi.',
+            ]);
+        }
+
+        $accuracy = (int) $data['accuracy'];
         $maxAccuracy = Setting::getInt('max_accuracy_m', 100);
 
-        if ($accuracy !== null && $accuracy > $maxAccuracy) {
+        if ($accuracy > $maxAccuracy) {
             throw ValidationException::withMessages([
                 'attendance' => "Akurasi GPS terlalu rendah ({$accuracy} m). Maksimal {$maxAccuracy} m.",
             ]);
