@@ -145,7 +145,7 @@ Lalu buat file `database/database.sqlite`.
 php artisan migrate --seed
 ```
 
-Perintah tersebut menjalankan `SettingSeeder`, `HolidaySeeder`, `UserSeeder`, `DemoDataSeeder`, dan `AnnouncementSeeder`, sehingga aplikasi langsung memiliki pengaturan awal, akun demo, serta data contoh.
+Perintah tersebut menjalankan `SettingSeeder`, `HolidaySeeder`, dan `UserSeeder`, sehingga aplikasi memiliki pengaturan awal, hari libur, serta satu akun untuk setiap role.
 
 Untuk mengulang database dari awal:
 
@@ -195,12 +195,10 @@ Seeder membuat dua akun berikut:
 
 Kredensial demo sengaja tidak ditampilkan di halaman login. Gunakan tabel di atas untuk masuk.
 
-`DemoDataSeeder` juga membuat lima mahasiswa contoh tambahan, riwayat absensi, logbook, dan pengajuan izin agar dashboard langsung memiliki data.
+Akun di atas dibuat oleh `UserSeeder` dan hanya untuk pengembangan. Sebelum digunakan di lingkungan produksi:
 
-Akun demo hanya untuk pengembangan. Sebelum digunakan di lingkungan produksi:
-
-- Ganti password akun demo atau nonaktifkan akun tersebut.
-- Hapus `DemoDataSeeder` dari `database/seeders/DatabaseSeeder.php` jika tidak ingin data contoh ikut dibuat.
+- Ganti password akun tersebut.
+- Nonaktifkan akun yang tidak dipakai.
 
 ## Pengujian dan Pemeriksaan
 
@@ -239,9 +237,9 @@ app/
   Notifications/               Notifikasi database
   Services/                    AttendanceService, GeofenceService, ReportService
 database/
-  factories/                   Factory data uji dan data demo
+  factories/                   Factory data uji
   migrations/                  Skema database
-  seeders/                     Data awal dan data demo
+  seeders/                     Data awal
 resources/
   css/                         Tailwind CSS
   js/                          Alpine.js dan Chart.js
@@ -265,7 +263,7 @@ tests/                         Unit dan feature test
 - **Absensi ditolak karena lokasi:** periksa izin lokasi browser, pastikan aplikasi diakses melalui HTTPS atau `localhost`, lalu cocokkan koordinat dan radius kantor di menu **Pengaturan**.
 - **Selfie tidak bisa diambil:** pastikan izin kamera diberikan dan browser mendukung akses kamera.
 - **Gaya halaman tidak muncul:** jalankan `npm run build`, atau gunakan `composer run dev` saat pengembangan.
-- **Data contoh tidak muncul:** pastikan migrasi dijalankan dengan `--seed` atau jalankan `php artisan db:seed`.
+- **Data awal tidak muncul:** pastikan migrasi dijalankan dengan `--seed` atau jalankan `php artisan db:seed`.
 - **Tidak bisa daftar akun:** memang tidak ada registrasi mandiri. Hubungi admin untuk pembuatan akun.
 
 ## Lisensi
