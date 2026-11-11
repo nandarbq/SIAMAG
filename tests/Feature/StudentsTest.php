@@ -4,9 +4,11 @@ namespace Tests\Feature;
 
 use App\Livewire\Admin\Students\Index as StudentIndex;
 use App\Models\Attendance;
+use App\Models\InternProfile;
 use App\Models\LeaveRequest;
 use App\Models\Logbook;
 use App\Models\User;
+use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
@@ -72,6 +74,17 @@ class StudentsTest extends TestCase
         Storage::disk('local')->assertMissing($attendance->check_out_photo);
         Storage::disk('local')->assertMissing($leave->attachment_path);
         Storage::disk('local')->assertMissing($logbook->attachment_path);
+    }
+
+    public function test_intern_profile_user_id_must_be_unique(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        InternProfile::factory()->for($student)->create();
+
+        $this->expectException(QueryException::class);
+
+        InternProfile::factory()->for($student)->create();
     }
 
     public function test_student_list_can_be_searched(): void
