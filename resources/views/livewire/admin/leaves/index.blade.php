@@ -141,6 +141,16 @@
                         <p class="mt-1 whitespace-pre-line text-sm leading-relaxed text-slate-600">{{ $reviewing->reason }}</p>
                     </div>
 
+                    @if ($reviewing->attachment_path)
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Lampiran</p>
+                            <a href="{{ route('leave.attachment', $reviewing) }}" target="_blank" rel="noopener" class="mt-1 inline-flex items-center gap-1.5 text-sm font-semibold text-brand-600 hover:text-brand-700">
+                                <x-icon name="document" class="h-4 w-4" />
+                                Lihat lampiran
+                            </a>
+                        </div>
+                    @endif
+
                     @if ($reviewing->status === \App\Enums\LeaveStatus::Pending)
                         <div class="border-t border-slate-100 pt-4">
                             <label class="label">Catatan Review</label>

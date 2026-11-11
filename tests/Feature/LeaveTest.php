@@ -104,6 +104,27 @@ class LeaveTest extends TestCase
         $this->assertDatabaseMissing('leave_requests', ['id' => $leave->id]);
     }
 
+    public function test_admin_can_see_leave_attachment_link_in_review_modal(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Izin,
+            'start_date' => '2026-11-10',
+            'end_date' => '2026-11-10',
+            'reason' => 'Kegiatan keluarga di luar kota.',
+            'attachment_path' => 'leave-attachments/'.$student->id.'/surat.pdf',
+            'status' => LeaveStatus::Pending,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminLeaveIndex::class)
+            ->call('openReview', $leave->id)
+            ->assertSee(route('leave.attachment', $leave));
+    }
+
     public function test_admin_approval_marks_attendance_days_as_leave(): void
     {
         $admin = User::factory()->admin()->create();
