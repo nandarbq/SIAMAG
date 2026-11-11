@@ -4,6 +4,7 @@ namespace App\Livewire\Admin\Students;
 
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\StudentFileCleaner;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -44,6 +45,7 @@ class Index extends Component
         abort_unless($user->role === UserRole::Mahasiswa, 404);
 
         $name = $user->name;
+        app(StudentFileCleaner::class)->deleteFor($user);
         $user->delete();
 
         session()->flash('success', "Data mahasiswa {$name} berhasil dihapus.");
