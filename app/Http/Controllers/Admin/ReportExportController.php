@@ -165,9 +165,19 @@ class ReportExportController extends Controller
 
     private function reportData(Request $request, ReportService $reportService): array
     {
-        $month = min(12, max(1, (int) $request->input('month', now()->month)));
-        $year = (int) $request->input('year', now()->year);
-        $studentId = $request->filled('student_id') ? (int) $request->input('student_id') : null;
+        $validated = $request->validate([
+            'month' => ['nullable', 'integer', 'between:1,12'],
+            'year' => ['nullable', 'integer', 'between:2000,2100'],
+            'student_id' => ['nullable', 'integer', 'exists:users,id'],
+        ], [
+            'month.between' => 'Bulan laporan tidak valid.',
+            'year.between' => 'Tahun laporan tidak valid.',
+            'student_id.exists' => 'Mahasiswa tidak ditemukan.',
+        ]);
+
+        $month = (int) ($validated['month'] ?? now()->month);
+        $year = (int) ($validated['year'] ?? now()->year);
+        $studentId = isset($validated['student_id']) ? (int) $validated['student_id'] : null;
 
         return $reportService->recap($month, $year, $studentId);
     }
