@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Mahasiswa;
 
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Layout;
@@ -76,6 +77,8 @@ class Profile extends Component
         auth()->user()->update([
             'password' => $this->password,
         ]);
+
+        Auth::logoutOtherDevices($this->password);
 
         $this->reset(['currentPassword', 'password', 'passwordConfirmation']);
         session()->flash('success', 'Password berhasil diperbarui.');
