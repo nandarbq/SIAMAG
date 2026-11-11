@@ -88,7 +88,22 @@ class Index extends Component
                     }
                 },
             ],
-            'endDate' => ['required', 'date', 'after_or_equal:startDate'],
+            'endDate' => [
+                'required',
+                'date',
+                'after_or_equal:startDate',
+                function (string $attribute, mixed $value, \Closure $fail) use ($profile) {
+                    if (! $profile) {
+                        return;
+                    }
+
+                    $date = Carbon::parse($value);
+
+                    if ($date->lessThan($profile->start_date) || $date->greaterThan($profile->end_date)) {
+                        $fail('Tanggal selesai harus berada di dalam periode magang.');
+                    }
+                },
+            ],
             'reason' => ['required', 'string', 'min:10', 'max:1000'],
             'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
         ], [
