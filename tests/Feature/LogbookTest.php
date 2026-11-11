@@ -95,6 +95,29 @@ class LogbookTest extends TestCase
             ->assertSet('showModal', false);
     }
 
+    public function test_student_cannot_overwrite_a_submitted_logbook_via_persist(): void
+    {
+        $student = $this->makeStudent();
+
+        $logbook = Logbook::factory()->submitted()->for($student)->create([
+            'date' => '2026-11-09',
+            'activity' => 'Aktivitas asli',
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->set('logbookId', $logbook->id)
+            ->set('date', '2026-11-09')
+            ->set('activity', 'Aktivitas palsu')
+            ->call('saveDraft')
+            ->assertHasNoErrors();
+
+        $logbook->refresh();
+
+        $this->assertSame(LogbookStatus::Submitted, $logbook->status);
+        $this->assertSame('Aktivitas asli', $logbook->activity);
+    }
+
     public function test_admin_can_approve_a_submitted_logbook_and_notify_the_student(): void
     {
         $admin = User::factory()->admin()->create();
