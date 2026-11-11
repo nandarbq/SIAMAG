@@ -11,5 +11,7 @@
 </head>
 <body class="min-h-full">
     {{ $slot }}
+
+    @livewireScripts
 </body>
 </html>
