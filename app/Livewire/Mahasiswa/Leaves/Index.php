@@ -48,7 +48,7 @@ class Index extends Component
 
         $profile = auth()->user()->internProfile;
 
-        if ($profile && ! now()->betweenIncluded($profile->start_date, $profile->end_date)) {
+        if ($profile && ! today()->betweenIncluded($profile->start_date, $profile->end_date)) {
             session()->flash('error', 'Pengajuan izin hanya dapat dilakukan selama periode magang.');
 
             return;

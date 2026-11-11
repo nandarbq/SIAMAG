@@ -49,6 +49,18 @@ class LeaveTest extends TestCase
         $this->assertSame('2026-11-10', $leave->start_date->toDateString());
     }
 
+    public function test_student_can_open_leave_form_on_final_internship_day(): void
+    {
+        $this->travelTo(Carbon::parse('2026-12-31 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('openCreate')
+            ->assertSet('showModal', true);
+    }
+
     public function test_overlapping_leave_requests_are_rejected(): void
     {
         $student = $this->makeStudent();

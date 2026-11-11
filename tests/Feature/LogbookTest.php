@@ -45,6 +45,18 @@ class LogbookTest extends TestCase
         $this->assertSame(LogbookStatus::Draft, $logbook->status);
     }
 
+    public function test_student_can_open_logbook_form_on_final_internship_day(): void
+    {
+        $this->travelTo(Carbon::parse('2026-12-31 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreate')
+            ->assertSet('showModal', true);
+    }
+
     public function test_student_can_submit_a_logbook_for_review(): void
     {
         $student = $this->makeStudent();

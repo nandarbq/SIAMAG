@@ -53,7 +53,7 @@ class Index extends Component
 
         $profile = auth()->user()->internProfile;
 
-        if ($profile && ! now()->betweenIncluded($profile->start_date, $profile->end_date)) {
+        if ($profile && ! today()->betweenIncluded($profile->start_date, $profile->end_date)) {
             session()->flash('error', 'Anda hanya dapat mengisi logbook selama periode magang.');
 
             return;
