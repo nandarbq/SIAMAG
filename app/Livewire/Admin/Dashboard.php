@@ -11,6 +11,7 @@ use App\Models\Attendance;
 use App\Models\LeaveRequest;
 use App\Models\Logbook;
 use App\Models\User;
+use App\Services\AttendanceService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -38,9 +39,13 @@ class Dashboard extends Component
         $late = (clone $todayQuery)->where('status', AttendanceStatus::Terlambat)->count();
         $permit = (clone $todayQuery)->whereIn('status', [AttendanceStatus::Izin, AttendanceStatus::Sakit])->count();
         $recorded = (clone $todayQuery)->distinct('user_id')->count('user_id');
-        $alpha = max(0, $totalStudents - $recorded);
 
-        $chart = $this->buildChart($studentIds, $totalStudents);
+        $attendanceService = app(AttendanceService::class);
+        $alpha = $attendanceService->isWorkday(now()->startOfDay())
+            ? max(0, $totalStudents - $recorded)
+            : 0;
+
+        $chart = $this->buildChart($studentIds, $totalStudents, $attendanceService);
 
         return view('livewire.admin.dashboard', [
             'totalStudents' => $totalStudents,
@@ -72,7 +77,7 @@ class Dashboard extends Component
         ]);
     }
 
-    private function buildChart($studentIds, int $totalStudents): array
+    private function buildChart($studentIds, int $totalStudents, AttendanceService $attendanceService): array
     {
         $labels = [];
         $present = [];
@@ -100,7 +105,9 @@ class Dashboard extends Component
             $present[] = $hadir;
             $late[] = $terlambat;
             $permit[] = $izin + $sakit;
-            $alpha[] = $date->isWeekend() ? 0 : max(0, $totalStudents - $recorded);
+            $alpha[] = $attendanceService->isWorkday($date->copy()->startOfDay())
+                ? max(0, $totalStudents - $recorded)
+                : 0;
         }
 
         return [

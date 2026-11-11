@@ -53,7 +53,7 @@ class Index extends Component
 
         $profile = auth()->user()->internProfile;
 
-        if ($profile && ! now()->betweenIncluded($profile->start_date, $profile->end_date)) {
+        if ($profile && ! today()->betweenIncluded($profile->start_date, $profile->end_date)) {
             session()->flash('error', 'Anda hanya dapat mengisi logbook selama periode magang.');
 
             return;
@@ -197,6 +197,16 @@ class Index extends Component
         $userId = auth()->id();
         $profile = auth()->user()->internProfile;
 
+        $logbook = $this->logbookId
+            ? auth()->user()->logbooks()->findOrFail($this->logbookId)
+            : null;
+
+        if ($logbook && ! $logbook->isEditable()) {
+            session()->flash('error', 'Logbook ini tidak dapat diubah karena sudah dikirim.');
+
+            return;
+        }
+
         $this->validate([
             'date' => [
                 'required',
@@ -240,9 +250,7 @@ class Index extends Component
             'endTime.after' => 'Jam selesai harus setelah jam mulai.',
         ]);
 
-        $logbook = $this->logbookId
-            ? auth()->user()->logbooks()->findOrFail($this->logbookId)
-            : new Logbook(['user_id' => $userId]);
+        $logbook ??= new Logbook(['user_id' => $userId]);
 
         $attendance = auth()->user()->attendances()
             ->whereDate('date', $this->date)

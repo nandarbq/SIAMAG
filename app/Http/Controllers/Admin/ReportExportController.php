@@ -8,6 +8,7 @@ use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
+use PhpOffice\PhpSpreadsheet\Style\Border;
 use PhpOffice\PhpSpreadsheet\Style\Fill;
 use PhpOffice\PhpSpreadsheet\Writer\Xlsx;
 use PhpOffice\PhpWord\IOFactory;
@@ -20,7 +21,7 @@ class ReportExportController extends Controller
     {
         $data = $this->reportData($request, $reportService);
 
-        $spreadsheet = new Spreadsheet();
+        $spreadsheet = new Spreadsheet;
         $sheet = $spreadsheet->getActiveSheet();
         $sheet->setTitle('Rekap Absensi');
 
@@ -83,7 +84,7 @@ class ReportExportController extends Controller
         }
 
         $sheet->getStyle('A4:J'.$totalRow)->getBorders()->getAllBorders()->setBorderStyle(
-            \PhpOffice\PhpSpreadsheet\Style\Border::BORDER_THIN
+            Border::BORDER_THIN
         );
 
         $temp = tempnam(sys_get_temp_dir(), 'siamag').'.xlsx';
@@ -106,7 +107,7 @@ class ReportExportController extends Controller
     {
         $data = $this->reportData($request, $reportService);
 
-        $phpWord = new PhpWord();
+        $phpWord = new PhpWord;
         $section = $phpWord->addSection([
             'orientation' => 'landscape',
             'marginLeft' => 600,
@@ -165,9 +166,19 @@ class ReportExportController extends Controller
 
     private function reportData(Request $request, ReportService $reportService): array
     {
-        $month = min(12, max(1, (int) $request->input('month', now()->month)));
-        $year = (int) $request->input('year', now()->year);
-        $studentId = $request->filled('student_id') ? (int) $request->input('student_id') : null;
+        $validated = $request->validate([
+            'month' => ['nullable', 'integer', 'between:1,12'],
+            'year' => ['nullable', 'integer', 'between:2000,2100'],
+            'student_id' => ['nullable', 'integer', 'exists:users,id'],
+        ], [
+            'month.between' => 'Bulan laporan tidak valid.',
+            'year.between' => 'Tahun laporan tidak valid.',
+            'student_id.exists' => 'Mahasiswa tidak ditemukan.',
+        ]);
+
+        $month = (int) ($validated['month'] ?? now()->month);
+        $year = (int) ($validated['year'] ?? now()->year);
+        $studentId = isset($validated['student_id']) ? (int) $validated['student_id'] : null;
 
         return $reportService->recap($month, $year, $studentId);
     }

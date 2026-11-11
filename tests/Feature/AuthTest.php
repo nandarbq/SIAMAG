@@ -15,6 +15,13 @@ class AuthTest extends TestCase
         $this->get(route('login'))->assertOk();
     }
 
+    public function test_login_page_loads_livewire_scripts_for_alpine(): void
+    {
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('livewire', false);
+    }
+
     public function test_guests_are_redirected_from_protected_pages(): void
     {
         $this->get(route('admin.dashboard'))->assertRedirect(route('login'));

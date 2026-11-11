@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Livewire\Mahasiswa\Profile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -60,6 +61,27 @@ class ProfileTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertTrue(Hash::check('new-password', $student->fresh()->password));
+    }
+
+    public function test_password_change_invalidates_sessions_with_the_old_password_hash(): void
+    {
+        $student = User::factory()->mahasiswa()->create(['password' => 'old-password']);
+        $oldPasswordHash = $student->getAuthPassword();
+
+        Livewire::actingAs($student)
+            ->test(Profile::class)
+            ->set('currentPassword', 'old-password')
+            ->set('password', 'new-password')
+            ->set('passwordConfirmation', 'new-password')
+            ->call('updatePassword')
+            ->assertHasNoErrors();
+
+        $this->actingAs($student->fresh())
+            ->withSession([
+                'password_hash_'.Auth::getDefaultDriver() => $oldPasswordHash,
+            ])
+            ->get(route('mahasiswa.dashboard'))
+            ->assertRedirect(route('login'));
     }
 
     public function test_password_change_requires_correct_current_password(): void

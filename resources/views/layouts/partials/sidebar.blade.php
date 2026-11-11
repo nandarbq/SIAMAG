@@ -27,8 +27,8 @@
 
 <div class="sidebar-bg flex h-full flex-col text-white">
     <div class="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 ring-1 ring-white/15 backdrop-blur">
-            <x-icon name="sparkles" class="h-5 w-5 text-accent-300" />
+        <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white p-1.5">
+            <img src="{{ asset('images/logo-bmkg.png') }}" alt="Logo BMKG" class="h-full w-auto">
         </div>
         <div>
             <p class="text-base font-bold tracking-tight">SIAMAG</p>

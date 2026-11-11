@@ -49,6 +49,18 @@ class LeaveTest extends TestCase
         $this->assertSame('2026-11-10', $leave->start_date->toDateString());
     }
 
+    public function test_student_can_open_leave_form_on_final_internship_day(): void
+    {
+        $this->travelTo(Carbon::parse('2026-12-31 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('openCreate')
+            ->assertSet('showModal', true);
+    }
+
     public function test_overlapping_leave_requests_are_rejected(): void
     {
         $student = $this->makeStudent();
@@ -90,6 +102,27 @@ class LeaveTest extends TestCase
             ->call('delete', $leave->id);
 
         $this->assertDatabaseMissing('leave_requests', ['id' => $leave->id]);
+    }
+
+    public function test_admin_can_see_leave_attachment_link_in_review_modal(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Izin,
+            'start_date' => '2026-11-10',
+            'end_date' => '2026-11-10',
+            'reason' => 'Kegiatan keluarga di luar kota.',
+            'attachment_path' => 'leave-attachments/'.$student->id.'/surat.pdf',
+            'status' => LeaveStatus::Pending,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminLeaveIndex::class)
+            ->call('openReview', $leave->id)
+            ->assertSee(route('leave.attachment', $leave));
     }
 
     public function test_admin_approval_marks_attendance_days_as_leave(): void
@@ -216,6 +249,20 @@ class LeaveTest extends TestCase
             ->set('reason', 'Kegiatan keluarga di luar kota.')
             ->call('submit')
             ->assertHasErrors(['startDate']);
+    }
+
+    public function test_student_cannot_end_leave_outside_the_internship_period(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->set('type', LeaveType::Izin->value)
+            ->set('startDate', '2026-12-31')
+            ->set('endDate', '2027-01-01')
+            ->set('reason', 'Kegiatan keluarga di luar kota.')
+            ->call('submit')
+            ->assertHasErrors(['endDate']);
     }
 
     public function test_student_cannot_check_in_on_an_approved_leave_day(): void

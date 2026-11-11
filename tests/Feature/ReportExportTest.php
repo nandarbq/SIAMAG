@@ -41,6 +41,23 @@ class ReportExportTest extends TestCase
             ->assertDownload('rekap-absensi-2026-11.docx');
     }
 
+    public function test_report_export_rejects_invalid_month_and_year(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->from(route('admin.reports'))
+            ->get(route('admin.reports.pdf', ['month' => 11, 'year' => 99999]))
+            ->assertRedirect(route('admin.reports'))
+            ->assertSessionHasErrors('year');
+
+        $this->actingAs($admin)
+            ->from(route('admin.reports'))
+            ->get(route('admin.reports.pdf', ['month' => 13, 'year' => 2026]))
+            ->assertRedirect(route('admin.reports'))
+            ->assertSessionHasErrors('month');
+    }
+
     public function test_students_cannot_download_reports(): void
     {
         $student = User::factory()->mahasiswa()->create();

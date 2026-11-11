@@ -65,6 +65,33 @@ class AnnouncementsTest extends TestCase
         $this->assertSame('Isi baru.', $announcement->body);
     }
 
+    public function test_editing_announcement_preserves_publication_metadata(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $originalAuthor = User::factory()->admin()->create();
+        $publishedAt = Carbon::parse('2026-11-01 08:00:00', 'Asia/Jakarta');
+
+        $announcement = Announcement::factory()->create([
+            'title' => 'Judul Lama',
+            'body' => 'Isi lama.',
+            'published_at' => $publishedAt,
+            'created_by' => $originalAuthor->id,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AnnouncementIndex::class)
+            ->call('openEdit', $announcement->id)
+            ->set('title', 'Judul Baru')
+            ->set('body', 'Isi baru.')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $announcement->refresh();
+
+        $this->assertTrue($announcement->published_at->equalTo($publishedAt));
+        $this->assertSame($originalAuthor->id, $announcement->created_by);
+    }
+
     public function test_admin_can_toggle_and_delete_an_announcement(): void
     {
         $admin = User::factory()->admin()->create();

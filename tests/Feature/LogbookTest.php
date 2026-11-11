@@ -45,6 +45,18 @@ class LogbookTest extends TestCase
         $this->assertSame(LogbookStatus::Draft, $logbook->status);
     }
 
+    public function test_student_can_open_logbook_form_on_final_internship_day(): void
+    {
+        $this->travelTo(Carbon::parse('2026-12-31 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreate')
+            ->assertSet('showModal', true);
+    }
+
     public function test_student_can_submit_a_logbook_for_review(): void
     {
         $student = $this->makeStudent();
@@ -93,6 +105,29 @@ class LogbookTest extends TestCase
             ->call('openEdit', $logbook->id)
             ->assertSet('logbookId', null)
             ->assertSet('showModal', false);
+    }
+
+    public function test_student_cannot_overwrite_a_submitted_logbook_via_persist(): void
+    {
+        $student = $this->makeStudent();
+
+        $logbook = Logbook::factory()->submitted()->for($student)->create([
+            'date' => '2026-11-09',
+            'activity' => 'Aktivitas asli',
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->set('logbookId', $logbook->id)
+            ->set('date', '2026-11-09')
+            ->set('activity', 'Aktivitas palsu')
+            ->call('saveDraft')
+            ->assertHasNoErrors();
+
+        $logbook->refresh();
+
+        $this->assertSame(LogbookStatus::Submitted, $logbook->status);
+        $this->assertSame('Aktivitas asli', $logbook->activity);
     }
 
     public function test_admin_can_approve_a_submitted_logbook_and_notify_the_student(): void

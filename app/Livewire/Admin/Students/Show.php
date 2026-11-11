@@ -6,6 +6,7 @@ use App\Enums\AttendanceStatus;
 use App\Enums\LogbookStatus;
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\StudentFileCleaner;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -35,6 +36,7 @@ class Show extends Component
     public function delete()
     {
         $name = $this->student->name;
+        app(StudentFileCleaner::class)->deleteFor($this->student);
         $this->student->delete();
 
         session()->flash('success', "Data mahasiswa {$name} berhasil dihapus.");

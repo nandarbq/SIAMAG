@@ -70,6 +70,24 @@ class AttendanceTest extends TestCase
         ]));
     }
 
+    public function test_check_in_without_accuracy_is_rejected_when_geofence_is_required(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
+            'accuracy' => null,
+        ]));
+    }
+
+    public function test_check_in_with_poor_accuracy_is_rejected(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
+            'accuracy' => 500,
+        ]));
+    }
+
     public function test_check_in_without_selfie_is_rejected_when_required(): void
     {
         $this->expectException(ValidationException::class);

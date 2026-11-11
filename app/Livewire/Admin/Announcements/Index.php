@@ -3,7 +3,6 @@
 namespace App\Livewire\Admin\Announcements;
 
 use App\Models\Announcement;
-use Illuminate\Support\Str;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -63,14 +62,15 @@ class Index extends Component
             'title' => $validated['title'],
             'body' => $validated['body'],
             'is_active' => $this->is_active,
-            'published_at' => now(),
-            'created_by' => auth()->id(),
         ];
 
         if ($this->editingId) {
             Announcement::query()->findOrFail($this->editingId)->update($data);
         } else {
-            Announcement::query()->create($data);
+            Announcement::query()->create($data + [
+                'published_at' => now(),
+                'created_by' => auth()->id(),
+            ]);
         }
 
         $this->closeForm();
