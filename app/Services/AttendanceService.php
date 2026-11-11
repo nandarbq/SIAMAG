@@ -112,11 +112,31 @@ class AttendanceService
 
     public function correct(Attendance $attendance, array $data): Attendance
     {
+        $checkInAt = array_key_exists('check_in_at', $data)
+            ? $data['check_in_at']
+            : $attendance->check_in_at;
+
+        $checkOutAt = array_key_exists('check_out_at', $data)
+            ? $data['check_out_at']
+            : $attendance->check_out_at;
+
+        $lateMinutes = 0;
+
+        if ($data['status'] === AttendanceStatus::Terlambat && $checkInAt) {
+            $workStart = Carbon::parse($checkInAt->toDateString().' '.Setting::get('work_start', '07:30'));
+            $threshold = $workStart->copy()->addMinutes(Setting::getInt('late_tolerance_min', 15));
+
+            $lateMinutes = $checkInAt->greaterThan($threshold)
+                ? (int) $threshold->diffInMinutes($checkInAt)
+                : 0;
+        }
+
         $attendance->update([
             'status' => $data['status'],
             'note' => $data['note'] ?? null,
-            'check_in_at' => $data['check_in_at'] ?: $attendance->check_in_at,
-            'check_out_at' => $data['check_out_at'] ?: $attendance->check_out_at,
+            'check_in_at' => $checkInAt,
+            'check_out_at' => $checkOutAt,
+            'late_minutes' => $lateMinutes,
         ]);
 
         return $attendance->refresh();
