@@ -137,28 +137,52 @@
                         <p class="mt-1 text-xs text-emerald-700">Masuk {{ $today->check_in_at?->format('H:i') }} · Pulang {{ $today->check_out_at?->format('H:i') }} WIB</p>
                     </div>
                 @else
-                    <label for="attendance-photo" class="group relative flex min-h-56 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-4 transition hover:border-brand-300 hover:bg-brand-50/40">
-                        @if ($photo)
-                            <img src="{{ $photo->temporaryUrl() }}" alt="Pratinjau selfie" class="absolute inset-0 h-full w-full object-cover">
-                            <span class="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
-                                Ganti foto
-                            </span>
-                        @else
-                            <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-brand-600 shadow-sm ring-1 ring-slate-200 transition group-hover:scale-105">
-                                <x-icon name="camera" class="h-7 w-7" />
-                            </span>
-                            <p class="mt-3 text-sm font-bold text-slate-800">Ambil atau pilih foto selfie</p>
-                            <p class="mt-1 max-w-xs text-center text-xs leading-relaxed text-slate-500">Gunakan kamera depan, pastikan wajah terlihat jelas dan pencahayaan cukup.</p>
-                            <span class="mt-4 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">Maksimal 5 MB</span>
-                        @endif
+                    <div x-data="attendanceCamera({ requireSelfie: @js($requireSelfie) })" class="space-y-3">
+                        <div class="relative flex min-h-56 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-950/90 p-2">
+                            <template x-if="capturedUrl">
+                                <img :src="capturedUrl" alt="Pratinjau selfie" class="absolute inset-0 h-full w-full object-cover">
+                            </template>
 
-                        <input id="attendance-photo" type="file" accept="image/*" capture="user" wire:model="photo" class="sr-only">
+                            <video x-show="! capturedUrl" x-ref="video" autoplay muted playsinline class="absolute inset-0 h-full w-full object-cover"></video>
+                            <canvas x-ref="canvas" class="hidden"></canvas>
 
-                        <span wire:loading wire:target="photo" class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-950/60 text-xs font-semibold text-white backdrop-blur-sm">
-                            <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
-                            Mengunggah foto...
-                        </span>
-                    </label>
+                            <div x-show="! cameraReady && ! capturedUrl && ! cameraError" class="relative flex flex-col items-center gap-2 text-center text-xs font-semibold text-white">
+                                <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                                Menyiapkan kamera...
+                            </div>
+
+                            <div x-show="cameraError" class="relative mx-4 rounded-2xl bg-rose-50/95 px-4 py-3 text-center text-xs font-medium leading-relaxed text-rose-700 shadow-sm">
+                                <p x-text="cameraError"></p>
+                            </div>
+
+                            <div x-show="uploading" class="absolute inset-x-0 bottom-0 bg-slate-950/70 px-4 py-3 text-center text-xs font-semibold text-white backdrop-blur-sm">
+                                Mengunggah foto... <span x-text="uploadProgress + '%'"></span>
+                            </div>
+
+                            <span x-show="capturedUrl && ! uploading" class="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                                Selfie siap digunakan
+                            </span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <p class="text-xs leading-relaxed text-slate-500">Gunakan kamera depan, pastikan wajah terlihat jelas dan pencahayaan cukup.</p>
+
+                            <div class="flex gap-2">
+                                <button type="button" x-show="cameraReady && ! capturedUrl" @click="capture()" class="btn-primary btn-sm">
+                                    <x-icon name="camera" class="h-4 w-4" />
+                                    Ambil Foto
+                                </button>
+                                <button type="button" x-show="! cameraReady && ! capturedUrl" @click="startCamera()" class="btn-secondary btn-sm">
+                                    <x-icon name="refresh" class="h-4 w-4" />
+                                    Coba Lagi
+                                </button>
+                                <button type="button" x-show="capturedUrl && ! uploading" @click="retake()" class="btn-secondary btn-sm">
+                                    <x-icon name="refresh" class="h-4 w-4" />
+                                    Ambil Ulang
+                                </button>
+                            </div>
+                        </div>
+                    </div>
 
                     <div class="rounded-2xl border border-slate-200 bg-white p-4">
                         <div class="flex items-start gap-3">
