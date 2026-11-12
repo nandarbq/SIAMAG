@@ -132,6 +132,25 @@ class AttendanceTest extends TestCase
         Storage::disk('local')->assertExists($attendance->check_out_photo);
     }
 
+    public function test_check_out_outside_the_geofence_is_allowed_when_disabled(): void
+    {
+        Setting::put('require_geofence', '0');
+
+        $student = $this->makeStudent();
+        $service = app(AttendanceService::class);
+
+        $service->checkIn($student, $this->payload());
+        $this->travelTo(Carbon::parse('2026-11-09 16:05:00', 'Asia/Jakarta'));
+
+        $attendance = $service->checkOut($student, $this->payload([
+            'lat' => self::OFFICE_LAT + 0.01,
+        ]));
+
+        $this->assertNotNull($attendance->check_out_at);
+        $this->assertNull($attendance->check_out_distance);
+        $this->assertNull($attendance->check_out_accuracy);
+    }
+
     private function makeStudent(): User
     {
         $student = User::factory()->mahasiswa()->create();
