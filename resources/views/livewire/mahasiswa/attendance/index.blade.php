@@ -3,7 +3,13 @@
         <div>
             <p class="page-eyebrow">Kehadiran</p>
             <h1 class="page-title">Absensi Harian</h1>
-            <p class="page-subtitle">Ambil selfie dan pastikan lokasi Anda berada di dalam area kantor.</p>
+            <p class="page-subtitle">
+                @if ($requireGeofence)
+                    Ambil selfie dan pastikan lokasi Anda berada di dalam area kantor.
+                @else
+                    Ambil selfie untuk mencatat kehadiran hari ini.
+                @endif
+            </p>
         </div>
         <div class="flex items-center gap-2 text-sm text-slate-500">
             <x-icon name="calendar" class="h-4 w-4" />
@@ -106,7 +112,13 @@
             <div class="card-header">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Ambil Kehadiran</h2>
-                    <p class="mt-0.5 text-xs text-slate-500">Foto wajah dan lokasi GPS diperlukan untuk validasi.</p>
+                    <p class="mt-0.5 text-xs text-slate-500">
+                        @if ($requireGeofence)
+                            Foto wajah dan lokasi GPS diperlukan untuk validasi.
+                        @else
+                            Foto wajah diperlukan untuk mencatat kehadiran.
+                        @endif
+                    </p>
                 </div>
                 @if ($today)
                     <x-attendance-status :status="$today->status" />
@@ -189,39 +201,49 @@
                         </div>
                     </div>
 
-                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                        <div class="flex items-start gap-3">
-                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                                <x-icon name="map-pin" class="h-5 w-5" />
-                            </span>
-                            <div class="min-w-0 flex-1">
-                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Lokasi GPS</p>
-                                    <span
-                                        class="badge"
-                                        :class="error ? 'badge-red' : (ready ? (distance <= radius ? 'badge-green' : 'badge-red') : 'badge-slate')"
-                                    >
-                                        <span x-text="error ? 'Bermasalah' : (ready ? (distance <= radius ? 'Dalam radius' : 'Di luar radius') : 'Menunggu')"></span>
-                                    </span>
-                                </div>
+                    @if ($requireGeofence)
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                            <div class="flex items-start gap-3">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                                    <x-icon name="map-pin" class="h-5 w-5" />
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Lokasi GPS</p>
+                                        <span
+                                            class="badge"
+                                            :class="error ? 'badge-red' : (ready ? (distance <= radius ? 'badge-green' : 'badge-red') : 'badge-slate')"
+                                        >
+                                            <span x-text="error ? 'Bermasalah' : (ready ? (distance <= radius ? 'Dalam radius' : 'Di luar radius') : 'Menunggu')"></span>
+                                        </span>
+                                    </div>
 
-                                <p x-show="locating" class="mt-2 text-sm font-medium text-slate-600">Mendeteksi lokasi Anda...</p>
-                                <p x-show="! locating && error" x-text="error" class="mt-2 text-xs leading-relaxed text-rose-600"></p>
-                                <p x-show="ready && ! error" class="mt-2 text-xs leading-relaxed text-slate-600">
-                                    Akurasi <span class="font-semibold text-slate-800" x-text="'± ' + accuracy + ' m'"></span>
-                                    · Jarak <span class="font-semibold text-slate-800" x-text="distance + ' m'"></span>
-                                    dari kantor
-                                </p>
-                                <p x-show="ready && accuracy > maxAccuracy" class="mt-1 text-xs font-semibold text-amber-600">
-                                    Akurasi GPS melebihi batas {{ $maxAccuracy }} m. Coba di area terbuka.
-                                </p>
+                                    <p x-show="locating" class="mt-2 text-sm font-medium text-slate-600">Mendeteksi lokasi Anda...</p>
+                                    <p x-show="! locating && error" x-text="error" class="mt-2 text-xs leading-relaxed text-rose-600"></p>
+                                    <p x-show="ready && ! error" class="mt-2 text-xs leading-relaxed text-slate-600">
+                                        Akurasi <span class="font-semibold text-slate-800" x-text="'± ' + accuracy + ' m'"></span>
+                                        · Jarak <span class="font-semibold text-slate-800" x-text="distance + ' m'"></span>
+                                        dari kantor
+                                    </p>
+                                    <p x-show="ready && accuracy > maxAccuracy" class="mt-1 text-xs font-semibold text-amber-600">
+                                        Akurasi GPS melebihi batas {{ $maxAccuracy }} m. Coba di area terbuka.
+                                    </p>
+                                </div>
+                                <button type="button" @click="locate()" class="btn-ghost btn-sm shrink-0" title="Perbarui lokasi">
+                                    <x-icon name="refresh" class="h-4 w-4" />
+                                    <span class="hidden sm:inline">Perbarui</span>
+                                </button>
                             </div>
-                            <button type="button" @click="locate()" class="btn-ghost btn-sm shrink-0" title="Perbarui lokasi">
-                                <x-icon name="refresh" class="h-4 w-4" />
-                                <span class="hidden sm:inline">Perbarui</span>
-                            </button>
                         </div>
-                    </div>
+                    @else
+                        <div class="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sky-800">
+                            <x-icon name="shield" class="mt-0.5 h-5 w-5 shrink-0" />
+                            <div>
+                                <p class="text-sm font-semibold">Validasi radius sedang dinonaktifkan admin</p>
+                                <p class="mt-1 text-xs leading-relaxed">Anda tetap bisa melakukan absensi dari lokasi mana pun. GPS tidak diwajibkan.</p>
+                            </div>
+                        </div>
+                    @endif
 
                         <div class="flex flex-col gap-2 border-t border-slate-100 pt-5">
                             @if (! $today?->check_in_at)
@@ -285,14 +307,16 @@
                             <span class="text-slate-500">Keterlambatan</span>
                             <span class="font-semibold text-slate-800">{{ $today?->late_minutes ? $today->late_minutes.' menit' : '—' }}</span>
                         </div>
-                        <div class="flex items-center justify-between px-4 py-3 text-sm">
-                            <span class="text-slate-500">Jarak absen masuk</span>
-                            <span class="font-semibold text-slate-800">{{ $today?->check_in_distance !== null ? $today->check_in_distance.' m' : '—' }}</span>
-                        </div>
-                        <div class="flex items-center justify-between px-4 py-3 text-sm">
-                            <span class="text-slate-500">Jarak absen pulang</span>
-                            <span class="font-semibold text-slate-800">{{ $today?->check_out_distance !== null ? $today->check_out_distance.' m' : '—' }}</span>
-                        </div>
+                        @if ($requireGeofence)
+                            <div class="flex items-center justify-between px-4 py-3 text-sm">
+                                <span class="text-slate-500">Jarak absen masuk</span>
+                                <span class="font-semibold text-slate-800">{{ $today?->check_in_distance !== null ? $today->check_in_distance.' m' : '—' }}</span>
+                            </div>
+                            <div class="flex items-center justify-between px-4 py-3 text-sm">
+                                <span class="text-slate-500">Jarak absen pulang</span>
+                                <span class="font-semibold text-slate-800">{{ $today?->check_out_distance !== null ? $today->check_out_distance.' m' : '—' }}</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -301,7 +325,13 @@
                 <div class="card-header">
                     <div>
                         <h2 class="text-base font-bold text-slate-900">Lokasi Kantor</h2>
-                        <p class="mt-0.5 text-xs text-slate-500">Titik pusat validasi absensi</p>
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            @if ($requireGeofence)
+                                Titik pusat validasi absensi
+                            @else
+                                Informasi lokasi kantor
+                            @endif
+                        </p>
                     </div>
                     <span class="stat-icon bg-brand-50 text-brand-600"><x-icon name="building" class="h-5 w-5" /></span>
                 </div>
@@ -318,10 +348,17 @@
                             <p class="mt-0.5 font-semibold text-slate-700">{{ $officeLng }}</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2.5 text-xs text-brand-700">
-                        <x-icon name="shield" class="h-4 w-4 shrink-0" />
-                        <p>Absensi valid jika berada dalam radius {{ $radius }} m dan akurasi GPS maksimal {{ $maxAccuracy }} m.</p>
-                    </div>
+                    @if ($requireGeofence)
+                        <div class="flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2.5 text-xs text-brand-700">
+                            <x-icon name="shield" class="h-4 w-4 shrink-0" />
+                            <p>Absensi valid jika berada dalam radius {{ $radius }} m dan akurasi GPS maksimal {{ $maxAccuracy }} m.</p>
+                        </div>
+                    @else
+                        <div class="flex items-center gap-2 rounded-xl bg-sky-50 px-3 py-2.5 text-xs text-sky-700">
+                            <x-icon name="shield" class="h-4 w-4 shrink-0" />
+                            <p>Validasi radius sedang dinonaktifkan admin. Absensi tidak dibatasi jarak dari kantor.</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>
