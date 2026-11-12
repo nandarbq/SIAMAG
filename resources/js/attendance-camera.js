@@ -72,11 +72,15 @@ export default function attendanceCamera({ requireSelfie = true } = {}) {
                 return;
             }
 
-            canvas.width = width;
-            canvas.height = height;
-            canvas.getContext('2d').drawImage(video, 0, 0, width, height);
+            const scale = Math.min(1, 1280 / Math.max(width, height));
+            const outputWidth = Math.round(width * scale);
+            const outputHeight = Math.round(height * scale);
 
-            const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.9));
+            canvas.width = outputWidth;
+            canvas.height = outputHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0, outputWidth, outputHeight);
+
+            const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
 
             if (! blob) {
                 this.cameraError = 'Gagal mengambil foto. Coba lagi.';
