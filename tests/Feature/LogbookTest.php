@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\LogbookStatus;
 use App\Livewire\Admin\Logbooks\Index as AdminLogbookIndex;
 use App\Livewire\Mahasiswa\Logbooks\Index as StudentLogbookIndex;
 use App\Models\Logbook;
@@ -60,7 +59,7 @@ class LogbookTest extends TestCase
     {
         $student = $this->makeStudent();
 
-        $logbook = Logbook::factory()->submitted()->for($student)->create([
+        $logbook = Logbook::factory()->for($student)->create([
             'date' => '2026-11-08',
             'activity' => 'Aktivitas asli',
         ]);
@@ -123,7 +122,6 @@ class LogbookTest extends TestCase
 
         Logbook::factory()->for($student)->create([
             'date' => '2026-11-09',
-            'status' => LogbookStatus::Draft,
         ]);
 
         Livewire::actingAs($student)
@@ -178,7 +176,7 @@ class LogbookTest extends TestCase
         $admin = User::factory()->admin()->create();
         $student = $this->makeStudent();
 
-        $logbook = Logbook::factory()->submitted()->for($student)->create([
+        $logbook = Logbook::factory()->for($student)->create([
             'date' => '2026-11-09',
         ]);
 
