@@ -132,6 +132,23 @@ class AttendanceTest extends TestCase
         Storage::disk('local')->assertExists($attendance->check_out_photo);
     }
 
+    public function test_check_in_without_gps_data_is_allowed_when_disabled(): void
+    {
+        Setting::put('require_geofence', '0');
+
+        $attendance = app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
+            'lat' => null,
+            'lng' => null,
+            'accuracy' => null,
+        ]));
+
+        $this->assertSame(AttendanceStatus::Hadir, $attendance->status);
+        $this->assertNull($attendance->check_in_lat);
+        $this->assertNull($attendance->check_in_lng);
+        $this->assertNull($attendance->check_in_distance);
+        $this->assertNull($attendance->check_in_accuracy);
+    }
+
     public function test_check_out_outside_the_geofence_is_allowed_when_disabled(): void
     {
         Setting::put('require_geofence', '0');
