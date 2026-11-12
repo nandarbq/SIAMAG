@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Models\Logbook;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\LogbookExportService;
@@ -62,6 +63,42 @@ class LogbookExportTest extends TestCase
 
         Setting::put('logbook_export_lead_days', '99');
         $this->assertSame(30, $service->leadDays());
+    }
+
+    public function test_student_can_download_logbook_as_word_when_window_is_open(): void
+    {
+        $student = $this->makeStudent('2026-11-01', '2026-12-31');
+        Logbook::factory()->for($student)->create([
+            'date' => '2026-11-03',
+            'activity' => 'Analisis data curah hujan',
+        ]);
+
+        $this->travelTo(Carbon::parse('2026-12-24 10:00:00', 'Asia/Jakarta'));
+
+        $this->actingAs($student)
+            ->get(route('mahasiswa.logbooks.word'))
+            ->assertOk()
+            ->assertDownload('logbook-'.$student->nim.'.docx');
+    }
+
+    public function test_student_cannot_download_logbook_before_window_opens(): void
+    {
+        $student = $this->makeStudent('2026-11-01', '2026-12-31');
+
+        $this->travelTo(Carbon::parse('2026-12-23 23:59:00', 'Asia/Jakarta'));
+
+        $this->actingAs($student)
+            ->get(route('mahasiswa.logbooks.word'))
+            ->assertForbidden();
+    }
+
+    public function test_student_without_internship_profile_cannot_download_logbook(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        $this->actingAs($student)
+            ->get(route('mahasiswa.logbooks.word'))
+            ->assertForbidden();
     }
 
     private function makeStudent(string $startDate, string $endDate): User
