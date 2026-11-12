@@ -56,10 +56,17 @@
                 officeLng: {{ $officeLng }},
                 radius: {{ $radius }},
                 maxAccuracy: {{ $maxAccuracy }},
+                requireGeofence: @js($requireGeofence),
                 init() {
-                    this.locate();
+                    if (this.requireGeofence) {
+                        this.locate();
+                    }
                 },
                 locate() {
+                    if (! this.requireGeofence) {
+                        return;
+                    }
+
                     this.locating = true;
                     this.ready = false;
                     this.error = null;
