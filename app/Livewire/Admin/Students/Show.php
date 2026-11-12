@@ -3,9 +3,9 @@
 namespace App\Livewire\Admin\Students;
 
 use App\Enums\AttendanceStatus;
-use App\Enums\LogbookStatus;
 use App\Enums\UserRole;
 use App\Models\User;
+use App\Services\LogbookProgressService;
 use App\Services\StudentFileCleaner;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -57,7 +57,7 @@ class Show extends Component
             'hadir' => (int) ($attendanceCounts[AttendanceStatus::Hadir->value] ?? 0),
             'terlambat' => (int) ($attendanceCounts[AttendanceStatus::Terlambat->value] ?? 0),
             'izinSakit' => (int) ($attendanceCounts[AttendanceStatus::Izin->value] ?? 0) + (int) ($attendanceCounts[AttendanceStatus::Sakit->value] ?? 0),
-            'logbookApproved' => $this->student->logbooks()->where('status', LogbookStatus::Approved)->count(),
+            'logbookProgress' => app(LogbookProgressService::class)->for($this->student),
             'attendances' => $this->student->attendances()->latest('date')->limit(10)->get(),
             'logbooks' => $this->student->logbooks()->latest('date')->limit(8)->get(),
             'leaves' => $this->student->leaveRequests()->latest()->limit(5)->get(),

@@ -90,8 +90,8 @@
                     <p class="mt-1 text-2xl font-bold text-brand-700">{{ $izinSakit }}</p>
                 </div>
                 <div class="rounded-xl bg-violet-50 p-3">
-                    <p class="text-[11px] font-bold uppercase tracking-wide text-violet-600">Logbook Disetujui</p>
-                    <p class="mt-1 text-2xl font-bold text-violet-700">{{ $logbookApproved }}</p>
+                    <p class="text-[11px] font-bold uppercase tracking-wide text-violet-600">Progres Logbook</p>
+                    <p class="mt-1 text-2xl font-bold text-violet-700">{{ $logbookProgress['percentage'] === null ? '—' : $logbookProgress['percentage'].'%' }}</p>
                 </div>
             </div>
 
@@ -150,10 +150,7 @@
                 <div class="divide-y divide-slate-100">
                     @forelse ($logbooks as $logbook)
                         <div class="px-5 py-3.5">
-                            <div class="flex items-center justify-between gap-3">
-                                <p class="truncate text-sm font-semibold text-slate-800">{{ $logbook->activity }}</p>
-                                <x-logbook-status :status="$logbook->status" />
-                            </div>
+                            <p class="truncate text-sm font-semibold text-slate-800">{{ $logbook->activity }}</p>
                             <p class="mt-1 text-xs text-slate-400">{{ $logbook->date?->translatedFormat('d M Y') }}</p>
                         </div>
                     @empty

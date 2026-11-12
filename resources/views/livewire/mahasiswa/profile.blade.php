@@ -116,12 +116,12 @@
                             <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Absensi</p>
                         </div>
                         <div class="rounded-xl bg-slate-50 p-3">
-                            <p class="text-lg font-bold text-slate-900">{{ $logbookCount }}</p>
+                            <p class="text-lg font-bold text-slate-900">{{ $logbookProgress['total'] }}</p>
                             <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Logbook</p>
                         </div>
                         <div class="rounded-xl bg-slate-50 p-3">
-                            <p class="text-lg font-bold text-emerald-600">{{ $approvedLogbookCount }}</p>
-                            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Disetujui</p>
+                            <p class="text-lg font-bold text-emerald-600">{{ $logbookProgress['percentage'] === null ? '—' : $logbookProgress['percentage'].'%' }}</p>
+                            <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Progres</p>
                         </div>
                     </div>
                 </div>
