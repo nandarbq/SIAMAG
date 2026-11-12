@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Mahasiswa;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use App\Services\LogbookExportService;
+use Barryvdh\DomPDF\Facade\Pdf;
 use PhpOffice\PhpWord\IOFactory;
 use PhpOffice\PhpWord\PhpWord;
 use PhpOffice\PhpWord\SimpleType\Jc;
@@ -13,14 +14,7 @@ class LogbookExportController extends Controller
 {
     public function word(LogbookExportService $exportService)
     {
-        $user = auth()->user()->load('internProfile');
-        $profile = $user->internProfile;
-
-        abort_unless($profile, 403, 'Profil magang belum lengkap.');
-        abort_unless($exportService->canExport($profile), 403, 'Export logbook belum dibuka.');
-
-        $logbooks = $exportService->logbooksFor($user);
-        $officeName = Setting::get('office_name', 'BMKG Banyuwangi');
+        ['user' => $user, 'profile' => $profile, 'logbooks' => $logbooks, 'officeName' => $officeName] = $this->exportData($exportService);
 
         $phpWord = new PhpWord;
         $section = $phpWord->addSection([
@@ -92,6 +86,38 @@ class LogbookExportController extends Controller
         return response()
             ->download($temp, 'logbook-'.($user->nim ?: $user->id).'.docx')
             ->deleteFileAfterSend(true);
+    }
+
+    public function pdf(LogbookExportService $exportService)
+    {
+        ['user' => $user, 'profile' => $profile, 'logbooks' => $logbooks, 'officeName' => $officeName] = $this->exportData($exportService);
+
+        $pdf = Pdf::loadView('exports.logbook-pdf', [
+            'user' => $user,
+            'profile' => $profile,
+            'logbooks' => $logbooks,
+            'office_name' => $officeName,
+            'office_address' => Setting::get('office_address', ''),
+            'generated_at' => now(),
+        ])->setPaper('a4', 'landscape');
+
+        return $pdf->download('logbook-'.($user->nim ?: $user->id).'.pdf');
+    }
+
+    private function exportData(LogbookExportService $exportService): array
+    {
+        $user = auth()->user()->load('internProfile');
+        $profile = $user->internProfile;
+
+        abort_unless($profile, 403, 'Profil magang belum lengkap.');
+        abort_unless($exportService->canExport($profile), 403, 'Export logbook belum dibuka.');
+
+        return [
+            'user' => $user,
+            'profile' => $profile,
+            'logbooks' => $exportService->logbooksFor($user),
+            'officeName' => Setting::get('office_name', 'BMKG Banyuwangi'),
+        ];
     }
 
     private function addIdentityRow($table, string $label, string $value): void

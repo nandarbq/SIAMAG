@@ -84,6 +84,7 @@ Route::middleware(['auth', 'role:mahasiswa'])
 
         Route::get('/logbooks', StudentLogbook::class)->name('logbooks');
         Route::get('/logbooks/word', [LogbookExportController::class, 'word'])->name('logbooks.word');
+        Route::get('/logbooks/pdf', [LogbookExportController::class, 'pdf'])->name('logbooks.pdf');
 
         Route::get('/leaves', StudentLeave::class)->name('leaves');
 
