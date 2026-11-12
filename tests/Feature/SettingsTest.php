@@ -43,11 +43,27 @@ class SettingsTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertSame('BMKG Stasiun Geofisika Banyuwangi', Setting::get('office_name'));
+        $this->assertSame('-8.2180000', Setting::get('office_lat'));
+        $this->assertSame('114.3700000', Setting::get('office_lng'));
         $this->assertSame('200', Setting::get('radius_m'));
+        $this->assertSame('80', Setting::get('max_accuracy_m'));
         $this->assertSame('08:00', Setting::get('work_start'));
         $this->assertSame('10', Setting::get('logbook_export_lead_days'));
         $this->assertFalse(Setting::getBool('require_selfie'));
         $this->assertTrue(Setting::getBool('require_geofence'));
+    }
+
+    public function test_admin_can_disable_geofence_validation(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(SettingsIndex::class)
+            ->set('require_geofence', false)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertFalse(Setting::getBool('require_geofence'));
     }
 
     public function test_work_end_must_be_after_work_start(): void
