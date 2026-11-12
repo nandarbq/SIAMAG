@@ -35,7 +35,7 @@ class ReportExportController extends Controller
         $sheet->getStyle('A2')->getAlignment()->setHorizontal(Alignment::HORIZONTAL_CENTER);
         $sheet->getStyle('A2')->getFont()->setItalic(true)->setSize(10);
 
-        $headers = ['Nama', 'NIM', 'Institusi', 'Hadir', 'Terlambat', 'Izin', 'Sakit', 'Alpha', 'Logbook Disetujui', 'Kehadiran (%)'];
+        $headers = ['Nama', 'NIM', 'Institusi', 'Hadir', 'Terlambat', 'Izin', 'Sakit', 'Alpha', 'Logbook', 'Kehadiran (%)'];
         $sheet->fromArray($headers, null, 'A4');
 
         $headerStyle = [
@@ -57,7 +57,7 @@ class ReportExportController extends Controller
                 $row['izin'],
                 $row['sakit'],
                 $row['alpha'],
-                $row['logbook_approved'],
+                $row['logbook_total'],
                 $row['percentage'],
             ], null, 'A'.$rowNumber);
             $rowNumber++;
@@ -73,7 +73,7 @@ class ReportExportController extends Controller
             $data['summary']['izin'],
             $data['summary']['sakit'],
             $data['summary']['alpha'],
-            $data['summary']['logbook_approved'],
+            $data['summary']['logbook_total'],
             '',
         ], null, 'A'.$totalRow);
         $sheet->getStyle('A'.$totalRow.':J'.$totalRow)->getFont()->setBold(true);
@@ -143,12 +143,12 @@ class ReportExportController extends Controller
             $table->addCell(700)->addText((string) $row['izin'], ['size' => 9], ['alignment' => Jc::CENTER]);
             $table->addCell(700)->addText((string) $row['sakit'], ['size' => 9], ['alignment' => Jc::CENTER]);
             $table->addCell(700)->addText((string) $row['alpha'], ['size' => 9], ['alignment' => Jc::CENTER]);
-            $table->addCell(900)->addText($row['logbook_approved'].'/'.$row['logbook_total'], ['size' => 9], ['alignment' => Jc::CENTER]);
+            $table->addCell(900)->addText((string) $row['logbook_total'], ['size' => 9], ['alignment' => Jc::CENTER]);
             $table->addCell(900)->addText($row['percentage'].'%', ['size' => 9], ['alignment' => Jc::CENTER]);
         }
 
         $table->addRow();
-        foreach (['TOTAL', '', '', '', $data['summary']['hadir'], $data['summary']['terlambat'], $data['summary']['izin'], $data['summary']['sakit'], $data['summary']['alpha'], $data['summary']['logbook_approved'], ''] as $cell) {
+        foreach (['TOTAL', '', '', '', $data['summary']['hadir'], $data['summary']['terlambat'], $data['summary']['izin'], $data['summary']['sakit'], $data['summary']['alpha'], $data['summary']['logbook_total'], ''] as $cell) {
             $table->addCell(800, ['bgColor' => 'EFF6FF'])->addText((string) $cell, ['bold' => true, 'size' => 9]);
         }
 

@@ -3,7 +3,6 @@
 namespace App\Services;
 
 use App\Enums\AttendanceStatus;
-use App\Enums\LogbookStatus;
 use App\Enums\UserRole;
 use App\Models\Attendance;
 use App\Models\Holiday;
@@ -50,12 +49,6 @@ class ReportService
             $recorded = $hadir + $terlambat + $izin + $sakit;
             $alpha = max(0, $workdays - $recorded);
 
-            $logbookApproved = Logbook::query()
-                ->where('user_id', $student->id)
-                ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
-                ->where('status', LogbookStatus::Approved)
-                ->count();
-
             $logbookTotal = Logbook::query()
                 ->where('user_id', $student->id)
                 ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
@@ -72,7 +65,6 @@ class ReportService
                 'sakit' => $sakit,
                 'alpha' => $alpha,
                 'workdays' => $workdays,
-                'logbook_approved' => $logbookApproved,
                 'logbook_total' => $logbookTotal,
                 'percentage' => $workdays > 0 ? (int) round((($hadir + $terlambat) / $workdays) * 100) : 0,
             ];
@@ -85,7 +77,7 @@ class ReportService
             'izin' => $rows->sum('izin'),
             'sakit' => $rows->sum('sakit'),
             'alpha' => $rows->sum('alpha'),
-            'logbook_approved' => $rows->sum('logbook_approved'),
+            'logbook_total' => $rows->sum('logbook_total'),
         ];
 
         return [

@@ -3,7 +3,6 @@
 namespace Tests\Feature;
 
 use App\Enums\AttendanceStatus;
-use App\Enums\LogbookStatus;
 use App\Models\Attendance;
 use App\Models\Holiday;
 use App\Models\Logbook;
@@ -56,7 +55,7 @@ class ReportTest extends TestCase
             'status' => AttendanceStatus::Sakit,
         ]);
 
-        Logbook::factory()->approved()->for($student)->create(['date' => '2026-11-02']);
+        Logbook::factory()->for($student)->create(['date' => '2026-11-02']);
         Logbook::factory()->for($student)->create(['date' => '2026-11-03']);
 
         $report = app(ReportService::class)->recap(11, 2026);
@@ -68,10 +67,10 @@ class ReportTest extends TestCase
         $this->assertSame(1, $row['sakit']);
         $this->assertSame(20, $row['workdays']);
         $this->assertSame(15, $row['alpha']);
-        $this->assertSame(1, $row['logbook_approved']);
         $this->assertSame(2, $row['logbook_total']);
         $this->assertSame(15, $row['percentage']);
         $this->assertSame(1, $report['summary']['students']);
+        $this->assertSame(2, $report['summary']['logbook_total']);
     }
 
     public function test_recap_can_be_filtered_by_student(): void
