@@ -8,6 +8,7 @@ use App\Models\InternProfile;
 use App\Models\Logbook;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Collection;
 
 class LogbookProgressService
 {
@@ -59,7 +60,7 @@ class LogbookProgressService
         ];
     }
 
-    private function expectedDates(User $user, Carbon $start, Carbon $end): \Illuminate\Support\Collection
+    private function expectedDates(User $user, Carbon $start, Carbon $end): Collection
     {
         if ($end->lessThan($start)) {
             return collect();

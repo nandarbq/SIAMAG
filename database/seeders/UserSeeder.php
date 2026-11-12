@@ -49,7 +49,7 @@ class UserSeeder extends Seeder
             ]
         );
 
-        $this->command?->info("Admin: admin@bmkg.go.id / password");
-        $this->command?->info("Mahasiswa: mahasiswa@bmkg.go.id / password");
+        $this->command?->info('Admin: admin@bmkg.go.id / password');
+        $this->command?->info('Mahasiswa: mahasiswa@bmkg.go.id / password');
     }
 }

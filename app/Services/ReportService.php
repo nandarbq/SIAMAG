@@ -10,7 +10,6 @@ use App\Models\Logbook;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Support\Collection;
 
 class ReportService
 {
