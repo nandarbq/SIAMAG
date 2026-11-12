@@ -57,12 +57,12 @@
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label class="label">Latitude</label>
-                        <input wire:model="office_lat" type="text" class="input" placeholder="-8.2192000">
+                        <input x-ref="officeLat" x-on:input.debounce.400ms="syncFromInputs()" wire:model="office_lat" type="text" class="input" placeholder="-8.2192000">
                         @error('office_lat') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="label">Longitude</label>
-                        <input wire:model="office_lng" type="text" class="input" placeholder="114.3692000">
+                        <input x-ref="officeLng" x-on:input.debounce.400ms="syncFromInputs()" wire:model="office_lng" type="text" class="input" placeholder="114.3692000">
                         @error('office_lng') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
@@ -82,27 +82,13 @@
                     <p class="mt-2 text-xs text-slate-500">Klik peta atau geser pin untuk memilih titik pusat kantor.</p>
                 </div>
 
-                <div
-                    x-data="{
-                        locate() {
-                            if (!navigator.geolocation) {
-                                alert('Browser tidak mendukung geolocation.');
-                                return;
-                            }
-                            navigator.geolocation.getCurrentPosition((position) => {
-                                $wire.set('office_lat', position.coords.latitude.toFixed(7));
-                                $wire.set('office_lng', position.coords.longitude.toFixed(7));
-                            }, () => alert('Gagal mendeteksi lokasi. Pastikan izin lokasi aktif.'), { enableHighAccuracy: true });
-                        }
-                    }"
-                    class="mt-5 flex items-start gap-3 rounded-xl border border-brand-100 bg-brand-50/60 p-4"
-                >
+                <div class="mt-5 flex items-start gap-3 rounded-xl border border-brand-100 bg-brand-50/60 p-4">
                     <x-icon name="map-pin" class="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
                     <div class="flex-1">
                         <p class="text-sm font-semibold text-brand-900">Gunakan lokasi perangkat saat ini</p>
-                        <p class="mt-0.5 text-xs text-brand-700">Buka aplikasi dari lokasi kantor, lalu klik tombol untuk mengisi koordinat otomatis.</p>
+                        <p class="mt-0.5 text-xs text-brand-700">Buka aplikasi dari lokasi kantor, lalu klik tombol untuk mengisi koordinat dan memindahkan pin.</p>
                     </div>
-                    <button type="button" @click="locate()" class="btn-primary btn-sm shrink-0">Deteksi</button>
+                    <button type="button" @click="locateDevice()" class="btn-primary btn-sm shrink-0">Deteksi</button>
                 </div>
             </div>
         </div>
