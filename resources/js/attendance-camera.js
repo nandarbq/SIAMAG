@@ -8,6 +8,7 @@ export default function attendanceCamera({ requireSelfie = true } = {}) {
         uploadProgress: 0,
         photoUploaded: false,
         capturedUrl: null,
+        capturedFile: null,
 
         init() {
             this.startCamera();
@@ -89,8 +90,9 @@ export default function attendanceCamera({ requireSelfie = true } = {}) {
             }
 
             this.capturedUrl = URL.createObjectURL(blob);
+            this.capturedFile = new File([blob], 'selfie.jpg', { type: 'image/jpeg' });
             this.stopCamera();
-            this.upload(new File([blob], 'selfie.jpg', { type: 'image/jpeg' }));
+            this.upload(this.capturedFile);
         },
 
         upload(file) {
@@ -118,14 +120,22 @@ export default function attendanceCamera({ requireSelfie = true } = {}) {
             );
         },
 
+        retryUpload() {
+            if (this.capturedFile) {
+                this.upload(this.capturedFile);
+            }
+        },
+
         retake() {
             if (this.capturedUrl) {
                 URL.revokeObjectURL(this.capturedUrl);
                 this.capturedUrl = null;
             }
 
+            this.capturedFile = null;
             this.photoUploaded = false;
             this.uploadProgress = 0;
+            this.cameraError = null;
             this.$wire.set('photo', null);
             this.startCamera();
         },

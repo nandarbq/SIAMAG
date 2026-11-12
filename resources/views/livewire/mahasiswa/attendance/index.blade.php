@@ -177,6 +177,10 @@
                                     <x-icon name="refresh" class="h-4 w-4" />
                                     Coba Lagi
                                 </button>
+                                <button type="button" x-show="cameraError && capturedUrl && ! uploading" @click="retryUpload()" class="btn-primary btn-sm">
+                                    <x-icon name="refresh" class="h-4 w-4" />
+                                    Unggah Ulang
+                                </button>
                                 <button type="button" x-show="capturedUrl && ! uploading" @click="retake()" class="btn-secondary btn-sm">
                                     <x-icon name="refresh" class="h-4 w-4" />
                                     Ambil Ulang
