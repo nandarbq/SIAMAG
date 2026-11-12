@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\AttendanceStatus;
+use App\Livewire\Mahasiswa\Dashboard as StudentDashboard;
 use App\Livewire\Mahasiswa\Logbooks\Index as StudentLogbookIndex;
 use App\Models\Attendance;
 use App\Models\Holiday;
@@ -143,6 +144,19 @@ class LogbookProgressTest extends TestCase
             ->assertSee('Ada 1 hari kerja yang belum diisi logbook.')
             ->assertSee('03 Nov')
             ->assertSee('Belum absen');
+    }
+
+    public function test_dashboard_renders_logbook_progress_and_alert(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+        $this->attendance($student, '2026-11-03', AttendanceStatus::Hadir);
+
+        Livewire::actingAs($student)
+            ->test(StudentDashboard::class)
+            ->assertSee('Progres Logbook')
+            ->assertSee('Ada 1 hari kerja yang belum diisi logbook.');
     }
 
     private function makeStudent(): User

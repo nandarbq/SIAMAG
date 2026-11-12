@@ -4,11 +4,11 @@ namespace App\Livewire\Mahasiswa;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\LeaveStatus;
-use App\Enums\LogbookStatus;
 use App\Models\Announcement;
 use App\Models\Attendance;
 use App\Models\Logbook;
 use App\Models\Setting;
+use App\Services\LogbookProgressService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -45,14 +45,7 @@ class Dashboard extends Component
             'hadir' => (int) ($monthCounts[AttendanceStatus::Hadir->value] ?? 0),
             'terlambat' => (int) ($monthCounts[AttendanceStatus::Terlambat->value] ?? 0),
             'izinSakit' => (int) ($monthCounts[AttendanceStatus::Izin->value] ?? 0) + (int) ($monthCounts[AttendanceStatus::Sakit->value] ?? 0),
-            'logbookApproved' => Logbook::query()
-                ->where('user_id', $user->id)
-                ->where('status', LogbookStatus::Approved)
-                ->count(),
-            'logbookPending' => Logbook::query()
-                ->where('user_id', $user->id)
-                ->whereIn('status', [LogbookStatus::Draft, LogbookStatus::Rejected])
-                ->count(),
+            'logbookProgress' => app(LogbookProgressService::class)->for($user),
             'leavePending' => $user->leaveRequests()->where('status', LeaveStatus::Pending)->count(),
             'recentLogbooks' => Logbook::query()
                 ->where('user_id', $user->id)
