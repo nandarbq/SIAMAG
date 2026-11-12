@@ -137,8 +137,9 @@
                         <p class="mt-1 text-xs text-emerald-700">Masuk {{ $today->check_in_at?->format('H:i') }} · Pulang {{ $today->check_out_at?->format('H:i') }} WIB</p>
                     </div>
                 @else
-                    <div x-data="attendanceCamera({ requireSelfie: @js($requireSelfie) })" class="space-y-3">
-                        <div class="relative flex min-h-56 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-950/90 p-2">
+                    <div x-data="attendanceCamera({ requireSelfie: @js($requireSelfie) })" class="space-y-5">
+                        <div class="space-y-3">
+                            <div class="relative flex min-h-56 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-950/90 p-2">
                             <template x-if="capturedUrl">
                                 <img :src="capturedUrl" alt="Pratinjau selfie" class="absolute inset-0 h-full w-full object-cover">
                             </template>
@@ -218,26 +219,28 @@
                         </div>
                     </div>
 
-                    <div class="flex flex-col gap-2 border-t border-slate-100 pt-5">
-                        @if (! $today?->check_in_at)
-                            <button type="button" wire:click="checkIn" wire:loading.attr="disabled" wire:target="checkIn" class="btn-primary w-full">
-                                <x-icon name="camera" class="h-4 w-4" />
-                                <span wire:loading.remove wire:target="checkIn">Absen Masuk</span>
-                                <span wire:loading wire:target="checkIn">Menyimpan absensi...</span>
-                            </button>
-                        @elseif (! $today?->check_out_at)
-                            <button type="button" wire:click="checkOut" wire:loading.attr="disabled" wire:target="checkOut" class="btn-primary w-full">
-                                <x-icon name="logout" class="h-4 w-4" />
-                                <span wire:loading.remove wire:target="checkOut">Absen Pulang</span>
-                                <span wire:loading wire:target="checkOut">Menyimpan absensi...</span>
-                            </button>
-                        @endif
-                        <p class="text-center text-[11px] text-slate-400">
-                            Jam kerja {{ \App\Models\Setting::get('work_start', '07:30') }} — {{ \App\Models\Setting::get('work_end', '16:00') }} WIB.
-                            @if ($requireGeofence)
-                                Radius kantor {{ $radius }} m.
+                        <div class="flex flex-col gap-2 border-t border-slate-100 pt-5">
+                            @if (! $today?->check_in_at)
+                                <button type="button" wire:click="checkIn" wire:loading.attr="disabled" wire:target="checkIn" x-bind:disabled="uploading || ! canSubmit()" class="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60">
+                                    <x-icon name="camera" class="h-4 w-4" />
+                                    <span wire:loading.remove wire:target="checkIn">Absen Masuk</span>
+                                    <span wire:loading wire:target="checkIn">Menyimpan absensi...</span>
+                                </button>
+                            @elseif (! $today?->check_out_at)
+                                <button type="button" wire:click="checkOut" wire:loading.attr="disabled" wire:target="checkOut" x-bind:disabled="uploading || ! canSubmit()" class="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60">
+                                    <x-icon name="logout" class="h-4 w-4" />
+                                    <span wire:loading.remove wire:target="checkOut">Absen Pulang</span>
+                                    <span wire:loading wire:target="checkOut">Menyimpan absensi...</span>
+                                </button>
                             @endif
-                        </p>
+                            <p x-show="! canSubmit()" class="text-center text-xs font-medium text-amber-600">Ambil foto selfie terlebih dahulu.</p>
+                            <p class="text-center text-[11px] text-slate-400">
+                                Jam kerja {{ \App\Models\Setting::get('work_start', '07:30') }} — {{ \App\Models\Setting::get('work_end', '16:00') }} WIB.
+                                @if ($requireGeofence)
+                                    Radius kantor {{ $radius }} m.
+                                @endif
+                            </p>
+                        </div>
                     </div>
                 @endif
             </div>
