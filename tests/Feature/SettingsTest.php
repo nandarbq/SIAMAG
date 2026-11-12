@@ -36,6 +36,7 @@ class SettingsTest extends TestCase
             ->set('work_start', '08:00')
             ->set('work_end', '16:30')
             ->set('late_tolerance_min', '10')
+            ->set('logbook_export_lead_days', '10')
             ->set('require_selfie', false)
             ->set('require_geofence', true)
             ->call('save')
@@ -44,6 +45,7 @@ class SettingsTest extends TestCase
         $this->assertSame('BMKG Stasiun Geofisika Banyuwangi', Setting::get('office_name'));
         $this->assertSame('200', Setting::get('radius_m'));
         $this->assertSame('08:00', Setting::get('work_start'));
+        $this->assertSame('10', Setting::get('logbook_export_lead_days'));
         $this->assertFalse(Setting::getBool('require_selfie'));
         $this->assertTrue(Setting::getBool('require_geofence'));
     }
@@ -58,6 +60,23 @@ class SettingsTest extends TestCase
             ->set('work_end', '08:00')
             ->call('save')
             ->assertHasErrors(['work_end']);
+    }
+
+    public function test_logbook_export_lead_days_must_be_between_one_and_thirty(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(SettingsIndex::class)
+            ->set('logbook_export_lead_days', '0')
+            ->call('save')
+            ->assertHasErrors(['logbook_export_lead_days']);
+
+        Livewire::actingAs($admin)
+            ->test(SettingsIndex::class)
+            ->set('logbook_export_lead_days', '31')
+            ->call('save')
+            ->assertHasErrors(['logbook_export_lead_days']);
     }
 
     public function test_admin_can_load_existing_settings(): void

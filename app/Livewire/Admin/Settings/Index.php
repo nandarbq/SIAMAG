@@ -29,6 +29,8 @@ class Index extends Component
 
     public string $late_tolerance_min = '';
 
+    public string $logbook_export_lead_days = '';
+
     public bool $require_selfie = true;
 
     public bool $require_geofence = true;
@@ -44,6 +46,7 @@ class Index extends Component
         $this->work_start = (string) Setting::get('work_start', '07:30');
         $this->work_end = (string) Setting::get('work_end', '16:00');
         $this->late_tolerance_min = (string) Setting::get('late_tolerance_min', '15');
+        $this->logbook_export_lead_days = (string) Setting::get('logbook_export_lead_days', '7');
         $this->require_selfie = Setting::getBool('require_selfie', true);
         $this->require_geofence = Setting::getBool('require_geofence', true);
     }
@@ -60,6 +63,7 @@ class Index extends Component
             'work_start' => ['required', 'date_format:H:i'],
             'work_end' => ['required', 'date_format:H:i', 'after:work_start'],
             'late_tolerance_min' => ['required', 'integer', 'min:0', 'max:120'],
+            'logbook_export_lead_days' => ['required', 'integer', 'min:1', 'max:30'],
         ], [
             'office_name.required' => 'Nama kantor wajib diisi.',
             'office_lat.required' => 'Latitude kantor wajib diisi.',
@@ -69,6 +73,8 @@ class Index extends Component
             'radius_m.min' => 'Radius minimal 10 meter.',
             'max_accuracy_m.min' => 'Akurasi minimal 10 meter.',
             'work_end.after' => 'Jam pulang harus setelah jam masuk.',
+            'logbook_export_lead_days.min' => 'Batas ekspor logbook minimal H-1.',
+            'logbook_export_lead_days.max' => 'Batas ekspor logbook maksimal H-30.',
         ]);
 
         foreach ($validated as $key => $value) {
