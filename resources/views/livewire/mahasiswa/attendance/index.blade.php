@@ -188,11 +188,11 @@
                                 <p x-text="cameraError"></p>
                             </div>
 
-                            <div x-show="uploading" class="absolute inset-x-0 bottom-0 bg-slate-950/70 px-4 py-3 text-center text-xs font-semibold text-white backdrop-blur-sm">
-                                Mengunggah foto... <span x-text="uploadProgress + '%'"></span>
+                            <div x-show="saving" class="absolute inset-x-0 bottom-0 bg-slate-950/70 px-4 py-3 text-center text-xs font-semibold text-white backdrop-blur-sm">
+                                Menyimpan foto...
                             </div>
 
-                            <span x-show="capturedUrl && ! uploading" class="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                            <span x-show="capturedUrl && ! saving" class="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
                                 Selfie siap digunakan
                             </span>
                         </div>
@@ -209,11 +209,11 @@
                                     <x-icon name="refresh" class="h-4 w-4" />
                                     Coba Lagi
                                 </button>
-                                <button type="button" x-show="cameraError && capturedUrl && ! uploading" @click="retryUpload()" class="btn-primary btn-sm">
+                                <button type="button" x-show="cameraError && capturedUrl && ! saving" @click="retryUpload()" class="btn-primary btn-sm">
                                     <x-icon name="refresh" class="h-4 w-4" />
-                                    Unggah Ulang
+                                    Simpan Ulang
                                 </button>
-                                <button type="button" x-show="capturedUrl && ! uploading" @click="retake()" class="btn-secondary btn-sm">
+                                <button type="button" x-show="capturedUrl && ! saving" @click="retake()" class="btn-secondary btn-sm">
                                     <x-icon name="refresh" class="h-4 w-4" />
                                     Ambil Ulang
                                 </button>
@@ -267,13 +267,13 @@
 
                         <div class="flex flex-col gap-2 border-t border-slate-100 pt-5">
                             @if (! $today?->check_in_at)
-                                <button type="button" wire:click="checkIn" wire:loading.attr="disabled" wire:target="checkIn" x-bind:disabled="uploading || ! @js($photoReady)" class="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60">
+                                <button type="button" wire:click="checkIn" wire:loading.attr="disabled" wire:target="checkIn" x-bind:disabled="saving || ! @js($photoReady)" class="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60">
                                     <x-icon name="camera" class="h-4 w-4" />
                                     <span wire:loading.remove wire:target="checkIn">Absen Masuk</span>
                                     <span wire:loading wire:target="checkIn">Menyimpan absensi...</span>
                                 </button>
                             @elseif (! $today?->check_out_at)
-                                <button type="button" wire:click="checkOut" wire:loading.attr="disabled" wire:target="checkOut" x-bind:disabled="uploading || ! @js($photoReady)" class="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60">
+                                <button type="button" wire:click="checkOut" wire:loading.attr="disabled" wire:target="checkOut" x-bind:disabled="saving || ! @js($photoReady)" class="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60">
                                     <x-icon name="logout" class="h-4 w-4" />
                                     <span wire:loading.remove wire:target="checkOut">Absen Pulang</span>
                                     <span wire:loading wire:target="checkOut">Menyimpan absensi...</span>

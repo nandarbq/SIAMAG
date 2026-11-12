@@ -7,17 +7,15 @@ use App\Services\AttendanceService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
-use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 #[Title('Absensi')]
 class Index extends Component
 {
-    use WithFileUploads;
     use WithPagination;
 
-    public $photo;
+    public ?string $photo = null;
 
     public ?float $lat = null;
 
@@ -27,12 +25,7 @@ class Index extends Component
 
     public function checkIn(AttendanceService $attendanceService): void
     {
-        $this->validate([
-            'photo' => ['nullable', 'image', 'max:5120'],
-        ], [
-            'photo.image' => 'File harus berupa gambar.',
-            'photo.max' => 'Ukuran foto maksimal 5 MB.',
-        ]);
+        $this->validatePhoto();
 
         $attendanceService->checkIn(auth()->user(), [
             'lat' => $this->lat,
@@ -47,12 +40,7 @@ class Index extends Component
 
     public function checkOut(AttendanceService $attendanceService): void
     {
-        $this->validate([
-            'photo' => ['nullable', 'image', 'max:5120'],
-        ], [
-            'photo.image' => 'File harus berupa gambar.',
-            'photo.max' => 'Ukuran foto maksimal 5 MB.',
-        ]);
+        $this->validatePhoto();
 
         $attendanceService->checkOut(auth()->user(), [
             'lat' => $this->lat,
@@ -63,6 +51,16 @@ class Index extends Component
 
         $this->reset('photo');
         session()->flash('success', 'Absen pulang berhasil dicatat.');
+    }
+
+    private function validatePhoto(): void
+    {
+        $this->validate([
+            'photo' => ['nullable', 'string', 'max:800000'],
+        ], [
+            'photo.string' => 'Format foto tidak valid.',
+            'photo.max' => 'Ukuran foto terlalu besar. Ambil ulang foto.',
+        ]);
     }
 
     public function render()
@@ -81,7 +79,7 @@ class Index extends Component
             'maxAccuracy' => Setting::getInt('max_accuracy_m', 100),
             'requireSelfie' => $requireSelfie,
             'requireGeofence' => Setting::getBool('require_geofence', true),
-            'photoReady' => ! $requireSelfie || $this->photo !== null,
+            'photoReady' => ! $requireSelfie || filled($this->photo),
         ]);
     }
 }

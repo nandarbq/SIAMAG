@@ -110,6 +110,15 @@ class AttendanceTest extends TestCase
         ]));
     }
 
+    public function test_check_in_rejects_invalid_photo_data_uri(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
+            'photo' => 'data:image/jpeg;base64,not-an-image',
+        ]));
+    }
+
     public function test_check_out_requires_a_previous_check_in(): void
     {
         $this->expectException(ValidationException::class);
@@ -188,7 +197,14 @@ class AttendanceTest extends TestCase
             'lat' => self::OFFICE_LAT,
             'lng' => self::OFFICE_LNG,
             'accuracy' => 10,
-            'photo' => UploadedFile::fake()->image('selfie.jpg', 600, 600),
+            'photo' => $this->selfieDataUri(),
         ], $overrides);
+    }
+
+    private function selfieDataUri(): string
+    {
+        $image = UploadedFile::fake()->image('selfie.jpg', 600, 600)->getContent();
+
+        return 'data:image/jpeg;base64,'.base64_encode($image);
     }
 }

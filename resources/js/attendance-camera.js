@@ -4,15 +4,8 @@ export default function attendanceCamera() {
         started: false,
         cameraReady: false,
         cameraError: null,
-        uploading: false,
-        uploadProgress: 0,
+        saving: false,
         capturedUrl: null,
-        capturedFile: null,
-
-        init() {
-            this.$wire.$on('upload:finished', () => this.finishUpload());
-            this.$wire.$on('upload:errored', () => this.failUpload());
-        },
 
         async startCamera() {
             this.started = true;
@@ -75,7 +68,7 @@ export default function attendanceCamera() {
                 return;
             }
 
-            const scale = Math.min(1, 1280 / Math.max(width, height));
+            const scale = Math.min(1, 960 / Math.max(width, height));
             const outputWidth = Math.round(width * scale);
             const outputHeight = Math.round(height * scale);
 
@@ -83,69 +76,43 @@ export default function attendanceCamera() {
             canvas.height = outputHeight;
             canvas.getContext('2d').drawImage(video, 0, 0, outputWidth, outputHeight);
 
-            const blob = await new Promise((resolve) => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+            let dataUrl = canvas.toDataURL('image/jpeg', 0.78);
 
-            if (! blob) {
+            if (! dataUrl.startsWith('data:image/')) {
                 this.cameraError = 'Gagal mengambil foto. Coba lagi.';
                 return;
             }
 
-            if (this.capturedUrl) {
-                URL.revokeObjectURL(this.capturedUrl);
+            if (dataUrl.length > 800000) {
+                dataUrl = canvas.toDataURL('image/jpeg', 0.55);
             }
 
-            this.capturedUrl = URL.createObjectURL(blob);
-            this.capturedFile = new File([blob], 'selfie.jpg', { type: 'image/jpeg' });
+            this.capturedUrl = dataUrl;
             this.stopCamera();
-            this.upload(this.capturedFile);
+            await this.savePhoto(dataUrl);
         },
 
-        upload(file) {
-            this.uploading = true;
-            this.uploadProgress = 0;
+        async savePhoto(dataUrl) {
+            this.saving = true;
             this.cameraError = null;
 
-            this.$wire.upload(
-                'photo',
-                file,
-                () => this.finishUpload(),
-                () => this.failUpload(),
-                (event) => {
-                    this.uploadProgress = event.detail.progress;
-                },
-                () => this.cancelUpload(),
-            );
-        },
-
-        finishUpload() {
-            this.uploading = false;
-            this.uploadProgress = 100;
-        },
-
-        failUpload() {
-            this.uploading = false;
-            this.cameraError = 'Gagal mengunggah foto selfie. Coba lagi.';
-        },
-
-        cancelUpload() {
-            this.uploading = false;
-            this.uploadProgress = 0;
+            try {
+                await this.$wire.set('photo', dataUrl);
+            } catch (error) {
+                this.cameraError = 'Gagal menyimpan foto selfie. Coba lagi.';
+            } finally {
+                this.saving = false;
+            }
         },
 
         retryUpload() {
-            if (this.capturedFile) {
-                this.upload(this.capturedFile);
+            if (this.capturedUrl) {
+                this.savePhoto(this.capturedUrl);
             }
         },
 
         retake() {
-            if (this.capturedUrl) {
-                URL.revokeObjectURL(this.capturedUrl);
-                this.capturedUrl = null;
-            }
-
-            this.capturedFile = null;
-            this.uploadProgress = 0;
+            this.capturedUrl = null;
             this.cameraError = null;
             this.$wire.set('photo', null);
             this.startCamera();
@@ -169,10 +136,6 @@ export default function attendanceCamera() {
 
         destroy() {
             this.stopCamera();
-
-            if (this.capturedUrl) {
-                URL.revokeObjectURL(this.capturedUrl);
-            }
         },
     };
 }

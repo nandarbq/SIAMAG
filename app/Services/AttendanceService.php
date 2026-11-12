@@ -12,6 +12,7 @@ use Carbon\Carbon;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
 
 class AttendanceService
@@ -260,7 +261,7 @@ class AttendanceService
         return [$distance, $accuracy];
     }
 
-    private function storePhoto(User $user, Carbon $date, ?UploadedFile $photo, string $type): ?string
+    private function storePhoto(User $user, Carbon $date, UploadedFile|string|null $photo, string $type): ?string
     {
         $requireSelfie = Setting::getBool('require_selfie', true);
 
@@ -277,14 +278,23 @@ class AttendanceService
         $path = 'attendance/'.$user->id.'/'.$date->format('Y-m-d').'-'.$type.'.jpg';
 
         try {
-            $image = ImageManager::usingDriver('gd')
-                ->decodePath($photo->getRealPath())
-                ->scaleDown(width: 900)
-                ->encodeUsingFileExtension('jpg', quality: 80);
+            $manager = ImageManager::usingDriver(Driver::class);
+
+            $image = $photo instanceof UploadedFile
+                ? $manager->decodePath($photo->getRealPath())
+                : $manager->decodeDataUri($photo);
+
+            $image = $image->scaleDown(width: 900)->encodeUsingFileExtension('jpg', quality: 80);
 
             Storage::disk('local')->put($path, (string) $image);
         } catch (\Throwable) {
-            $path = $photo->store('attendance/'.$user->id, 'local');
+            if ($photo instanceof UploadedFile) {
+                $path = $photo->store('attendance/'.$user->id, 'local');
+            } else {
+                throw ValidationException::withMessages([
+                    'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
+                ]);
+            }
         }
 
         return $path;
