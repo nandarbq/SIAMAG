@@ -4,6 +4,7 @@ namespace App\Livewire\Mahasiswa\Logbooks;
 
 use App\Models\Logbook;
 use App\Models\Setting;
+use App\Services\LogbookExportService;
 use App\Services\LogbookProgressService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
@@ -176,11 +177,15 @@ class Index extends Component
             ->latest()
             ->paginate(8);
 
+        $exportService = app(LogbookExportService::class);
+
         return view('livewire.mahasiswa.logbooks.index', [
             'logbooks' => $logbooks,
             'profile' => $profile,
             'total' => Logbook::query()->where('user_id', $userId)->count(),
             'progress' => app(LogbookProgressService::class)->for(auth()->user()),
+            'exportOpen' => $profile ? $exportService->canExport($profile) : false,
+            'exportOpensAt' => $profile ? $exportService->opensAt($profile) : null,
         ]);
     }
 

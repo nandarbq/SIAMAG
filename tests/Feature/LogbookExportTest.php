@@ -2,6 +2,7 @@
 
 namespace Tests\Feature;
 
+use App\Livewire\Mahasiswa\Logbooks\Index as StudentLogbookIndex;
 use App\Models\Logbook;
 use App\Models\Setting;
 use App\Models\User;
@@ -9,6 +10,7 @@ use App\Services\LogbookExportService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Cache;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class LogbookExportTest extends TestCase
@@ -106,6 +108,25 @@ class LogbookExportTest extends TestCase
         $this->actingAs($student)
             ->get(route('mahasiswa.logbooks.word'))
             ->assertForbidden();
+    }
+
+    public function test_logbook_page_shows_export_actions_only_when_window_opens(): void
+    {
+        $student = $this->makeStudent('2026-11-01', '2026-12-31');
+
+        $this->travelTo(Carbon::parse('2026-12-23 10:00:00', 'Asia/Jakarta'));
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->assertSee('Export dibuka')
+            ->assertDontSee(route('mahasiswa.logbooks.word'));
+
+        $this->travelTo(Carbon::parse('2026-12-24 10:00:00', 'Asia/Jakarta'));
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->assertSee(route('mahasiswa.logbooks.word'))
+            ->assertSee(route('mahasiswa.logbooks.pdf'));
     }
 
     public function test_student_without_internship_profile_cannot_download_logbook(): void

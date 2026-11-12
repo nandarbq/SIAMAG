@@ -5,10 +5,24 @@
             <h1 class="page-title">Logbook Magang</h1>
             <p class="page-subtitle">Catat pekerjaan harian Anda agar laporan akhir magang lebih mudah disusun.</p>
         </div>
-        <button type="button" wire:click="openCreate" class="btn-primary">
-            <x-icon name="plus" class="h-4 w-4" />
-            Tulis Logbook
-        </button>
+        <div class="flex flex-wrap items-center gap-2">
+            @if ($exportOpen)
+                <a href="{{ route('mahasiswa.logbooks.word') }}" class="btn-secondary btn-sm">
+                    <x-icon name="download" class="h-3.5 w-3.5" />
+                    Word
+                </a>
+                <a href="{{ route('mahasiswa.logbooks.pdf') }}" class="btn-secondary btn-sm">
+                    <x-icon name="download" class="h-3.5 w-3.5" />
+                    PDF
+                </a>
+            @elseif ($exportOpensAt)
+                <span class="badge-slate">Export dibuka {{ $exportOpensAt->translatedFormat('d M Y') }}</span>
+            @endif
+            <button type="button" wire:click="openCreate" class="btn-primary">
+                <x-icon name="plus" class="h-4 w-4" />
+                Tulis Logbook
+            </button>
+        </div>
     </section>
 
     @if (! $profile)
@@ -97,6 +111,9 @@
                 <div class="min-w-0 flex-1">
                     <p class="font-semibold">Ada {{ $progress['missing'] }} hari kerja yang belum diisi logbook.</p>
                     <p class="mt-0.5 text-xs">Lengkapi sekarang agar laporan akhir magang Anda tidak terhambat.</p>
+                    @if ($exportOpen)
+                        <p class="mt-1 text-xs font-medium">Anda tetap dapat mengunduh logbook, tetapi lengkapi hari terlewat agar laporan lebih utuh.</p>
+                    @endif
                     <div class="mt-3 flex flex-wrap gap-2">
                         @foreach (array_slice($progress['missing_dates'], 0, 8) as $missingDate)
                             <button type="button" wire:click="openCreateForDate('{{ $missingDate }}')" class="btn-secondary btn-sm">
