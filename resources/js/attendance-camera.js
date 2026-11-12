@@ -1,15 +1,18 @@
-export default function attendanceCamera({ requireSelfie = true } = {}) {
+export default function attendanceCamera() {
     return {
-        requireSelfie,
         stream: null,
         started: false,
         cameraReady: false,
         cameraError: null,
         uploading: false,
         uploadProgress: 0,
-        photoUploaded: false,
         capturedUrl: null,
         capturedFile: null,
+
+        init() {
+            this.$wire.$on('upload:finished', () => this.finishUpload());
+            this.$wire.$on('upload:errored', () => this.failUpload());
+        },
 
         async startCamera() {
             this.started = true;
@@ -100,26 +103,33 @@ export default function attendanceCamera({ requireSelfie = true } = {}) {
         upload(file) {
             this.uploading = true;
             this.uploadProgress = 0;
-            this.photoUploaded = false;
             this.cameraError = null;
 
             this.$wire.upload(
                 'photo',
                 file,
-                () => {
-                    this.uploading = false;
-                    this.uploadProgress = 100;
-                    this.photoUploaded = true;
-                },
-                () => {
-                    this.uploading = false;
-                    this.photoUploaded = false;
-                    this.cameraError = 'Gagal mengunggah foto selfie. Coba lagi.';
-                },
+                () => this.finishUpload(),
+                () => this.failUpload(),
                 (event) => {
                     this.uploadProgress = event.detail.progress;
                 },
+                () => this.cancelUpload(),
             );
+        },
+
+        finishUpload() {
+            this.uploading = false;
+            this.uploadProgress = 100;
+        },
+
+        failUpload() {
+            this.uploading = false;
+            this.cameraError = 'Gagal mengunggah foto selfie. Coba lagi.';
+        },
+
+        cancelUpload() {
+            this.uploading = false;
+            this.uploadProgress = 0;
         },
 
         retryUpload() {
@@ -135,15 +145,10 @@ export default function attendanceCamera({ requireSelfie = true } = {}) {
             }
 
             this.capturedFile = null;
-            this.photoUploaded = false;
             this.uploadProgress = 0;
             this.cameraError = null;
             this.$wire.set('photo', null);
             this.startCamera();
-        },
-
-        canSubmit() {
-            return ! this.requireSelfie || this.photoUploaded;
         },
 
         cameraErrorMessage(error) {

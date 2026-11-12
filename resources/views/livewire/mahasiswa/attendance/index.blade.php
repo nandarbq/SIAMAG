@@ -155,7 +155,7 @@
                         <p class="mt-1 text-xs text-emerald-700">Masuk {{ $today->check_in_at?->format('H:i') }} · Pulang {{ $today->check_out_at?->format('H:i') }} WIB</p>
                     </div>
                 @else
-                    <div x-data="attendanceCamera({ requireSelfie: @js($requireSelfie) })" wire:key="attendance-camera" class="space-y-5">
+                    <div x-data="attendanceCamera()" wire:key="attendance-camera" class="space-y-5">
                         <div class="space-y-3">
                             <div x-cloak class="relative flex min-h-56 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-950/90 p-2">
                             <template x-if="capturedUrl">
