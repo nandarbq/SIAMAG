@@ -253,19 +253,21 @@
 
                         <div class="flex flex-col gap-2 border-t border-slate-100 pt-5">
                             @if (! $today?->check_in_at)
-                                <button type="button" wire:click="checkIn" wire:loading.attr="disabled" wire:target="checkIn" x-bind:disabled="uploading || ! canSubmit()" class="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60">
+                                <button type="button" wire:click="checkIn" wire:loading.attr="disabled" wire:target="checkIn" x-bind:disabled="uploading || ! @js($photoReady)" class="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60">
                                     <x-icon name="camera" class="h-4 w-4" />
                                     <span wire:loading.remove wire:target="checkIn">Absen Masuk</span>
                                     <span wire:loading wire:target="checkIn">Menyimpan absensi...</span>
                                 </button>
                             @elseif (! $today?->check_out_at)
-                                <button type="button" wire:click="checkOut" wire:loading.attr="disabled" wire:target="checkOut" x-bind:disabled="uploading || ! canSubmit()" class="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60">
+                                <button type="button" wire:click="checkOut" wire:loading.attr="disabled" wire:target="checkOut" x-bind:disabled="uploading || ! @js($photoReady)" class="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60">
                                     <x-icon name="logout" class="h-4 w-4" />
                                     <span wire:loading.remove wire:target="checkOut">Absen Pulang</span>
                                     <span wire:loading wire:target="checkOut">Menyimpan absensi...</span>
                                 </button>
                             @endif
-                            <p x-show="! canSubmit()" class="text-center text-xs font-medium text-amber-600">Ambil foto selfie terlebih dahulu.</p>
+                            @if (! $photoReady)
+                                <p class="text-center text-xs font-medium text-amber-600">Ambil foto selfie terlebih dahulu.</p>
+                            @endif
                             <p class="text-center text-[11px] text-slate-400">
                                 Jam kerja {{ \App\Models\Setting::get('work_start', '07:30') }} — {{ \App\Models\Setting::get('work_end', '16:00') }} WIB.
                                 @if ($requireGeofence)

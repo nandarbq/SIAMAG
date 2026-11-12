@@ -69,6 +69,7 @@ class Index extends Component
     {
         $user = auth()->user();
         $today = app(AttendanceService::class)->todayFor($user);
+        $requireSelfie = Setting::getBool('require_selfie', true);
 
         return view('livewire.mahasiswa.attendance.index', [
             'today' => $today,
@@ -78,8 +79,9 @@ class Index extends Component
             'officeLng' => (float) Setting::get('office_lng', '114.3692000'),
             'radius' => Setting::getInt('radius_m', 150),
             'maxAccuracy' => Setting::getInt('max_accuracy_m', 100),
-            'requireSelfie' => Setting::getBool('require_selfie', true),
+            'requireSelfie' => $requireSelfie,
             'requireGeofence' => Setting::getBool('require_geofence', true),
+            'photoReady' => ! $requireSelfie || $this->photo !== null,
         ]);
     }
 }
