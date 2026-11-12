@@ -53,7 +53,7 @@
                     Buka Maps
                 </a>
             </div>
-            <div class="card-body">
+            <div class="card-body" x-data="officeMapPicker({ lat: {{ (float) $office_lat }}, lng: {{ (float) $office_lng }} })">
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label class="label">Latitude</label>
@@ -75,6 +75,11 @@
                         <input wire:model="max_accuracy_m" type="number" min="10" max="1000" class="input">
                         @error('max_accuracy_m') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                     </div>
+                </div>
+
+                <div wire:ignore class="mt-5">
+                    <div x-ref="map" class="h-72 w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100"></div>
+                    <p class="mt-2 text-xs text-slate-500">Klik peta atau geser pin untuk memilih titik pusat kantor.</p>
                 </div>
 
                 <div
