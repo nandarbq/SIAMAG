@@ -3,7 +3,7 @@
         <div>
             <p class="page-eyebrow">Aktivitas Harian</p>
             <h1 class="page-title">Logbook Magang</h1>
-            <p class="page-subtitle">Catat pekerjaan harian Anda dan kirim untuk direview oleh pembimbing.</p>
+            <p class="page-subtitle">Catat pekerjaan harian Anda agar laporan akhir magang lebih mudah disusun.</p>
         </div>
         <button type="button" wire:click="openCreate" class="btn-primary">
             <x-icon name="plus" class="h-4 w-4" />
@@ -18,35 +18,6 @@
         </div>
     @endif
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        @php
-            $stats = [
-                ['label' => 'Total Logbook', 'value' => $total, 'icon' => 'book', 'tone' => 'brand'],
-                ['label' => 'Disetujui', 'value' => $counts[App\Enums\LogbookStatus::Approved->value] ?? 0, 'icon' => 'check-circle', 'tone' => 'emerald'],
-                ['label' => 'Menunggu Review', 'value' => $counts[App\Enums\LogbookStatus::Submitted->value] ?? 0, 'icon' => 'clock', 'tone' => 'amber'],
-                ['label' => 'Perlu Revisi', 'value' => $counts[App\Enums\LogbookStatus::Rejected->value] ?? 0, 'icon' => 'alert', 'tone' => 'rose'],
-            ];
-            $tones = [
-                'brand' => 'bg-brand-50 text-brand-600',
-                'emerald' => 'bg-emerald-50 text-emerald-600',
-                'amber' => 'bg-amber-50 text-amber-600',
-                'rose' => 'bg-rose-50 text-rose-600',
-            ];
-        @endphp
-
-        @foreach ($stats as $stat)
-            <div class="card card-body animate-fade-up">
-                <div class="flex items-center justify-between">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $stat['label'] }}</p>
-                    <span class="flex h-9 w-9 items-center justify-center rounded-lg {{ $tones[$stat['tone']] }}">
-                        <x-icon :name="$stat['icon']" class="h-4 w-4" />
-                    </span>
-                </div>
-                <p class="mt-2 text-2xl font-bold text-slate-900">{{ $stat['value'] }}</p>
-            </div>
-        @endforeach
-    </section>
-
     <div class="card">
         <div class="card-header flex-col items-start gap-3 sm:flex-row sm:items-center">
             <div>
@@ -58,13 +29,7 @@
                     <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input type="search" wire:model.live.debounce.400ms="search" placeholder="Cari aktivitas..." class="input pl-9 sm:w-56">
                 </div>
-                <select wire:model.live="status" class="input sm:w-44">
-                    <option value="">Semua status</option>
-                    @foreach ($statuses as $statusOption)
-                        <option value="{{ $statusOption->value }}">{{ $statusOption->label() }}</option>
-                    @endforeach
-                </select>
-                @if ($search !== '' || $status !== '')
+                @if ($search !== '')
                     <button type="button" wire:click="resetFilters" class="btn-ghost btn-sm">Reset</button>
                 @endif
             </div>
@@ -77,7 +42,6 @@
                         <th class="table-th">Tanggal</th>
                         <th class="table-th">Aktivitas</th>
                         <th class="table-th">Durasi</th>
-                        <th class="table-th">Status</th>
                         <th class="table-th text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -93,11 +57,6 @@
                                 @if ($logbook->description)
                                     <p class="mt-1 line-clamp-2 max-w-xl text-xs leading-relaxed text-slate-500">{{ $logbook->description }}</p>
                                 @endif
-                                @if ($logbook->status === App\Enums\LogbookStatus::Rejected && $logbook->review_note)
-                                    <p class="mt-2 rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs text-rose-700">
-                                        <span class="font-semibold">Catatan reviewer:</span> {{ $logbook->review_note }}
-                                    </p>
-                                @endif
                             </td>
                             <td class="table-td whitespace-nowrap text-xs text-slate-500">
                                 @if ($logbook->start_time && $logbook->end_time)
@@ -107,30 +66,24 @@
                                     —
                                 @endif
                             </td>
-                            <td class="table-td"><x-logbook-status :status="$logbook->status" /></td>
                             <td class="table-td">
                                 <div class="flex items-center justify-end gap-1.5">
                                     @if ($logbook->isEditable())
                                         <button type="button" wire:click="openEdit({{ $logbook->id }})" class="btn-ghost btn-sm" title="Ubah logbook">
                                             <x-icon name="pencil" class="h-4 w-4" />
                                         </button>
-                                        <button type="button" wire:click="submitExisting({{ $logbook->id }})" wire:confirm="Kirim logbook ini untuk review?" class="btn-secondary btn-sm" title="Kirim untuk review">
-                                            <x-icon name="arrow-up-circle" class="h-4 w-4" />
-                                        </button>
                                         <button type="button" wire:click="delete({{ $logbook->id }})" wire:confirm="Hapus logbook ini?" class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50" title="Hapus logbook">
                                             <x-icon name="trash" class="h-4 w-4" />
                                         </button>
-                                    @elseif ($logbook->status === App\Enums\LogbookStatus::Submitted)
-                                        <span class="text-xs text-slate-400">Menunggu review</span>
                                     @else
-                                        <span class="text-xs text-emerald-600">Selesai</span>
+                                        <span class="text-xs text-slate-400">Terkunci</span>
                                     @endif
                                 </div>
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-5 py-16 text-center">
+                            <td colspan="4" class="px-5 py-16 text-center">
                                 <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
                                     <x-icon name="book" class="h-6 w-6" />
                                 </span>
@@ -164,7 +117,7 @@
                         </button>
                     </div>
 
-                    <form wire:submit="submit" class="space-y-5 p-6">
+                    <form wire:submit="save" class="space-y-5 p-6">
                         <div class="grid gap-4 sm:grid-cols-3">
                             <div class="sm:col-span-1">
                                 <label class="form-label">Tanggal</label>
@@ -210,17 +163,11 @@
 
                         <div class="flex flex-col-reverse gap-2 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">
                             <button type="button" wire:click="closeModal" class="btn-ghost">Batal</button>
-                            <div class="flex flex-col gap-2 sm:flex-row">
-                                <button type="button" wire:click="saveDraft" wire:loading.attr="disabled" wire:target="saveDraft" class="btn-secondary">
-                                    <span wire:loading.remove wire:target="saveDraft">Simpan Draft</span>
-                                    <span wire:loading wire:target="saveDraft">Menyimpan...</span>
-                                </button>
-                                <button type="submit" wire:loading.attr="disabled" wire:target="submit" class="btn-primary">
-                                    <x-icon name="arrow-up-circle" class="h-4 w-4" />
-                                    <span wire:loading.remove wire:target="submit">Kirim untuk Review</span>
-                                    <span wire:loading wire:target="submit">Mengirim...</span>
-                                </button>
-                            </div>
+                            <button type="submit" wire:loading.attr="disabled" wire:target="save" class="btn-primary">
+                                <x-icon name="check-circle" class="h-4 w-4" />
+                                <span wire:loading.remove wire:target="save">Simpan Logbook</span>
+                                <span wire:loading wire:target="save">Menyimpan...</span>
+                            </button>
                         </div>
                     </form>
                 </div>

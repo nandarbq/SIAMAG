@@ -71,6 +71,12 @@ class Logbook extends Model
 
     public function isEditable(): bool
     {
-        return in_array($this->status, [LogbookStatus::Draft, LogbookStatus::Rejected], true);
+        $profile = $this->user?->internProfile;
+
+        if (! $profile) {
+            return true;
+        }
+
+        return today()->betweenIncluded($profile->start_date, $profile->end_date);
     }
 }
