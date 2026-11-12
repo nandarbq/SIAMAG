@@ -90,6 +90,14 @@
                     </div>
                     <button type="button" @click="locateDevice()" class="btn-primary btn-sm shrink-0">Deteksi</button>
                 </div>
+
+                <label class="mt-5 flex items-start gap-3 rounded-xl border border-slate-200 px-4 py-3">
+                    <input wire:model="require_geofence" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30">
+                    <span>
+                        <span class="block text-sm font-semibold text-slate-700">Aktifkan validasi radius kantor</span>
+                        <span class="block text-xs text-slate-500">Jika dimatikan, absensi tetap bisa dilakukan di luar radius dan GPS tidak diwajibkan. Nilai radius di atas diabaikan.</span>
+                    </span>
+                </label>
             </div>
         </div>
 
@@ -137,8 +145,8 @@
                             <x-icon name="shield" class="h-5 w-5" />
                         </span>
                         <div>
-                            <h2 class="text-base font-bold text-slate-900">Validasi Absensi</h2>
-                            <p class="text-xs text-slate-500">Kontrol persyaratan saat mahasiswa absen.</p>
+                            <h2 class="text-base font-bold text-slate-900">Validasi Selfie</h2>
+                            <p class="text-xs text-slate-500">Kontrol persyaratan foto saat mahasiswa absen.</p>
                         </div>
                     </div>
                 </div>
@@ -148,13 +156,6 @@
                         <span>
                             <span class="block text-sm font-semibold text-slate-700">Wajib selfie</span>
                             <span class="block text-xs text-slate-500">Mahasiswa harus mengambil foto saat absen masuk dan pulang.</span>
-                        </span>
-                    </label>
-                    <label class="flex items-start gap-3 rounded-xl border border-slate-200 px-4 py-3">
-                        <input wire:model="require_geofence" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30">
-                        <span>
-                            <span class="block text-sm font-semibold text-slate-700">Wajib dalam radius kantor</span>
-                            <span class="block text-xs text-slate-500">Absensi ditolak jika lokasi berada di luar radius yang ditentukan.</span>
                         </span>
                     </label>
                 </div>
