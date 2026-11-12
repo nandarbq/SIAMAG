@@ -2,6 +2,7 @@ export default function attendanceCamera({ requireSelfie = true } = {}) {
     return {
         requireSelfie,
         stream: null,
+        started: false,
         cameraReady: false,
         cameraError: null,
         uploading: false,
@@ -10,11 +11,8 @@ export default function attendanceCamera({ requireSelfie = true } = {}) {
         capturedUrl: null,
         capturedFile: null,
 
-        init() {
-            this.startCamera();
-        },
-
         async startCamera() {
+            this.started = true;
             this.cameraError = null;
             this.cameraReady = false;
 
