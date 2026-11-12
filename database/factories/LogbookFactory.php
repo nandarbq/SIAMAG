@@ -2,7 +2,6 @@
 
 namespace Database\Factories;
 
-use App\Enums\LogbookStatus;
 use App\Models\Logbook;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -32,29 +31,6 @@ class LogbookFactory extends Factory
             'end_time' => '15:30',
             'result' => fake()->sentence(10),
             'obstacle' => fake()->boolean(30) ? fake()->sentence(6) : null,
-            'status' => LogbookStatus::Draft,
         ];
-    }
-
-    public function submitted(): static
-    {
-        return $this->state(fn () => ['status' => LogbookStatus::Submitted]);
-    }
-
-    public function approved(): static
-    {
-        return $this->state(fn () => [
-            'status' => LogbookStatus::Approved,
-            'reviewed_at' => now(),
-        ]);
-    }
-
-    public function rejected(): static
-    {
-        return $this->state(fn () => [
-            'status' => LogbookStatus::Rejected,
-            'review_note' => 'Mohon lengkapi uraian hasil kegiatan.',
-            'reviewed_at' => now(),
-        ]);
     }
 }

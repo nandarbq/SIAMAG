@@ -66,13 +66,31 @@
         </div>
     </section>
 
+    @if ($logbookProgress['today_status'] === 'missing')
+        <div class="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 sm:flex-row sm:items-center">
+            <div class="flex flex-1 items-start gap-3">
+                <x-icon name="alert" class="mt-0.5 h-5 w-5 shrink-0" />
+                <p>Logbook hari ini belum diisi. Lengkapi sebelum hari berganti.</p>
+            </div>
+            <a href="{{ route('mahasiswa.logbooks') }}" class="btn-secondary btn-sm self-start sm:self-auto">Isi sekarang</a>
+        </div>
+    @elseif ($logbookProgress['missing'] > 0)
+        <div class="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 sm:flex-row sm:items-center">
+            <div class="flex flex-1 items-start gap-3">
+                <x-icon name="alert" class="mt-0.5 h-5 w-5 shrink-0" />
+                <p>Ada {{ $logbookProgress['missing'] }} hari kerja yang belum diisi logbook.</p>
+            </div>
+            <a href="{{ route('mahasiswa.logbooks') }}" class="btn-secondary btn-sm self-start sm:self-auto">Lengkapi</a>
+        </div>
+    @endif
+
     <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         @php
             $stats = [
                 ['label' => 'Hadir Bulan Ini', 'value' => $hadir, 'icon' => 'check-circle', 'tone' => 'emerald'],
                 ['label' => 'Terlambat', 'value' => $terlambat, 'icon' => 'clock', 'tone' => 'amber'],
                 ['label' => 'Izin / Sakit', 'value' => $izinSakit, 'icon' => 'calendar', 'tone' => 'brand'],
-                ['label' => 'Logbook Disetujui', 'value' => $logbookApproved, 'icon' => 'book', 'tone' => 'violet'],
+                ['label' => 'Progres Logbook', 'value' => $logbookProgress['percentage'] === null ? '—' : $logbookProgress['percentage'].'%', 'icon' => 'book', 'tone' => 'violet'],
             ];
             $tones = [
                 'emerald' => 'bg-emerald-50 text-emerald-600',
@@ -143,17 +161,20 @@
                 <div class="card-header">
                     <div>
                         <h2 class="text-base font-bold text-slate-900">Logbook Terbaru</h2>
-                        <p class="mt-0.5 text-xs text-slate-500">{{ $logbookPending }} perlu dilengkapi</p>
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            @if ($logbookProgress['missing'] > 0)
+                                {{ $logbookProgress['missing'] }} hari kerja belum diisi
+                            @else
+                                Semua logbook sudah lengkap
+                            @endif
+                        </p>
                     </div>
                     <a href="{{ route('mahasiswa.logbooks') }}" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Buka</a>
                 </div>
                 <div class="divide-y divide-slate-100">
                     @forelse ($recentLogbooks as $logbook)
                         <div class="px-5 py-3.5">
-                            <div class="flex items-center justify-between gap-2">
-                                <p class="truncate text-sm font-semibold text-slate-800">{{ $logbook->activity }}</p>
-                                <x-logbook-status :status="$logbook->status" />
-                            </div>
+                            <p class="truncate text-sm font-semibold text-slate-800">{{ $logbook->activity }}</p>
                             <p class="mt-1 text-xs text-slate-400">{{ $logbook->date?->translatedFormat('d M Y') }}</p>
                         </div>
                     @empty

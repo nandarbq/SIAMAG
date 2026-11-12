@@ -170,6 +170,30 @@
             </div>
         </div>
 
+        <div class="card">
+            <div class="card-header">
+                <div class="flex items-center gap-3">
+                    <span class="stat-icon bg-violet-50 text-violet-600">
+                        <x-icon name="book" class="h-5 w-5" />
+                    </span>
+                    <div>
+                        <h2 class="text-base font-bold text-slate-900">Logbook</h2>
+                        <p class="text-xs text-slate-500">Atur kapan mahasiswa boleh mengekspor logbook.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="max-w-xs">
+                    <label class="label">Batas Ekspor Logbook (H-)</label>
+                    <input wire:model="logbook_export_lead_days" type="number" min="1" max="30" class="input">
+                    @error('logbook_export_lead_days') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
+                </div>
+                <p class="mt-3 rounded-xl bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
+                    Contoh: diisi 7, maka tombol export logbook aktif mulai 7 hari sebelum tanggal magang selesai.
+                </p>
+            </div>
+        </div>
+
         <div class="flex justify-end">
             <button type="submit" class="btn-primary" wire:loading.attr="disabled">
                 <x-icon name="check-circle" class="h-4 w-4" />

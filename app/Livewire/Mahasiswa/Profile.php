@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Mahasiswa;
 
+use App\Services\LogbookProgressService;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
@@ -92,8 +93,7 @@ class Profile extends Component
             'user' => $user,
             'profile' => $user->internProfile,
             'attendanceCount' => $user->attendances()->count(),
-            'logbookCount' => $user->logbooks()->count(),
-            'approvedLogbookCount' => $user->logbooks()->where('status', 'approved')->count(),
+            'logbookProgress' => app(LogbookProgressService::class)->for($user),
         ]);
     }
 }

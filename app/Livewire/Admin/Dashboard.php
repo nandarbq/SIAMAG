@@ -4,7 +4,6 @@ namespace App\Livewire\Admin;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\LeaveStatus;
-use App\Enums\LogbookStatus;
 use App\Enums\UserRole;
 use App\Models\Announcement;
 use App\Models\Attendance;
@@ -53,7 +52,6 @@ class Dashboard extends Component
             'late' => $late,
             'permit' => $permit,
             'alpha' => $alpha,
-            'pendingLogbooks' => Logbook::query()->where('status', LogbookStatus::Submitted)->count(),
             'pendingLeaves' => LeaveRequest::query()->where('status', LeaveStatus::Pending)->count(),
             'chart' => $chart,
             'recentAttendances' => Attendance::query()
@@ -63,9 +61,9 @@ class Dashboard extends Component
                 ->latest('check_in_at')
                 ->limit(6)
                 ->get(),
-            'pendingReviews' => Logbook::query()
+            'recentLogbooks' => Logbook::query()
                 ->with('user')
-                ->where('status', LogbookStatus::Submitted)
+                ->latest('date')
                 ->latest()
                 ->limit(5)
                 ->get(),

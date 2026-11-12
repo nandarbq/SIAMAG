@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\ReportExportController;
 use App\Http\Controllers\AttendancePhotoController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaveAttachmentController;
+use App\Http\Controllers\Mahasiswa\LogbookExportController;
 use App\Livewire\Admin\Announcements\Index as AnnouncementIndex;
 use App\Livewire\Admin\Attendances\Index as AttendanceIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
@@ -82,6 +83,8 @@ Route::middleware(['auth', 'role:mahasiswa'])
         Route::get('/attendance', StudentAttendance::class)->name('attendance');
 
         Route::get('/logbooks', StudentLogbook::class)->name('logbooks');
+        Route::get('/logbooks/word', [LogbookExportController::class, 'word'])->name('logbooks.word');
+        Route::get('/logbooks/pdf', [LogbookExportController::class, 'pdf'])->name('logbooks.pdf');
 
         Route::get('/leaves', StudentLeave::class)->name('leaves');
 

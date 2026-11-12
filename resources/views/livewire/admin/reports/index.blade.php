@@ -49,7 +49,7 @@
                 ['label' => 'Hadir', 'value' => $report['summary']['hadir'], 'tone' => 'emerald', 'icon' => 'check-circle'],
                 ['label' => 'Terlambat', 'value' => $report['summary']['terlambat'], 'tone' => 'amber', 'icon' => 'clock'],
                 ['label' => 'Alpha', 'value' => $report['summary']['alpha'], 'tone' => 'rose', 'icon' => 'alert'],
-                ['label' => 'Logbook Disetujui', 'value' => $report['summary']['logbook_approved'], 'tone' => 'violet', 'icon' => 'book'],
+                ['label' => 'Total Logbook', 'value' => $report['summary']['logbook_total'], 'tone' => 'violet', 'icon' => 'book'],
             ];
             $toneClasses = [
                 'brand' => 'bg-brand-50 text-brand-600',
@@ -146,7 +146,7 @@
                                 <td class="table-td text-center">{{ $row['izin'] + $row['sakit'] }}</td>
                                 <td class="table-td text-center font-semibold text-rose-600">{{ $row['alpha'] }}</td>
                                 <td class="table-td text-center">
-                                    <span class="text-xs font-semibold text-slate-700">{{ $row['logbook_approved'] }}/{{ $row['logbook_total'] }}</span>
+                                    <span class="text-xs font-semibold text-slate-700">{{ $row['logbook_total'] }}</span>
                                 </td>
                                 <td class="table-td">
                                     <div class="flex items-center gap-2">

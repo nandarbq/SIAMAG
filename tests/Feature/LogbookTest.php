@@ -2,7 +2,6 @@
 
 namespace Tests\Feature;
 
-use App\Enums\LogbookStatus;
 use App\Livewire\Admin\Logbooks\Index as AdminLogbookIndex;
 use App\Livewire\Mahasiswa\Logbooks\Index as StudentLogbookIndex;
 use App\Models\Logbook;
@@ -23,7 +22,7 @@ class LogbookTest extends TestCase
         $this->travelTo(Carbon::parse('2026-11-09 10:00:00', 'Asia/Jakarta'));
     }
 
-    public function test_student_can_save_a_logbook_as_draft(): void
+    public function test_student_can_save_a_logbook(): void
     {
         $student = $this->makeStudent();
 
@@ -35,14 +34,13 @@ class LogbookTest extends TestCase
             ->set('description', 'Mengolah data observasi harian.')
             ->set('startTime', '08:00')
             ->set('endTime', '10:00')
-            ->call('saveDraft')
+            ->call('save')
             ->assertHasNoErrors();
 
         $logbook = Logbook::query()->where('user_id', $student->id)->firstOrFail();
 
         $this->assertSame('2026-11-09', $logbook->date->toDateString());
         $this->assertSame('Analisis data curah hujan', $logbook->activity);
-        $this->assertSame(LogbookStatus::Draft, $logbook->status);
     }
 
     public function test_student_can_open_logbook_form_on_final_internship_day(): void
@@ -57,22 +55,65 @@ class LogbookTest extends TestCase
             ->assertSet('showModal', true);
     }
 
-    public function test_student_can_submit_a_logbook_for_review(): void
+    public function test_student_can_edit_a_logbook_within_the_internship_period(): void
+    {
+        $student = $this->makeStudent();
+
+        $logbook = Logbook::factory()->for($student)->create([
+            'date' => '2026-11-08',
+            'activity' => 'Aktivitas asli',
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openEdit', $logbook->id)
+            ->assertSet('logbookId', $logbook->id)
+            ->set('activity', 'Aktivitas baru')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('Aktivitas baru', $logbook->fresh()->activity);
+    }
+
+    public function test_student_can_open_a_missing_logbook_date(): void
     {
         $student = $this->makeStudent();
 
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
-            ->call('openCreate')
-            ->set('date', '2026-11-09')
-            ->set('activity', 'Penyusunan laporan mingguan')
-            ->call('submit')
-            ->assertHasNoErrors();
+            ->call('openCreateForDate', '2026-11-05')
+            ->assertSet('showModal', true)
+            ->assertSet('date', '2026-11-05');
+    }
 
-        $logbook = Logbook::query()->where('user_id', $student->id)->firstOrFail();
+    public function test_student_cannot_open_a_future_or_out_of_period_logbook_date(): void
+    {
+        $student = $this->makeStudent();
 
-        $this->assertSame('2026-11-09', $logbook->date->toDateString());
-        $this->assertSame(LogbookStatus::Submitted, $logbook->status);
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreateForDate', '2026-11-10')
+            ->assertSet('showModal', false);
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreateForDate', '2026-10-31')
+            ->assertSet('showModal', false);
+    }
+
+    public function test_opening_an_existing_missing_date_loads_it_for_editing(): void
+    {
+        $student = $this->makeStudent();
+
+        $logbook = Logbook::factory()->for($student)->create([
+            'date' => '2026-11-08',
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreateForDate', '2026-11-08')
+            ->assertSet('showModal', true)
+            ->assertSet('logbookId', $logbook->id);
     }
 
     public function test_student_cannot_create_two_logbooks_on_the_same_date(): void
@@ -81,23 +122,24 @@ class LogbookTest extends TestCase
 
         Logbook::factory()->for($student)->create([
             'date' => '2026-11-09',
-            'status' => LogbookStatus::Draft,
         ]);
 
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
             ->set('date', '2026-11-09')
             ->set('activity', 'Aktivitas lain')
-            ->call('submit')
+            ->call('save')
             ->assertHasErrors(['date']);
     }
 
-    public function test_student_cannot_edit_a_submitted_logbook(): void
+    public function test_student_cannot_edit_a_logbook_after_internship_ends(): void
     {
+        $this->travelTo(Carbon::parse('2027-01-05 10:00:00', 'Asia/Jakarta'));
+
         $student = $this->makeStudent();
 
-        $logbook = Logbook::factory()->submitted()->for($student)->create([
-            'date' => '2026-11-09',
+        $logbook = Logbook::factory()->for($student)->create([
+            'date' => '2026-12-30',
         ]);
 
         Livewire::actingAs($student)
@@ -107,96 +149,44 @@ class LogbookTest extends TestCase
             ->assertSet('showModal', false);
     }
 
-    public function test_student_cannot_overwrite_a_submitted_logbook_via_persist(): void
+    public function test_student_cannot_overwrite_a_logbook_after_internship_ends(): void
     {
+        $this->travelTo(Carbon::parse('2027-01-05 10:00:00', 'Asia/Jakarta'));
+
         $student = $this->makeStudent();
 
-        $logbook = Logbook::factory()->submitted()->for($student)->create([
-            'date' => '2026-11-09',
+        $logbook = Logbook::factory()->for($student)->create([
+            'date' => '2026-12-30',
             'activity' => 'Aktivitas asli',
         ]);
 
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
             ->set('logbookId', $logbook->id)
-            ->set('date', '2026-11-09')
+            ->set('date', '2026-12-30')
             ->set('activity', 'Aktivitas palsu')
-            ->call('saveDraft')
+            ->call('save')
             ->assertHasNoErrors();
 
-        $logbook->refresh();
-
-        $this->assertSame(LogbookStatus::Submitted, $logbook->status);
-        $this->assertSame('Aktivitas asli', $logbook->activity);
+        $this->assertSame('Aktivitas asli', $logbook->fresh()->activity);
     }
 
-    public function test_admin_can_approve_a_submitted_logbook_and_notify_the_student(): void
+    public function test_admin_can_view_logbook_details_read_only(): void
     {
         $admin = User::factory()->admin()->create();
         $student = $this->makeStudent();
 
-        $logbook = Logbook::factory()->submitted()->for($student)->create([
+        $logbook = Logbook::factory()->for($student)->create([
             'date' => '2026-11-09',
         ]);
 
         Livewire::actingAs($admin)
             ->test(AdminLogbookIndex::class)
-            ->call('openReview', $logbook->id)
-            ->set('reviewNote', 'Logbook sudah lengkap.')
-            ->call('approve', $logbook->id)
-            ->assertHasNoErrors();
-
-        $logbook->refresh();
-
-        $this->assertSame(LogbookStatus::Approved, $logbook->status);
-        $this->assertSame($admin->id, $logbook->reviewed_by);
-        $this->assertNotNull($logbook->reviewed_at);
-        $this->assertDatabaseHas('notifications', [
-            'notifiable_id' => $student->id,
-            'notifiable_type' => User::class,
-        ]);
-    }
-
-    public function test_admin_must_add_a_note_when_rejecting_a_logbook(): void
-    {
-        $admin = User::factory()->admin()->create();
-        $student = $this->makeStudent();
-
-        $logbook = Logbook::factory()->submitted()->for($student)->create([
-            'date' => '2026-11-09',
-        ]);
-
-        Livewire::actingAs($admin)
-            ->test(AdminLogbookIndex::class)
-            ->call('openReview', $logbook->id)
-            ->set('reviewNote', '')
-            ->call('reject', $logbook->id)
-            ->assertHasErrors(['reviewNote']);
-
-        $this->assertSame(LogbookStatus::Submitted, $logbook->fresh()->status);
-    }
-
-    public function test_admin_can_reject_a_logbook_with_a_revision_note(): void
-    {
-        $admin = User::factory()->admin()->create();
-        $student = $this->makeStudent();
-
-        $logbook = Logbook::factory()->submitted()->for($student)->create([
-            'date' => '2026-11-09',
-        ]);
-
-        Livewire::actingAs($admin)
-            ->test(AdminLogbookIndex::class)
-            ->call('openReview', $logbook->id)
-            ->set('reviewNote', 'Tambahkan detail kegiatan.')
-            ->call('reject', $logbook->id)
-            ->assertHasNoErrors();
-
-        $logbook->refresh();
-
-        $this->assertSame(LogbookStatus::Rejected, $logbook->status);
-        $this->assertSame('Tambahkan detail kegiatan.', $logbook->review_note);
-        $this->assertSame($admin->id, $logbook->reviewed_by);
+            ->call('openDetail', $logbook->id)
+            ->assertSet('viewingId', $logbook->id)
+            ->assertSee('Logbook hanya dapat dilihat.')
+            ->assertDontSee('Setujui Logbook')
+            ->assertDontSee('Tolak & Minta Revisi');
     }
 
     private function makeStudent(): User

@@ -10,7 +10,7 @@
                 </p>
                 <h1 class="mt-3 text-2xl font-bold tracking-tight sm:text-3xl">Selamat datang, {{ auth()->user()->name }}.</h1>
                 <p class="mt-2 max-w-2xl text-sm leading-relaxed text-slate-300">
-                    Pantau kehadiran, review logbook, dan kelola data mahasiswa magang BMKG Banyuwangi dalam satu tampilan.
+                    Pantau kehadiran, monitoring logbook, dan kelola data mahasiswa magang BMKG Banyuwangi dalam satu tampilan.
                 </p>
             </div>
             <div class="flex flex-wrap gap-2">
@@ -113,21 +113,11 @@
                 <div class="card-header">
                     <div>
                         <h2 class="text-base font-bold text-slate-900">Perlu Tindakan</h2>
-                        <p class="mt-0.5 text-xs text-slate-500">Antrian review & persetujuan</p>
+                        <p class="mt-0.5 text-xs text-slate-500">Antrian persetujuan izin & kehadiran</p>
                     </div>
-                    <span class="badge-amber">{{ $pendingLogbooks + $pendingLeaves }} item</span>
+                    <span class="badge-amber">{{ $pendingLeaves }} item</span>
                 </div>
                 <div class="divide-y divide-slate-100">
-                    <a href="{{ route('admin.logbooks') }}" class="flex items-center gap-3 px-5 py-4 transition hover:bg-slate-50">
-                        <span class="stat-icon bg-amber-50 text-amber-600">
-                            <x-icon name="book" class="h-5 w-5" />
-                        </span>
-                        <div class="min-w-0 flex-1">
-                            <p class="text-sm font-semibold text-slate-800">Review Logbook</p>
-                            <p class="text-xs text-slate-500">{{ $pendingLogbooks }} logbook menunggu persetujuan</p>
-                        </div>
-                        <x-icon name="chevron-down" class="h-4 w-4 -rotate-90 text-slate-400" />
-                    </a>
                     <a href="{{ route('admin.leaves') }}" class="flex items-center gap-3 px-5 py-4 transition hover:bg-slate-50">
                         <span class="stat-icon bg-brand-50 text-brand-600">
                             <x-icon name="calendar" class="h-5 w-5" />
@@ -223,13 +213,13 @@
         <div class="card overflow-hidden">
             <div class="card-header">
                 <div>
-                    <h2 class="text-base font-bold text-slate-900">Logbook Menunggu</h2>
-                    <p class="mt-0.5 text-xs text-slate-500">Review terbaru</p>
+                    <h2 class="text-base font-bold text-slate-900">Logbook Terbaru</h2>
+                    <p class="mt-0.5 text-xs text-slate-500">Aktivitas terakhir mahasiswa</p>
                 </div>
-                <a href="{{ route('admin.logbooks') }}" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Review</a>
+                <a href="{{ route('admin.logbooks') }}" class="text-xs font-semibold text-brand-600 hover:text-brand-700">Lihat</a>
             </div>
             <div class="divide-y divide-slate-100">
-                @forelse ($pendingReviews as $logbook)
+                @forelse ($recentLogbooks as $logbook)
                     <div class="flex items-start gap-3 px-5 py-4">
                         <span class="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
                             <x-icon name="book" class="h-4 w-4" />
@@ -241,7 +231,7 @@
                         </div>
                     </div>
                 @empty
-                    <p class="empty-state">Tidak ada logbook yang menunggu review.</p>
+                    <p class="empty-state">Belum ada logbook.</p>
                 @endforelse
             </div>
         </div>

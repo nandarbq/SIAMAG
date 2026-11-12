@@ -68,7 +68,7 @@
                     <td class="center">{{ $row['izin'] }}</td>
                     <td class="center">{{ $row['sakit'] }}</td>
                     <td class="center">{{ $row['alpha'] }}</td>
-                    <td class="center">{{ $row['logbook_approved'] }}/{{ $row['logbook_total'] }}</td>
+                    <td class="center">{{ $row['logbook_total'] }}</td>
                     <td class="center"><span class="badge">{{ $row['percentage'] }}%</span></td>
                 </tr>
             @empty
@@ -83,7 +83,7 @@
                 <td class="center">{{ $summary['izin'] }}</td>
                 <td class="center">{{ $summary['sakit'] }}</td>
                 <td class="center">{{ $summary['alpha'] }}</td>
-                <td class="center">{{ $summary['logbook_approved'] }}</td>
+                <td class="center">{{ $summary['logbook_total'] }}</td>
                 <td class="center">-</td>
             </tr>
         </tbody>

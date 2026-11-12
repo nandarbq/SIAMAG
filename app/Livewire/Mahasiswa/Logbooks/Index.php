@@ -2,9 +2,10 @@
 
 namespace App\Livewire\Mahasiswa\Logbooks;
 
-use App\Enums\LogbookStatus;
 use App\Models\Logbook;
 use App\Models\Setting;
+use App\Services\LogbookExportService;
+use App\Services\LogbookProgressService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -16,8 +17,6 @@ use Livewire\WithPagination;
 class Index extends Component
 {
     use WithPagination;
-
-    public string $status = '';
 
     public string $search = '';
 
@@ -41,7 +40,7 @@ class Index extends Component
 
     public function updating(string $property): void
     {
-        if (in_array($property, ['status', 'search'], true)) {
+        if ($property === 'search') {
             $this->resetPage();
         }
     }
@@ -61,14 +60,8 @@ class Index extends Component
 
         $existing = auth()->user()->logbooks()->whereDate('date', today())->first();
 
-        if ($existing && $existing->isEditable()) {
-            $this->openEdit($existing->id);
-
-            return;
-        }
-
         if ($existing) {
-            session()->flash('error', 'Logbook hari ini sudah dikirim dan sedang menunggu review.');
+            $this->openEdit($existing->id);
 
             return;
         }
@@ -79,12 +72,46 @@ class Index extends Component
         $this->showModal = true;
     }
 
+    public function openCreateForDate(string $date): void
+    {
+        $this->resetForm();
+        $this->resetValidation();
+
+        $profile = auth()->user()->internProfile;
+        $date = Carbon::parse($date)->startOfDay();
+
+        if ($date->greaterThan(today())) {
+            session()->flash('error', 'Logbook tidak dapat diisi untuk tanggal yang akan datang.');
+
+            return;
+        }
+
+        if ($profile && ! $date->betweenIncluded($profile->start_date, $profile->end_date)) {
+            session()->flash('error', 'Tanggal logbook harus berada di dalam periode magang.');
+
+            return;
+        }
+
+        $existing = auth()->user()->logbooks()->whereDate('date', $date->toDateString())->first();
+
+        if ($existing) {
+            $this->openEdit($existing->id);
+
+            return;
+        }
+
+        $this->date = $date->toDateString();
+        $this->startTime = Setting::get('work_start', '07:30');
+        $this->endTime = Setting::get('work_end', '16:00');
+        $this->showModal = true;
+    }
+
     public function openEdit(int $logbookId): void
     {
         $logbook = auth()->user()->logbooks()->findOrFail($logbookId);
 
         if (! $logbook->isEditable()) {
-            session()->flash('error', 'Logbook ini tidak dapat diubah karena sudah dikirim.');
+            session()->flash('error', 'Logbook ini tidak dapat diubah karena sudah terkunci.');
 
             return;
         }
@@ -108,34 +135,9 @@ class Index extends Component
         $this->resetValidation();
     }
 
-    public function saveDraft(): void
+    public function save(): void
     {
-        $this->persist(LogbookStatus::Draft);
-    }
-
-    public function submit(): void
-    {
-        $this->persist(LogbookStatus::Submitted);
-    }
-
-    public function submitExisting(int $logbookId): void
-    {
-        $logbook = auth()->user()->logbooks()->findOrFail($logbookId);
-
-        if (! $logbook->isEditable()) {
-            session()->flash('error', 'Logbook ini sudah dikirim.');
-
-            return;
-        }
-
-        $logbook->update([
-            'status' => LogbookStatus::Submitted,
-            'review_note' => null,
-            'reviewed_by' => null,
-            'reviewed_at' => null,
-        ]);
-
-        session()->flash('success', 'Logbook berhasil dikirim untuk review.');
+        $this->persist();
     }
 
     public function delete(int $logbookId): void
@@ -143,7 +145,7 @@ class Index extends Component
         $logbook = auth()->user()->logbooks()->findOrFail($logbookId);
 
         if (! $logbook->isEditable()) {
-            session()->flash('error', 'Logbook yang sudah dikirim tidak dapat dihapus.');
+            session()->flash('error', 'Logbook yang sudah terkunci tidak dapat dihapus.');
 
             return;
         }
@@ -154,7 +156,7 @@ class Index extends Component
 
     public function resetFilters(): void
     {
-        $this->reset(['status', 'search']);
+        $this->reset('search');
         $this->resetPage();
     }
 
@@ -164,9 +166,7 @@ class Index extends Component
         $profile = auth()->user()->internProfile;
 
         $logbooks = Logbook::query()
-            ->with('reviewer')
             ->where('user_id', $userId)
-            ->when($this->status !== '', fn ($query) => $query->where('status', $this->status))
             ->when($this->search !== '', function ($query) {
                 $search = '%'.$this->search.'%';
                 $query->where(fn ($q) => $q
@@ -177,22 +177,19 @@ class Index extends Component
             ->latest()
             ->paginate(8);
 
-        $counts = Logbook::query()
-            ->where('user_id', $userId)
-            ->selectRaw('status, count(*) as total')
-            ->groupBy('status')
-            ->pluck('total', 'status');
+        $exportService = app(LogbookExportService::class);
 
         return view('livewire.mahasiswa.logbooks.index', [
             'logbooks' => $logbooks,
-            'counts' => $counts,
-            'statuses' => LogbookStatus::cases(),
             'profile' => $profile,
-            'total' => $counts->sum(),
+            'total' => Logbook::query()->where('user_id', $userId)->count(),
+            'progress' => app(LogbookProgressService::class)->for(auth()->user()),
+            'exportOpen' => $profile ? $exportService->canExport($profile) : false,
+            'exportOpensAt' => $profile ? $exportService->opensAt($profile) : null,
         ]);
     }
 
-    private function persist(LogbookStatus $status): void
+    private function persist(): void
     {
         $userId = auth()->id();
         $profile = auth()->user()->internProfile;
@@ -202,7 +199,7 @@ class Index extends Component
             : null;
 
         if ($logbook && ! $logbook->isEditable()) {
-            session()->flash('error', 'Logbook ini tidak dapat diubah karena sudah dikirim.');
+            session()->flash('error', 'Logbook ini tidak dapat diubah karena sudah terkunci.');
 
             return;
         }
@@ -265,20 +262,11 @@ class Index extends Component
             'end_time' => $this->endTime ?: null,
             'result' => $this->result ?: null,
             'obstacle' => $this->obstacle ?: null,
-            'status' => $status,
-            'review_note' => null,
-            'reviewed_by' => null,
-            'reviewed_at' => null,
         ])->save();
 
         $this->closeModal();
 
-        session()->flash(
-            'success',
-            $status === LogbookStatus::Submitted
-                ? 'Logbook berhasil dikirim untuk review.'
-                : 'Logbook berhasil disimpan sebagai draft.'
-        );
+        session()->flash('success', 'Logbook berhasil disimpan.');
     }
 
     private function resetForm(): void
