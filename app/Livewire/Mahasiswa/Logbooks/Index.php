@@ -70,6 +70,40 @@ class Index extends Component
         $this->showModal = true;
     }
 
+    public function openCreateForDate(string $date): void
+    {
+        $this->resetForm();
+        $this->resetValidation();
+
+        $profile = auth()->user()->internProfile;
+        $date = Carbon::parse($date)->startOfDay();
+
+        if ($date->greaterThan(today())) {
+            session()->flash('error', 'Logbook tidak dapat diisi untuk tanggal yang akan datang.');
+
+            return;
+        }
+
+        if ($profile && ! $date->betweenIncluded($profile->start_date, $profile->end_date)) {
+            session()->flash('error', 'Tanggal logbook harus berada di dalam periode magang.');
+
+            return;
+        }
+
+        $existing = auth()->user()->logbooks()->whereDate('date', $date->toDateString())->first();
+
+        if ($existing) {
+            $this->openEdit($existing->id);
+
+            return;
+        }
+
+        $this->date = $date->toDateString();
+        $this->startTime = Setting::get('work_start', '07:30');
+        $this->endTime = Setting::get('work_end', '16:00');
+        $this->showModal = true;
+    }
+
     public function openEdit(int $logbookId): void
     {
         $logbook = auth()->user()->logbooks()->findOrFail($logbookId);

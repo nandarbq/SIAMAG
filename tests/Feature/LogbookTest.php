@@ -76,6 +76,47 @@ class LogbookTest extends TestCase
         $this->assertSame('Aktivitas baru', $logbook->fresh()->activity);
     }
 
+    public function test_student_can_open_a_missing_logbook_date(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreateForDate', '2026-11-05')
+            ->assertSet('showModal', true)
+            ->assertSet('date', '2026-11-05');
+    }
+
+    public function test_student_cannot_open_a_future_or_out_of_period_logbook_date(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreateForDate', '2026-11-10')
+            ->assertSet('showModal', false);
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreateForDate', '2026-10-31')
+            ->assertSet('showModal', false);
+    }
+
+    public function test_opening_an_existing_missing_date_loads_it_for_editing(): void
+    {
+        $student = $this->makeStudent();
+
+        $logbook = Logbook::factory()->for($student)->create([
+            'date' => '2026-11-08',
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreateForDate', '2026-11-08')
+            ->assertSet('showModal', true)
+            ->assertSet('logbookId', $logbook->id);
+    }
+
     public function test_student_cannot_create_two_logbooks_on_the_same_date(): void
     {
         $student = $this->makeStudent();
