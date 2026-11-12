@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\AttendanceStatus;
+use App\Livewire\Mahasiswa\Logbooks\Index as StudentLogbookIndex;
 use App\Models\Attendance;
 use App\Models\Holiday;
 use App\Models\Logbook;
@@ -10,6 +11,7 @@ use App\Models\User;
 use App\Services\LogbookProgressService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class LogbookProgressTest extends TestCase
@@ -127,6 +129,20 @@ class LogbookProgressTest extends TestCase
         $this->assertSame(1, $progress['filled']);
         $this->assertSame(['2026-11-03'], $progress['missing_dates']);
         $this->assertSame('outside', $progress['today_status']);
+    }
+
+    public function test_logbook_page_renders_progress_and_missing_dates(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+        $this->attendance($student, '2026-11-03', AttendanceStatus::Hadir);
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->assertSee('Ada 1 hari kerja yang belum diisi logbook.')
+            ->assertSee('03 Nov')
+            ->assertSee('Belum absen');
     }
 
     private function makeStudent(): User
