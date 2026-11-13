@@ -9,3 +9,4 @@ Artisan::command('inspire', function () {
 })->purpose('Display an inspiring quote');
 
 Schedule::command('attendance:prune-photos')->dailyAt('02:00');
+Schedule::command('attendance:sync-ongoing-sick-leaves')->dailyAt('00:05');
