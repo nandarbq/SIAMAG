@@ -23,7 +23,7 @@ class PrivateFileAccessTest extends TestCase
         Storage::fake('local');
     }
 
-    public function test_owner_can_view_attendance_photo(): void
+    public function test_owner_cannot_view_attendance_photo(): void
     {
         $student = User::factory()->mahasiswa()->create();
         Storage::disk('local')->put('attendance/in.jpg', 'image-bytes');
@@ -37,7 +37,7 @@ class PrivateFileAccessTest extends TestCase
 
         $this->actingAs($student)
             ->get(route('attendance.photo', ['attendance' => $attendance, 'type' => 'in']))
-            ->assertOk();
+            ->assertForbidden();
     }
 
     public function test_admin_can_view_student_attendance_photo(): void
@@ -78,6 +78,7 @@ class PrivateFileAccessTest extends TestCase
 
     public function test_attendance_photo_returns_not_found_for_invalid_type_or_missing_file(): void
     {
+        $admin = User::factory()->admin()->create();
         $student = User::factory()->mahasiswa()->create();
 
         $attendance = Attendance::query()->create([
@@ -87,11 +88,11 @@ class PrivateFileAccessTest extends TestCase
             'check_in_photo' => 'attendance/missing.jpg',
         ]);
 
-        $this->actingAs($student)
+        $this->actingAs($admin)
             ->get(route('attendance.photo', ['attendance' => $attendance, 'type' => 'side']))
             ->assertNotFound();
 
-        $this->actingAs($student)
+        $this->actingAs($admin)
             ->get(route('attendance.photo', ['attendance' => $attendance, 'type' => 'in']))
             ->assertNotFound();
     }

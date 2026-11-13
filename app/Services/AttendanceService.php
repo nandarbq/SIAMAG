@@ -9,8 +9,9 @@ use App\Models\LeaveRequest;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
@@ -55,7 +56,7 @@ class AttendanceService
 
         $status = $lateMinutes > 0 ? AttendanceStatus::Terlambat : AttendanceStatus::Hadir;
 
-        $photoPath = $this->storePhoto($user, $date, $data['photo'] ?? null, 'in');
+        $photoPath = $this->resolveSelfiePath($user, $data['photo_token'] ?? null);
 
         return Attendance::query()->updateOrCreate(
             ['user_id' => $user->id, 'date' => $date->toDateString()],
@@ -96,7 +97,7 @@ class AttendanceService
 
         [$distance, $accuracy] = $this->validateLocation($data);
 
-        $photoPath = $this->storePhoto($user, $date, $data['photo'] ?? null, 'out');
+        $photoPath = $this->resolveSelfiePath($user, $data['photo_token'] ?? null);
 
         $attendance->update([
             'check_out_at' => now(),
@@ -261,12 +262,38 @@ class AttendanceService
         return [$distance, $accuracy];
     }
 
-    private function storePhoto(User $user, Carbon $date, UploadedFile|string|null $photo, string $type): ?string
+    public function storeSelfie(User $user, string $photo): string
     {
-        $requireSelfie = Setting::getBool('require_selfie', true);
+        if (! str_starts_with($photo, 'data:image/')) {
+            throw ValidationException::withMessages([
+                'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
 
-        if (! $photo) {
-            if ($requireSelfie) {
+        try {
+            $manager = ImageManager::usingDriver(Driver::class);
+            $image = $manager->decodeDataUri($photo);
+            $image = $image->scaleDown(width: 900)->encodeUsingFileExtension('jpg', quality: 80);
+        } catch (\Throwable) {
+            throw ValidationException::withMessages([
+                'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
+
+        $path = 'attendance/'.$user->id.'/'.Str::uuid().'.jpg';
+
+        Storage::disk('local')->put($path, (string) $image);
+
+        return Crypt::encryptString(json_encode([
+            'user_id' => $user->id,
+            'path' => $path,
+        ], JSON_THROW_ON_ERROR));
+    }
+
+    public function resolveSelfiePath(User $user, ?string $token): ?string
+    {
+        if (! $token) {
+            if (Setting::getBool('require_selfie', true)) {
                 throw ValidationException::withMessages([
                     'photo' => 'Foto selfie wajib diambil untuk absensi.',
                 ]);
@@ -275,26 +302,27 @@ class AttendanceService
             return null;
         }
 
-        $path = 'attendance/'.$user->id.'/'.$date->format('Y-m-d').'-'.$type.'.jpg';
-
         try {
-            $manager = ImageManager::usingDriver(Driver::class);
-
-            $image = $photo instanceof UploadedFile
-                ? $manager->decodePath($photo->getRealPath())
-                : $manager->decodeDataUri($photo);
-
-            $image = $image->scaleDown(width: 900)->encodeUsingFileExtension('jpg', quality: 80);
-
-            Storage::disk('local')->put($path, (string) $image);
+            $payload = json_decode(Crypt::decryptString($token), true, 512, JSON_THROW_ON_ERROR);
         } catch (\Throwable) {
-            if ($photo instanceof UploadedFile) {
-                $path = $photo->store('attendance/'.$user->id, 'local');
-            } else {
-                throw ValidationException::withMessages([
-                    'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
-                ]);
-            }
+            throw ValidationException::withMessages([
+                'photo' => 'Sesi foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
+
+        $userId = (int) ($payload['user_id'] ?? 0);
+        $path = $payload['path'] ?? null;
+
+        if ($userId !== $user->id || ! is_string($path) || ! str_starts_with($path, 'attendance/'.$user->id.'/')) {
+            throw ValidationException::withMessages([
+                'photo' => 'Sesi foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
+
+        if (! Storage::disk('local')->exists($path)) {
+            throw ValidationException::withMessages([
+                'photo' => 'Foto selfie tidak ditemukan. Ambil ulang foto.',
+            ]);
         }
 
         return $path;

@@ -1,4 +1,4 @@
-export default function attendanceCamera() {
+export default function attendanceCamera({ uploadUrl } = {}) {
     return {
         stream: null,
         started: false,
@@ -97,9 +97,31 @@ export default function attendanceCamera() {
             this.cameraError = null;
 
             try {
-                await this.$wire.set('photo', dataUrl);
+                const response = await fetch(uploadUrl, {
+                    method: 'POST',
+                    credentials: 'same-origin',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.content ?? '',
+                    },
+                    body: JSON.stringify({ photo: dataUrl }),
+                });
+
+                if (! response.ok) {
+                    const payload = await response.json().catch(() => null);
+                    this.cameraError = payload?.errors?.photo?.[0]
+                        ?? payload?.message
+                        ?? 'Gagal menyimpan foto selfie. Coba lagi.';
+
+                    return;
+                }
+
+                const payload = await response.json();
+
+                await this.$wire.set('photoToken', payload.token);
             } catch (error) {
-                this.cameraError = 'Gagal menyimpan foto selfie. Coba lagi.';
+                this.cameraError = 'Gagal menyimpan foto selfie. Periksa koneksi lalu coba lagi.';
             } finally {
                 this.saving = false;
             }
@@ -114,7 +136,7 @@ export default function attendanceCamera() {
         retake() {
             this.capturedUrl = null;
             this.cameraError = null;
-            this.$wire.set('photo', null);
+            this.$wire.set('photoToken', null);
             this.startCamera();
         },
 

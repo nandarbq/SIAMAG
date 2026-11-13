@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Admin\ReportExportController;
 use App\Http\Controllers\AttendancePhotoController;
+use App\Http\Controllers\AttendanceSelfieController;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaveAttachmentController;
 use App\Http\Controllers\Mahasiswa\LogbookExportController;
@@ -41,7 +42,14 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->name('logout');
 
 Route::middleware('auth')->group(function () {
-    Route::get('/attendance/{attendance}/photo/{type}', AttendancePhotoController::class)->name('attendance.photo');
+    Route::post('/attendance/selfie', AttendanceSelfieController::class)
+        ->middleware('role:mahasiswa')
+        ->name('attendance.selfie');
+
+    Route::get('/attendance/{attendance}/photo/{type}', AttendancePhotoController::class)
+        ->middleware('role:admin')
+        ->name('attendance.photo');
+
     Route::get('/leaves/{leave}/attachment', LeaveAttachmentController::class)->name('leave.attachment');
 });
 
