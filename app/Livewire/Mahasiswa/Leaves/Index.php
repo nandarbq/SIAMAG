@@ -187,30 +187,48 @@ class Index extends Component
                     $date = Carbon::parse($value)->startOfDay();
 
                     if ($date->lessThan($leave->start_date)) {
-                        $fail('Tanggal sembuh tidak boleh sebelum tanggal mulai sakit.');
+                        $fail('Tanggal kembali masuk tidak boleh sebelum tanggal mulai sakit.');
 
                         return;
                     }
 
                     if ($date->greaterThan(today())) {
-                        $fail('Tanggal sembuh tidak boleh melewati hari ini.');
+                        $fail('Tanggal kembali masuk tidak boleh melewati hari ini.');
 
                         return;
                     }
 
                     if ($profile && $date->greaterThan($profile->end_date)) {
-                        $fail('Tanggal sembuh harus berada di dalam periode magang.');
+                        $fail('Tanggal kembali masuk harus berada di dalam periode magang.');
                     }
                 },
             ],
         ], [
-            'recoveryDate.required' => 'Tanggal sembuh wajib diisi.',
+            'recoveryDate.required' => 'Tanggal kembali masuk wajib diisi.',
         ]);
 
-        $attendanceService->closeSickLeave($leave, Carbon::parse($this->recoveryDate));
+        $returnDate = Carbon::parse($this->recoveryDate);
+
+        if (! $attendanceService->closeSickLeave($leave, $returnDate)) {
+            if (! $attendanceService->cancelLeave($leave)) {
+                session()->flash('error', 'Pengajuan sakit tidak dapat dibatalkan karena sudah ada absensi masuk.');
+
+                return;
+            }
+
+            if ($leave->attachment_path) {
+                Storage::disk('local')->delete($leave->attachment_path);
+            }
+
+            $leave->delete();
+            $this->closeRecoveryModal();
+            session()->flash('success', 'Pengajuan sakit dibatalkan karena kamu kembali masuk di hari yang sama.');
+
+            return;
+        }
 
         $this->closeRecoveryModal();
-        session()->flash('success', 'Masa sakit berhasil ditutup dan absensi telah disesuaikan.');
+        session()->flash('success', 'Masa sakit ditutup sampai '.$leave->refresh()->end_date->translatedFormat('d M Y').'. Kamu sudah bisa absen masuk.');
     }
 
     public function delete(int $leaveId, AttendanceService $attendanceService): void
