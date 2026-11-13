@@ -3,7 +3,13 @@
         <div>
             <p class="page-eyebrow">Kehadiran</p>
             <h1 class="page-title">Absensi Harian</h1>
-            <p class="page-subtitle">Ambil selfie dan pastikan lokasi Anda berada di dalam area kantor.</p>
+            <p class="page-subtitle">
+                @if ($requireGeofence)
+                    Ambil selfie dan pastikan lokasi Anda berada di dalam area kantor.
+                @else
+                    Ambil selfie untuk mencatat kehadiran hari ini.
+                @endif
+            </p>
         </div>
         <div class="flex items-center gap-2 text-sm text-slate-500">
             <x-icon name="calendar" class="h-4 w-4" />
@@ -50,10 +56,17 @@
                 officeLng: {{ $officeLng }},
                 radius: {{ $radius }},
                 maxAccuracy: {{ $maxAccuracy }},
+                requireGeofence: @js($requireGeofence),
                 init() {
-                    this.locate();
+                    if (this.requireGeofence) {
+                        this.locate();
+                    }
                 },
                 locate() {
+                    if (! this.requireGeofence) {
+                        return;
+                    }
+
                     this.locating = true;
                     this.ready = false;
                     this.error = null;
@@ -101,12 +114,17 @@
                     return earth * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
                 },
             }"
-            x-init="init()"
         >
             <div class="card-header">
                 <div>
                     <h2 class="text-base font-bold text-slate-900">Ambil Kehadiran</h2>
-                    <p class="mt-0.5 text-xs text-slate-500">Foto wajah dan lokasi GPS diperlukan untuk validasi.</p>
+                    <p class="mt-0.5 text-xs text-slate-500">
+                        @if ($requireGeofence)
+                            Foto wajah dan lokasi GPS diperlukan untuk validasi.
+                        @else
+                            Foto wajah diperlukan untuk mencatat kehadiran.
+                        @endif
+                    </p>
                 </div>
                 @if ($today)
                     <x-attendance-status :status="$today->status" />
@@ -137,83 +155,140 @@
                         <p class="mt-1 text-xs text-emerald-700">Masuk {{ $today->check_in_at?->format('H:i') }} · Pulang {{ $today->check_out_at?->format('H:i') }} WIB</p>
                     </div>
                 @else
-                    <label for="attendance-photo" class="group relative flex min-h-56 cursor-pointer flex-col items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-50/70 p-4 transition hover:border-brand-300 hover:bg-brand-50/40">
-                        @if ($photo)
-                            <img src="{{ $photo->temporaryUrl() }}" alt="Pratinjau selfie" class="absolute inset-0 h-full w-full object-cover">
-                            <span class="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
-                                Ganti foto
-                            </span>
-                        @else
-                            <span class="flex h-14 w-14 items-center justify-center rounded-2xl bg-white text-brand-600 shadow-sm ring-1 ring-slate-200 transition group-hover:scale-105">
-                                <x-icon name="camera" class="h-7 w-7" />
-                            </span>
-                            <p class="mt-3 text-sm font-bold text-slate-800">Ambil atau pilih foto selfie</p>
-                            <p class="mt-1 max-w-xs text-center text-xs leading-relaxed text-slate-500">Gunakan kamera depan, pastikan wajah terlihat jelas dan pencahayaan cukup.</p>
-                            <span class="mt-4 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-slate-600 ring-1 ring-slate-200">Maksimal 5 MB</span>
-                        @endif
+                    <div x-data="attendanceCamera()" wire:key="attendance-camera" class="space-y-5">
+                        <div class="space-y-3">
+                            <div x-cloak class="relative flex min-h-56 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-950/90 p-2">
+                            <template x-if="capturedUrl">
+                                <img :src="capturedUrl" alt="Pratinjau selfie" class="absolute inset-0 h-full w-full object-cover">
+                            </template>
 
-                        <input id="attendance-photo" type="file" accept="image/*" capture="user" wire:model="photo" class="sr-only">
+                            <video x-show="started && ! capturedUrl" x-ref="video" autoplay muted playsinline class="absolute inset-0 h-full w-full object-cover"></video>
+                            <canvas x-ref="canvas" class="hidden"></canvas>
 
-                        <span wire:loading wire:target="photo" class="absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-950/60 text-xs font-semibold text-white backdrop-blur-sm">
-                            <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
-                            Mengunggah foto...
-                        </span>
-                    </label>
-
-                    <div class="rounded-2xl border border-slate-200 bg-white p-4">
-                        <div class="flex items-start gap-3">
-                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                                <x-icon name="map-pin" class="h-5 w-5" />
-                            </span>
-                            <div class="min-w-0 flex-1">
-                                <div class="flex flex-wrap items-center justify-between gap-2">
-                                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Lokasi GPS</p>
-                                    <span
-                                        class="badge"
-                                        :class="error ? 'badge-red' : (ready ? (distance <= radius ? 'badge-green' : 'badge-red') : 'badge-slate')"
-                                    >
-                                        <span x-text="error ? 'Bermasalah' : (ready ? (distance <= radius ? 'Dalam radius' : 'Di luar radius') : 'Menunggu')"></span>
-                                    </span>
+                            <div x-show="! started" class="relative flex flex-col items-center gap-3 px-4 text-center text-white">
+                                <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
+                                    <x-icon name="camera" class="h-6 w-6" />
+                                </span>
+                                <div>
+                                    <p class="text-sm font-bold">Kamera belum aktif</p>
+                                    <p class="mt-1 text-xs leading-relaxed text-slate-300">Tekan tombol mulai untuk menyalakan kamera dan mengambil selfie.</p>
                                 </div>
-
-                                <p x-show="locating" class="mt-2 text-sm font-medium text-slate-600">Mendeteksi lokasi Anda...</p>
-                                <p x-show="! locating && error" x-text="error" class="mt-2 text-xs leading-relaxed text-rose-600"></p>
-                                <p x-show="ready && ! error" class="mt-2 text-xs leading-relaxed text-slate-600">
-                                    Akurasi <span class="font-semibold text-slate-800" x-text="'± ' + accuracy + ' m'"></span>
-                                    · Jarak <span class="font-semibold text-slate-800" x-text="distance + ' m'"></span>
-                                    dari kantor
-                                </p>
-                                <p x-show="ready && accuracy > maxAccuracy" class="mt-1 text-xs font-semibold text-amber-600">
-                                    Akurasi GPS melebihi batas {{ $maxAccuracy }} m. Coba di area terbuka.
-                                </p>
+                                <button type="button" @click="startCamera()" class="btn-primary btn-sm">
+                                    <x-icon name="camera" class="h-4 w-4" />
+                                    {{ $today?->check_in_at ? 'Mulai Absen Pulang' : 'Mulai Absen' }}
+                                </button>
                             </div>
-                            <button type="button" @click="locate()" class="btn-ghost btn-sm shrink-0" title="Perbarui lokasi">
-                                <x-icon name="refresh" class="h-4 w-4" />
-                                <span class="hidden sm:inline">Perbarui</span>
-                            </button>
+
+                            <div x-show="started && ! cameraReady && ! capturedUrl && ! cameraError" class="relative flex flex-col items-center gap-2 text-center text-xs font-semibold text-white">
+                                <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                                Menyiapkan kamera...
+                            </div>
+
+                            <div x-show="started && cameraError" class="relative mx-4 rounded-2xl bg-rose-50/95 px-4 py-3 text-center text-xs font-medium leading-relaxed text-rose-700 shadow-sm">
+                                <p x-text="cameraError"></p>
+                            </div>
+
+                            <div x-show="saving" class="absolute inset-x-0 bottom-0 bg-slate-950/70 px-4 py-3 text-center text-xs font-semibold text-white backdrop-blur-sm">
+                                Menyimpan foto...
+                            </div>
+
+                            <span x-show="capturedUrl && ! saving" class="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                                Selfie siap digunakan
+                            </span>
+                        </div>
+
+                        <div class="flex flex-wrap items-center justify-between gap-2">
+                            <p class="text-xs leading-relaxed text-slate-500">Gunakan kamera depan, pastikan wajah terlihat jelas dan pencahayaan cukup.</p>
+
+                            <div class="flex gap-2">
+                                <button type="button" x-show="started && cameraReady && ! capturedUrl" @click="capture()" class="btn-primary btn-sm">
+                                    <x-icon name="camera" class="h-4 w-4" />
+                                    Ambil Foto
+                                </button>
+                                <button type="button" x-show="started && cameraError && ! cameraReady && ! capturedUrl" @click="startCamera()" class="btn-secondary btn-sm">
+                                    <x-icon name="refresh" class="h-4 w-4" />
+                                    Coba Lagi
+                                </button>
+                                <button type="button" x-show="cameraError && capturedUrl && ! saving" @click="retryUpload()" class="btn-primary btn-sm">
+                                    <x-icon name="refresh" class="h-4 w-4" />
+                                    Simpan Ulang
+                                </button>
+                                <button type="button" x-show="capturedUrl && ! saving" @click="retake()" class="btn-secondary btn-sm">
+                                    <x-icon name="refresh" class="h-4 w-4" />
+                                    Ambil Ulang
+                                </button>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="flex flex-col gap-2 border-t border-slate-100 pt-5">
-                        @if (! $today?->check_in_at)
-                            <button type="button" wire:click="checkIn" wire:loading.attr="disabled" wire:target="checkIn" class="btn-primary w-full">
-                                <x-icon name="camera" class="h-4 w-4" />
-                                <span wire:loading.remove wire:target="checkIn">Absen Masuk</span>
-                                <span wire:loading wire:target="checkIn">Menyimpan absensi...</span>
-                            </button>
-                        @elseif (! $today?->check_out_at)
-                            <button type="button" wire:click="checkOut" wire:loading.attr="disabled" wire:target="checkOut" class="btn-primary w-full">
-                                <x-icon name="logout" class="h-4 w-4" />
-                                <span wire:loading.remove wire:target="checkOut">Absen Pulang</span>
-                                <span wire:loading wire:target="checkOut">Menyimpan absensi...</span>
-                            </button>
-                        @endif
-                        <p class="text-center text-[11px] text-slate-400">
-                            Jam kerja {{ \App\Models\Setting::get('work_start', '07:30') }} — {{ \App\Models\Setting::get('work_end', '16:00') }} WIB.
-                            @if ($requireGeofence)
-                                Radius kantor {{ $radius }} m.
+                    @if ($requireGeofence)
+                        <div class="rounded-2xl border border-slate-200 bg-white p-4">
+                            <div class="flex items-start gap-3">
+                                <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
+                                    <x-icon name="map-pin" class="h-5 w-5" />
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Lokasi GPS</p>
+                                        <span
+                                            class="badge"
+                                            :class="error ? 'badge-red' : (ready ? (distance <= radius ? 'badge-green' : 'badge-red') : 'badge-slate')"
+                                        >
+                                            <span x-text="error ? 'Bermasalah' : (ready ? (distance <= radius ? 'Dalam radius' : 'Di luar radius') : 'Menunggu')"></span>
+                                        </span>
+                                    </div>
+
+                                    <p x-show="locating" class="mt-2 text-sm font-medium text-slate-600">Mendeteksi lokasi Anda...</p>
+                                    <p x-show="! locating && error" x-text="error" class="mt-2 text-xs leading-relaxed text-rose-600"></p>
+                                    <p x-show="ready && ! error" class="mt-2 text-xs leading-relaxed text-slate-600">
+                                        Akurasi <span class="font-semibold text-slate-800" x-text="'± ' + accuracy + ' m'"></span>
+                                        · Jarak <span class="font-semibold text-slate-800" x-text="distance + ' m'"></span>
+                                        dari kantor
+                                    </p>
+                                    <p x-show="ready && accuracy > maxAccuracy" class="mt-1 text-xs font-semibold text-amber-600">
+                                        Akurasi GPS melebihi batas {{ $maxAccuracy }} m. Coba di area terbuka.
+                                    </p>
+                                </div>
+                                <button type="button" @click="locate()" class="btn-ghost btn-sm shrink-0" title="Perbarui lokasi">
+                                    <x-icon name="refresh" class="h-4 w-4" />
+                                    <span class="hidden sm:inline">Perbarui</span>
+                                </button>
+                            </div>
+                        </div>
+                    @else
+                        <div class="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 p-4 text-sky-800">
+                            <x-icon name="shield" class="mt-0.5 h-5 w-5 shrink-0" />
+                            <div>
+                                <p class="text-sm font-semibold">Validasi radius sedang dinonaktifkan admin</p>
+                                <p class="mt-1 text-xs leading-relaxed">Anda tetap bisa melakukan absensi dari lokasi mana pun. GPS tidak diwajibkan.</p>
+                            </div>
+                        </div>
+                    @endif
+
+                        <div class="flex flex-col gap-2 border-t border-slate-100 pt-5">
+                            @if (! $today?->check_in_at)
+                                <button type="button" wire:click="checkIn" wire:loading.attr="disabled" wire:target="checkIn" x-bind:disabled="saving || ! @js($photoReady)" class="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60">
+                                    <x-icon name="camera" class="h-4 w-4" />
+                                    <span wire:loading.remove wire:target="checkIn">Absen Masuk</span>
+                                    <span wire:loading wire:target="checkIn">Menyimpan absensi...</span>
+                                </button>
+                            @elseif (! $today?->check_out_at)
+                                <button type="button" wire:click="checkOut" wire:loading.attr="disabled" wire:target="checkOut" x-bind:disabled="saving || ! @js($photoReady)" class="btn-primary w-full disabled:cursor-not-allowed disabled:opacity-60">
+                                    <x-icon name="logout" class="h-4 w-4" />
+                                    <span wire:loading.remove wire:target="checkOut">Absen Pulang</span>
+                                    <span wire:loading wire:target="checkOut">Menyimpan absensi...</span>
+                                </button>
                             @endif
-                        </p>
+                            @if (! $photoReady)
+                                <p class="text-center text-xs font-medium text-amber-600">Ambil foto selfie terlebih dahulu.</p>
+                            @endif
+                            <p class="text-center text-[11px] text-slate-400">
+                                Jam kerja {{ \App\Models\Setting::get('work_start', '07:30') }} — {{ \App\Models\Setting::get('work_end', '16:00') }} WIB.
+                                @if ($requireGeofence)
+                                    Radius kantor {{ $radius }} m.
+                                @endif
+                            </p>
+                        </div>
                     </div>
                 @endif
             </div>
@@ -254,14 +329,16 @@
                             <span class="text-slate-500">Keterlambatan</span>
                             <span class="font-semibold text-slate-800">{{ $today?->late_minutes ? $today->late_minutes.' menit' : '—' }}</span>
                         </div>
-                        <div class="flex items-center justify-between px-4 py-3 text-sm">
-                            <span class="text-slate-500">Jarak absen masuk</span>
-                            <span class="font-semibold text-slate-800">{{ $today?->check_in_distance !== null ? $today->check_in_distance.' m' : '—' }}</span>
-                        </div>
-                        <div class="flex items-center justify-between px-4 py-3 text-sm">
-                            <span class="text-slate-500">Jarak absen pulang</span>
-                            <span class="font-semibold text-slate-800">{{ $today?->check_out_distance !== null ? $today->check_out_distance.' m' : '—' }}</span>
-                        </div>
+                        @if ($requireGeofence)
+                            <div class="flex items-center justify-between px-4 py-3 text-sm">
+                                <span class="text-slate-500">Jarak absen masuk</span>
+                                <span class="font-semibold text-slate-800">{{ $today?->check_in_distance !== null ? $today->check_in_distance.' m' : '—' }}</span>
+                            </div>
+                            <div class="flex items-center justify-between px-4 py-3 text-sm">
+                                <span class="text-slate-500">Jarak absen pulang</span>
+                                <span class="font-semibold text-slate-800">{{ $today?->check_out_distance !== null ? $today->check_out_distance.' m' : '—' }}</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </div>
@@ -270,7 +347,13 @@
                 <div class="card-header">
                     <div>
                         <h2 class="text-base font-bold text-slate-900">Lokasi Kantor</h2>
-                        <p class="mt-0.5 text-xs text-slate-500">Titik pusat validasi absensi</p>
+                        <p class="mt-0.5 text-xs text-slate-500">
+                            @if ($requireGeofence)
+                                Titik pusat validasi absensi
+                            @else
+                                Informasi lokasi kantor
+                            @endif
+                        </p>
                     </div>
                     <span class="stat-icon bg-brand-50 text-brand-600"><x-icon name="building" class="h-5 w-5" /></span>
                 </div>
@@ -287,10 +370,17 @@
                             <p class="mt-0.5 font-semibold text-slate-700">{{ $officeLng }}</p>
                         </div>
                     </div>
-                    <div class="flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2.5 text-xs text-brand-700">
-                        <x-icon name="shield" class="h-4 w-4 shrink-0" />
-                        <p>Absensi valid jika berada dalam radius {{ $radius }} m dan akurasi GPS maksimal {{ $maxAccuracy }} m.</p>
-                    </div>
+                    @if ($requireGeofence)
+                        <div class="flex items-center gap-2 rounded-xl bg-brand-50 px-3 py-2.5 text-xs text-brand-700">
+                            <x-icon name="shield" class="h-4 w-4 shrink-0" />
+                            <p>Absensi valid jika berada dalam radius {{ $radius }} m dan akurasi GPS maksimal {{ $maxAccuracy }} m.</p>
+                        </div>
+                    @else
+                        <div class="flex items-center gap-2 rounded-xl bg-sky-50 px-3 py-2.5 text-xs text-sky-700">
+                            <x-icon name="shield" class="h-4 w-4 shrink-0" />
+                            <p>Validasi radius sedang dinonaktifkan admin. Absensi tidak dibatasi jarak dari kantor.</p>
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

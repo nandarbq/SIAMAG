@@ -70,6 +70,19 @@ class AttendanceTest extends TestCase
         ]));
     }
 
+    public function test_check_in_outside_the_geofence_is_allowed_when_disabled(): void
+    {
+        Setting::put('require_geofence', '0');
+
+        $attendance = app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
+            'lat' => self::OFFICE_LAT + 0.01,
+        ]));
+
+        $this->assertSame(AttendanceStatus::Hadir, $attendance->status);
+        $this->assertNull($attendance->check_in_distance);
+        $this->assertNull($attendance->check_in_accuracy);
+    }
+
     public function test_check_in_without_accuracy_is_rejected_when_geofence_is_required(): void
     {
         $this->expectException(ValidationException::class);
@@ -97,6 +110,15 @@ class AttendanceTest extends TestCase
         ]));
     }
 
+    public function test_check_in_rejects_invalid_photo_data_uri(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
+            'photo' => 'data:image/jpeg;base64,not-an-image',
+        ]));
+    }
+
     public function test_check_out_requires_a_previous_check_in(): void
     {
         $this->expectException(ValidationException::class);
@@ -119,6 +141,42 @@ class AttendanceTest extends TestCase
         Storage::disk('local')->assertExists($attendance->check_out_photo);
     }
 
+    public function test_check_in_without_gps_data_is_allowed_when_disabled(): void
+    {
+        Setting::put('require_geofence', '0');
+
+        $attendance = app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
+            'lat' => null,
+            'lng' => null,
+            'accuracy' => null,
+        ]));
+
+        $this->assertSame(AttendanceStatus::Hadir, $attendance->status);
+        $this->assertNull($attendance->check_in_lat);
+        $this->assertNull($attendance->check_in_lng);
+        $this->assertNull($attendance->check_in_distance);
+        $this->assertNull($attendance->check_in_accuracy);
+    }
+
+    public function test_check_out_outside_the_geofence_is_allowed_when_disabled(): void
+    {
+        Setting::put('require_geofence', '0');
+
+        $student = $this->makeStudent();
+        $service = app(AttendanceService::class);
+
+        $service->checkIn($student, $this->payload());
+        $this->travelTo(Carbon::parse('2026-11-09 16:05:00', 'Asia/Jakarta'));
+
+        $attendance = $service->checkOut($student, $this->payload([
+            'lat' => self::OFFICE_LAT + 0.01,
+        ]));
+
+        $this->assertNotNull($attendance->check_out_at);
+        $this->assertNull($attendance->check_out_distance);
+        $this->assertNull($attendance->check_out_accuracy);
+    }
+
     private function makeStudent(): User
     {
         $student = User::factory()->mahasiswa()->create();
@@ -139,7 +197,14 @@ class AttendanceTest extends TestCase
             'lat' => self::OFFICE_LAT,
             'lng' => self::OFFICE_LNG,
             'accuracy' => 10,
-            'photo' => UploadedFile::fake()->image('selfie.jpg', 600, 600),
+            'photo' => $this->selfieDataUri(),
         ], $overrides);
+    }
+
+    private function selfieDataUri(): string
+    {
+        $image = UploadedFile::fake()->image('selfie.jpg', 600, 600)->getContent();
+
+        return 'data:image/jpeg;base64,'.base64_encode($image);
     }
 }

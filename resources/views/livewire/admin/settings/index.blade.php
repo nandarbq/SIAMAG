@@ -53,16 +53,16 @@
                     Buka Maps
                 </a>
             </div>
-            <div class="card-body">
+            <div class="card-body" x-data="officeMapPicker({ lat: {{ (float) $office_lat }}, lng: {{ (float) $office_lng }} })">
                 <div class="grid gap-5 sm:grid-cols-2">
                     <div>
                         <label class="label">Latitude</label>
-                        <input wire:model="office_lat" type="text" class="input" placeholder="-8.2192000">
+                        <input x-ref="officeLat" x-on:input.debounce.400ms="syncFromInputs()" wire:model="office_lat" type="text" class="input" placeholder="-8.2192000">
                         @error('office_lat') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
                         <label class="label">Longitude</label>
-                        <input wire:model="office_lng" type="text" class="input" placeholder="114.3692000">
+                        <input x-ref="officeLng" x-on:input.debounce.400ms="syncFromInputs()" wire:model="office_lng" type="text" class="input" placeholder="114.3692000">
                         @error('office_lng') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
@@ -77,28 +77,27 @@
                     </div>
                 </div>
 
-                <div
-                    x-data="{
-                        locate() {
-                            if (!navigator.geolocation) {
-                                alert('Browser tidak mendukung geolocation.');
-                                return;
-                            }
-                            navigator.geolocation.getCurrentPosition((position) => {
-                                $wire.set('office_lat', position.coords.latitude.toFixed(7));
-                                $wire.set('office_lng', position.coords.longitude.toFixed(7));
-                            }, () => alert('Gagal mendeteksi lokasi. Pastikan izin lokasi aktif.'), { enableHighAccuracy: true });
-                        }
-                    }"
-                    class="mt-5 flex items-start gap-3 rounded-xl border border-brand-100 bg-brand-50/60 p-4"
-                >
+                <div wire:ignore class="mt-5">
+                    <div x-ref="map" class="h-72 w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100"></div>
+                    <p class="mt-2 text-xs text-slate-500">Klik peta atau geser pin untuk memilih titik pusat kantor.</p>
+                </div>
+
+                <div class="mt-5 flex items-start gap-3 rounded-xl border border-brand-100 bg-brand-50/60 p-4">
                     <x-icon name="map-pin" class="mt-0.5 h-5 w-5 shrink-0 text-brand-600" />
                     <div class="flex-1">
                         <p class="text-sm font-semibold text-brand-900">Gunakan lokasi perangkat saat ini</p>
-                        <p class="mt-0.5 text-xs text-brand-700">Buka aplikasi dari lokasi kantor, lalu klik tombol untuk mengisi koordinat otomatis.</p>
+                        <p class="mt-0.5 text-xs text-brand-700">Buka aplikasi dari lokasi kantor, lalu klik tombol untuk mengisi koordinat dan memindahkan pin.</p>
                     </div>
-                    <button type="button" @click="locate()" class="btn-primary btn-sm shrink-0">Deteksi</button>
+                    <button type="button" @click="locateDevice()" class="btn-primary btn-sm shrink-0">Deteksi</button>
                 </div>
+
+                <label class="mt-5 flex items-start gap-3 rounded-xl border border-slate-200 px-4 py-3">
+                    <input wire:model="require_geofence" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30">
+                    <span>
+                        <span class="block text-sm font-semibold text-slate-700">Aktifkan validasi radius kantor</span>
+                        <span class="block text-xs text-slate-500">Jika dimatikan, absensi tetap bisa dilakukan di luar radius dan GPS tidak diwajibkan. Nilai radius di atas diabaikan.</span>
+                    </span>
+                </label>
             </div>
         </div>
 
@@ -146,8 +145,8 @@
                             <x-icon name="shield" class="h-5 w-5" />
                         </span>
                         <div>
-                            <h2 class="text-base font-bold text-slate-900">Validasi Absensi</h2>
-                            <p class="text-xs text-slate-500">Kontrol persyaratan saat mahasiswa absen.</p>
+                            <h2 class="text-base font-bold text-slate-900">Validasi Selfie</h2>
+                            <p class="text-xs text-slate-500">Kontrol persyaratan foto saat mahasiswa absen.</p>
                         </div>
                     </div>
                 </div>
@@ -157,13 +156,6 @@
                         <span>
                             <span class="block text-sm font-semibold text-slate-700">Wajib selfie</span>
                             <span class="block text-xs text-slate-500">Mahasiswa harus mengambil foto saat absen masuk dan pulang.</span>
-                        </span>
-                    </label>
-                    <label class="flex items-start gap-3 rounded-xl border border-slate-200 px-4 py-3">
-                        <input wire:model="require_geofence" type="checkbox" class="mt-0.5 h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30">
-                        <span>
-                            <span class="block text-sm font-semibold text-slate-700">Wajib dalam radius kantor</span>
-                            <span class="block text-xs text-slate-500">Absensi ditolak jika lokasi berada di luar radius yang ditentukan.</span>
                         </span>
                     </label>
                 </div>
