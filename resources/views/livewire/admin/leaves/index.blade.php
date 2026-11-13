@@ -1,11 +1,11 @@
 <div class="space-y-6">
     <div>
-        <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">Persetujuan</p>
+        <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">Monitoring</p>
         <h1 class="page-title mt-1">Izin & Sakit</h1>
-        <p class="page-subtitle">Tinjau pengajuan ketidakhadiran mahasiswa dan perbarui absensi otomatis.</p>
+        <p class="page-subtitle">Pantau pengajuan ketidakhadiran yang tercatat otomatis pada absensi mahasiswa.</p>
     </div>
 
-    <div class="grid gap-3 sm:grid-cols-3">
+    <div class="grid gap-3 sm:grid-cols-2">
         @foreach ($statuses as $statusOption)
             @php($count = (int) ($counts[$statusOption->value] ?? 0))
             <button
@@ -67,8 +67,10 @@
                                 <span class="{{ $leave->type === \App\Enums\LeaveType::Izin ? 'badge-blue' : 'badge-amber' }}">{{ $leave->type->label() }}</span>
                             </td>
                             <td class="table-td">
-                                <p class="whitespace-nowrap text-sm font-medium text-slate-700">{{ $leave->start_date?->translatedFormat('d M Y') }}</p>
-                                <p class="text-xs text-slate-400">{{ $leave->totalDays() }} hari</p>
+                                <p class="whitespace-nowrap text-sm font-medium text-slate-700">{{ $leave->periodLabel() }}</p>
+                                <p class="text-xs text-slate-400">
+                                    {{ $leave->isOngoing() ? 'Berlangsung' : $leave->totalDays().' hari' }}
+                                </p>
                             </td>
                             <td class="table-td">
                                 <p class="max-w-xs truncate text-sm text-slate-600">{{ $leave->reason }}</p>
@@ -88,7 +90,7 @@
                             <td colspan="6" class="empty-state">
                                 <x-icon name="calendar" class="h-10 w-10 text-slate-300" />
                                 <p class="font-semibold text-slate-600">Tidak ada pengajuan</p>
-                                <p class="text-xs">Belum ada data pada filter yang dipilih.</p>
+                                <p class="text-xs">Belum ada pengajuan tercatat pada filter yang dipilih.</p>
                             </td>
                         </tr>
                     @endforelse
@@ -132,7 +134,9 @@
                         </div>
                         <div class="rounded-xl bg-slate-50 p-3">
                             <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Selesai</p>
-                            <p class="mt-1 text-sm font-semibold text-slate-700">{{ $reviewing->end_date?->translatedFormat('d M Y') }}</p>
+                            <p class="mt-1 text-sm font-semibold text-slate-700">
+                                {{ $reviewing->isOngoing() ? 'Masih berlangsung' : $reviewing->end_date?->translatedFormat('d M Y') }}
+                            </p>
                         </div>
                     </div>
 
@@ -151,35 +155,16 @@
                         </div>
                     @endif
 
-                    @if ($reviewing->status === \App\Enums\LeaveStatus::Pending)
-                        <div class="border-t border-slate-100 pt-4">
-                            <label class="label">Catatan Review</label>
-                            <textarea wire:model="reviewNote" rows="3" class="input" placeholder="Catatan persetujuan atau alasan penolakan..."></textarea>
-                            @error('reviewNote') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
-
-                            <div class="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
-                                <button type="button" wire:click="reject({{ $reviewing->id }})" class="btn-danger">
-                                    <x-icon name="x" class="h-4 w-4" />
-                                    Tolak
-                                </button>
-                                <button type="button" wire:click="approve({{ $reviewing->id }})" class="btn-primary">
-                                    <x-icon name="check-circle" class="h-4 w-4" />
-                                    Setujui
-                                </button>
-                            </div>
+                    <div class="rounded-xl bg-slate-50 p-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Status</span>
+                            <x-leave-status :status="$reviewing->status" />
                         </div>
-                    @else
-                        <div class="rounded-xl bg-slate-50 p-4">
-                            <div class="flex items-center gap-2">
-                                <span class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Status</span>
-                                <x-leave-status :status="$reviewing->status" />
-                            </div>
-                            @if ($reviewing->review_note)
-                                <p class="mt-2 text-sm text-slate-700">{{ $reviewing->review_note }}</p>
-                            @endif
-                            <p class="mt-2 text-xs text-slate-400">Diproses {{ $reviewing->reviewed_at?->translatedFormat('d M Y H:i') }}</p>
-                        </div>
-                    @endif
+                        @if ($reviewing->review_note)
+                            <p class="mt-2 text-sm text-slate-700">{{ $reviewing->review_note }}</p>
+                        @endif
+                        <p class="mt-2 text-xs text-slate-400">Dicatat {{ $reviewing->created_at?->translatedFormat('d M Y H:i') }}</p>
+                    </div>
                 </div>
             </div>
         </div>
