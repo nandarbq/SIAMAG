@@ -50,6 +50,18 @@ class AttendanceSelfieTest extends TestCase
         $response->assertOk()->assertJsonStructure(['token']);
     }
 
+    public function test_student_can_upload_png_selfie(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        $response = $this->actingAs($student)
+            ->postJson(route('attendance.selfie'), [
+                'photo' => $this->selfieDataUri(600, 600, 'png'),
+            ]);
+
+        $response->assertOk()->assertJsonStructure(['token']);
+    }
+
     public function test_selfie_upload_rejects_invalid_image_data(): void
     {
         $student = User::factory()->mahasiswa()->create();
@@ -57,6 +69,30 @@ class AttendanceSelfieTest extends TestCase
         $this->actingAs($student)
             ->postJson(route('attendance.selfie'), [
                 'photo' => 'data:image/jpeg;base64,not-an-image',
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('photo');
+    }
+
+    public function test_selfie_upload_rejects_non_image_binary(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        $this->actingAs($student)
+            ->postJson(route('attendance.selfie'), [
+                'photo' => 'data:image/jpeg;base64,'.base64_encode('not an image'),
+            ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('photo');
+    }
+
+    public function test_selfie_upload_rejects_unsupported_mime_type(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        $this->actingAs($student)
+            ->postJson(route('attendance.selfie'), [
+                'photo' => 'data:image/gif;base64,'.base64_encode('not an image'),
             ])
             ->assertUnprocessable()
             ->assertJsonValidationErrors('photo');
@@ -73,10 +109,11 @@ class AttendanceSelfieTest extends TestCase
             ->assertForbidden();
     }
 
-    private function selfieDataUri(int $width = 600, int $height = 600): string
+    private function selfieDataUri(int $width = 600, int $height = 600, string $format = 'jpg'): string
     {
-        $image = UploadedFile::fake()->image('selfie.jpg', $width, $height)->getContent();
+        $image = UploadedFile::fake()->image('selfie.'.$format, $width, $height)->getContent();
+        $mimeType = $format === 'png' ? 'image/png' : 'image/jpeg';
 
-        return 'data:image/jpeg;base64,'.base64_encode($image);
+        return 'data:'.$mimeType.';base64,'.base64_encode($image);
     }
 }
