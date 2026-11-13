@@ -350,6 +350,8 @@ class LeaveTest extends TestCase
 
     public function test_student_can_mark_ongoing_sick_leave_as_recovered(): void
     {
+        $this->travelTo(Carbon::parse('2026-11-11 10:00:00', 'Asia/Jakarta'));
+
         $student = $this->makeStudent();
 
         $leave = LeaveRequest::query()->create([
@@ -365,12 +367,12 @@ class LeaveTest extends TestCase
             ->test(StudentLeaveIndex::class)
             ->call('openRecovery', $leave->id)
             ->assertSet('showRecoveryModal', true)
-            ->set('recoveryDate', '2026-11-09')
+            ->set('recoveryDate', '2026-11-11')
             ->call('markRecovered')
             ->assertHasNoErrors()
             ->assertSet('showRecoveryModal', false);
 
-        $this->assertSame('2026-11-09', $leave->refresh()->end_date->toDateString());
+        $this->assertSame('2026-11-10', $leave->refresh()->end_date->toDateString());
     }
 
     public function test_recovery_date_cannot_be_in_the_future(): void
@@ -438,7 +440,7 @@ class LeaveTest extends TestCase
         $this->assertSame(AttendanceStatus::Sakit, $attendance->status);
     }
 
-    public function test_recovery_closes_ongoing_sick_leave_and_removes_future_attendance(): void
+    public function test_recovery_closes_sick_leave_before_return_date_and_removes_return_day_attendance(): void
     {
         $student = $this->makeStudent();
 
@@ -469,11 +471,15 @@ class LeaveTest extends TestCase
 
         app(AttendanceService::class)->closeSickLeave($leave, Carbon::parse('2026-11-10'));
 
-        $this->assertSame('2026-11-10', $leave->refresh()->end_date->toDateString());
+        $this->assertSame('2026-11-09', $leave->refresh()->end_date->toDateString());
         $this->assertDatabaseHas('attendances', [
             'user_id' => $student->id,
-            'date' => '2026-11-10 00:00:00',
+            'date' => '2026-11-09 00:00:00',
             'status' => AttendanceStatus::Sakit->value,
+        ]);
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $student->id,
+            'date' => '2026-11-10 00:00:00',
         ]);
         $this->assertDatabaseMissing('attendances', [
             'user_id' => $student->id,
