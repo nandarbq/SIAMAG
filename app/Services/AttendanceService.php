@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
 use App\Models\Attendance;
 use App\Models\Holiday;
@@ -288,6 +289,22 @@ class AttendanceService
         if (! $this->isWorkday($date)) {
             throw ValidationException::withMessages([
                 'attendance' => 'Hari ini bukan hari kerja atau merupakan hari libur.',
+            ]);
+        }
+
+        $leave = LeaveRequest::query()
+            ->where('user_id', $user->id)
+            ->where('status', LeaveStatus::Approved->value)
+            ->whereDate('start_date', '<=', $date)
+            ->where(function ($query) use ($date) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $date);
+            })
+            ->first();
+
+        if ($leave) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Anda tercatat '.$leave->type->label().' pada hari ini sehingga tidak perlu absen.',
             ]);
         }
     }

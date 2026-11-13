@@ -483,6 +483,28 @@ class LeaveTest extends TestCase
         ]);
     }
 
+    public function test_student_cannot_check_in_during_ongoing_sick_leave(): void
+    {
+        $student = $this->makeStudent();
+
+        LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        $this->expectException(ValidationException::class);
+
+        app(AttendanceService::class)->checkIn($student, [
+            'lat' => -8.2192,
+            'lng' => 114.3692,
+            'accuracy' => 10,
+        ]);
+    }
+
     private function makeStudent(): User
     {
         $student = User::factory()->mahasiswa()->create();
