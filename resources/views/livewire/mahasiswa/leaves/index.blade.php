@@ -3,7 +3,7 @@
         <div>
             <p class="page-eyebrow">Perizinan</p>
             <h1 class="page-title">Izin & Sakit</h1>
-            <p class="page-subtitle">Ajukan ketidakhadiran dengan alasan yang jelas dan lampiran pendukung.</p>
+            <p class="page-subtitle">Catat ketidakhadiran dengan alasan yang jelas dan lampiran pendukung.</p>
         </div>
         <button type="button" wire:click="openCreate" class="btn-primary">
             <x-icon name="plus" class="h-4 w-4" />
@@ -108,6 +108,11 @@
                                             <x-icon name="document" class="h-4 w-4" />
                                         </a>
                                     @endif
+                                    @if ($leave->type === App\Enums\LeaveType::Sakit && $leave->isOngoing() && $leave->status === App\Enums\LeaveStatus::Approved)
+                                        <button type="button" wire:click="openRecovery({{ $leave->id }})" class="btn-ghost btn-sm text-emerald-600 hover:bg-emerald-50" title="Saya sudah sembuh">
+                                            <x-icon name="check-circle" class="h-4 w-4" />
+                                        </button>
+                                    @endif
                                     @if ($leave->status === App\Enums\LeaveStatus::Pending)
                                         <button type="button" wire:click="delete({{ $leave->id }})" wire:confirm="Hapus pengajuan ini?" class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50" title="Hapus pengajuan">
                                             <x-icon name="trash" class="h-4 w-4" />
@@ -145,7 +150,7 @@
                     <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
                         <div>
                             <h2 class="text-lg font-bold text-slate-900">Ajukan Izin atau Sakit</h2>
-                            <p class="mt-0.5 text-xs text-slate-500">Admin akan meninjau pengajuan Anda.</p>
+                            <p class="mt-0.5 text-xs text-slate-500">Pengajuan langsung dicatat tanpa persetujuan admin.</p>
                         </div>
                         <button type="button" wire:click="closeModal" class="btn-ghost btn-sm" title="Tutup">
                             <x-icon name="x" class="h-5 w-5" />
@@ -214,8 +219,45 @@
                             <button type="button" wire:click="closeModal" class="btn-ghost">Batal</button>
                             <button type="submit" wire:loading.attr="disabled" wire:target="submit" class="btn-primary">
                                 <x-icon name="arrow-up-circle" class="h-4 w-4" />
-                                <span wire:loading.remove wire:target="submit">Kirim Pengajuan</span>
-                                <span wire:loading wire:target="submit">Mengirim...</span>
+                                <span wire:loading.remove wire:target="submit">Catat Pengajuan</span>
+                                <span wire:loading wire:target="submit">Menyimpan...</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    @endif
+
+    @if ($showRecoveryModal)
+        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+            <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" wire:click="closeRecoveryModal"></div>
+
+            <div class="relative flex min-h-full items-center justify-center p-4">
+                <div class="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/5">
+                    <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
+                        <div>
+                            <h2 class="text-lg font-bold text-slate-900">Tandai Sembuh</h2>
+                            <p class="mt-0.5 text-xs text-slate-500">Absensi sampai tanggal ini dicatat sebagai sakit.</p>
+                        </div>
+                        <button type="button" wire:click="closeRecoveryModal" class="btn-ghost btn-sm" title="Tutup">
+                            <x-icon name="x" class="h-5 w-5" />
+                        </button>
+                    </div>
+
+                    <form wire:submit="markRecovered" class="space-y-5 p-6">
+                        <div>
+                            <label class="form-label">Tanggal Sembuh</label>
+                            <input type="date" wire:model="recoveryDate" class="input">
+                            @error('recoveryDate') <p class="form-error">{{ $message }}</p> @enderror
+                        </div>
+
+                        <div class="flex justify-end gap-2 border-t border-slate-100 pt-5">
+                            <button type="button" wire:click="closeRecoveryModal" class="btn-ghost">Batal</button>
+                            <button type="submit" wire:loading.attr="disabled" wire:target="markRecovered" class="btn-primary">
+                                <x-icon name="check-circle" class="h-4 w-4" />
+                                <span wire:loading.remove wire:target="markRecovered">Saya sudah sembuh</span>
+                                <span wire:loading wire:target="markRecovered">Menyimpan...</span>
                             </button>
                         </div>
                     </form>
