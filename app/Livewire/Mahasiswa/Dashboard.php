@@ -4,6 +4,7 @@ namespace App\Livewire\Mahasiswa;
 
 use App\Enums\AttendanceStatus;
 use App\Enums\LeaveStatus;
+use App\Enums\LeaveType;
 use App\Models\Announcement;
 use App\Models\Attendance;
 use App\Models\Logbook;
@@ -46,7 +47,11 @@ class Dashboard extends Component
             'terlambat' => (int) ($monthCounts[AttendanceStatus::Terlambat->value] ?? 0),
             'izinSakit' => (int) ($monthCounts[AttendanceStatus::Izin->value] ?? 0) + (int) ($monthCounts[AttendanceStatus::Sakit->value] ?? 0),
             'logbookProgress' => app(LogbookProgressService::class)->for($user),
-            'leavePending' => $user->leaveRequests()->where('status', LeaveStatus::Pending)->count(),
+            'ongoingSick' => $user->leaveRequests()
+                ->where('type', LeaveType::Sakit->value)
+                ->where('status', LeaveStatus::Approved->value)
+                ->whereNull('end_date')
+                ->count(),
             'recentLogbooks' => Logbook::query()
                 ->where('user_id', $user->id)
                 ->latest('date')

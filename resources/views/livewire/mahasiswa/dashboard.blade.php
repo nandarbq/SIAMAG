@@ -224,7 +224,7 @@
             <span class="stat-icon bg-rose-50 text-rose-600"><x-icon name="calendar" class="h-5 w-5" /></span>
             <div>
                 <p class="text-sm font-bold text-slate-900">Izin & Sakit</p>
-                <p class="text-xs text-slate-500">{{ $leavePending }} menunggu persetujuan</p>
+                <p class="text-xs text-slate-500">{{ $ongoingSick > 0 ? $ongoingSick.' sakit berlangsung' : 'Tidak ada sakit berlangsung' }}</p>
             </div>
         </a>
     </section>
