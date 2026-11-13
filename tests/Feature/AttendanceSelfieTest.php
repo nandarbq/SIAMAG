@@ -38,6 +38,18 @@ class AttendanceSelfieTest extends TestCase
         Storage::disk('local')->assertExists($payload['path']);
     }
 
+    public function test_student_can_upload_high_resolution_jpeg_selfie(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        $response = $this->actingAs($student)
+            ->postJson(route('attendance.selfie'), [
+                'photo' => $this->selfieDataUri(960, 960),
+            ]);
+
+        $response->assertOk()->assertJsonStructure(['token']);
+    }
+
     public function test_selfie_upload_rejects_invalid_image_data(): void
     {
         $student = User::factory()->mahasiswa()->create();
@@ -61,9 +73,9 @@ class AttendanceSelfieTest extends TestCase
             ->assertForbidden();
     }
 
-    private function selfieDataUri(): string
+    private function selfieDataUri(int $width = 600, int $height = 600): string
     {
-        $image = UploadedFile::fake()->image('selfie.jpg', 600, 600)->getContent();
+        $image = UploadedFile::fake()->image('selfie.jpg', $width, $height)->getContent();
 
         return 'data:image/jpeg;base64,'.base64_encode($image);
     }
