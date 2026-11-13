@@ -12,7 +12,5 @@ return new class extends Migration
             ->update(['status' => 'approved']);
     }
 
-    public function down(): void
-    {
-    }
+    public function down(): void {}
 };
