@@ -198,24 +198,26 @@ class AttendanceService
         }
     }
 
-    public function closeSickLeave(LeaveRequest $leave, Carbon $recoveryDate): void
+    public function closeSickLeave(LeaveRequest $leave, Carbon $returnDate): bool
     {
-        $recoveryDate = $recoveryDate->copy()->startOfDay();
+        $returnDate = $returnDate->copy()->startOfDay();
 
         if ($leave->type !== LeaveType::Sakit || ! $leave->isOngoing()) {
-            return;
+            return false;
         }
 
-        if ($recoveryDate->lessThan($leave->start_date)) {
-            return;
+        if ($returnDate->lessThanOrEqualTo($leave->start_date)) {
+            return false;
         }
 
         $leave->update([
-            'end_date' => $recoveryDate->toDateString(),
+            'end_date' => $returnDate->copy()->subDay()->toDateString(),
         ]);
 
-        $this->clearSickAttendanceAfter($leave, $recoveryDate);
+        $this->clearSickAttendanceFrom($leave, $returnDate);
         $this->markLeave($leave);
+
+        return true;
     }
 
     public function cancelLeave(LeaveRequest $leave): bool
@@ -239,11 +241,11 @@ class AttendanceService
         return true;
     }
 
-    private function clearSickAttendanceAfter(LeaveRequest $leave, Carbon $recoveryDate): void
+    private function clearSickAttendanceFrom(LeaveRequest $leave, Carbon $returnDate): void
     {
         Attendance::query()
             ->where('user_id', $leave->user_id)
-            ->whereDate('date', '>', $recoveryDate->toDateString())
+            ->whereDate('date', '>=', $returnDate->toDateString())
             ->where('status', AttendanceStatus::Sakit)
             ->whereNull('check_in_at')
             ->whereIn('note', [
