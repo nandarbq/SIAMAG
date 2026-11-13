@@ -276,6 +276,73 @@ class LeaveTest extends TestCase
         ]);
     }
 
+    public function test_student_can_mark_ongoing_sick_leave_as_recovered(): void
+    {
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('openRecovery', $leave->id)
+            ->assertSet('showRecoveryModal', true)
+            ->set('recoveryDate', '2026-11-09')
+            ->call('markRecovered')
+            ->assertHasNoErrors()
+            ->assertSet('showRecoveryModal', false);
+
+        $this->assertSame('2026-11-09', $leave->refresh()->end_date->toDateString());
+    }
+
+    public function test_recovery_date_cannot_be_in_the_future(): void
+    {
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('openRecovery', $leave->id)
+            ->set('recoveryDate', '2026-11-10')
+            ->call('markRecovered')
+            ->assertHasErrors(['recoveryDate']);
+    }
+
+    public function test_recovery_date_cannot_be_before_sick_leave_start(): void
+    {
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('openRecovery', $leave->id)
+            ->set('recoveryDate', '2026-11-08')
+            ->call('markRecovered')
+            ->assertHasErrors(['recoveryDate']);
+    }
+
     public function test_ongoing_sick_leave_marks_attendance_from_start_date(): void
     {
         $student = $this->makeStudent();
