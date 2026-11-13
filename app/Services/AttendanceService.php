@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\LeaveType;
 use App\Models\Attendance;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
@@ -147,13 +148,24 @@ class AttendanceService
 
     public function markLeave(LeaveRequest $leave): void
     {
+        $endDate = $leave->end_date?->copy() ?? now()->startOfDay();
+        $profileEnd = $leave->user?->internProfile?->end_date;
+
+        if ($profileEnd && $endDate->greaterThan($profileEnd)) {
+            $endDate = $profileEnd->copy()->startOfDay();
+        }
+
+        if ($endDate->lessThan($leave->start_date)) {
+            return;
+        }
+
         $holidayDates = Holiday::query()
-            ->whereBetween('date', [$leave->start_date, $leave->end_date])
+            ->whereBetween('date', [$leave->start_date, $endDate])
             ->pluck('date')
             ->map(fn ($date) => $date->toDateString())
             ->all();
 
-        for ($date = $leave->start_date->copy(); $date->lessThanOrEqualTo($leave->end_date); $date->addDay()) {
+        for ($date = $leave->start_date->copy(); $date->lessThanOrEqualTo($endDate); $date->addDay()) {
             if ($date->isWeekend() || in_array($date->toDateString(), $holidayDates, true)) {
                 continue;
             }
@@ -167,14 +179,56 @@ class AttendanceService
                 continue;
             }
 
-            Attendance::query()->updateOrCreate(
-                ['user_id' => $leave->user_id, 'date' => $date->toDateString()],
-                [
+            if ($attendance) {
+                $attendance->update([
                     'status' => $leave->type->value,
-                    'note' => 'Pengajuan '.$leave->type->label().' disetujui.',
-                ]
-            );
+                    'note' => 'Pengajuan '.$leave->type->label().' tercatat.',
+                ]);
+
+                continue;
+            }
+
+            Attendance::query()->create([
+                'user_id' => $leave->user_id,
+                'date' => $date->toDateString(),
+                'status' => $leave->type->value,
+                'note' => 'Pengajuan '.$leave->type->label().' tercatat.',
+            ]);
         }
+    }
+
+    public function closeSickLeave(LeaveRequest $leave, Carbon $recoveryDate): void
+    {
+        $recoveryDate = $recoveryDate->copy()->startOfDay();
+
+        if ($leave->type !== LeaveType::Sakit || ! $leave->isOngoing()) {
+            return;
+        }
+
+        if ($recoveryDate->lessThan($leave->start_date)) {
+            return;
+        }
+
+        $leave->update([
+            'end_date' => $recoveryDate->toDateString(),
+        ]);
+
+        $this->clearSickAttendanceAfter($leave, $recoveryDate);
+        $this->markLeave($leave);
+    }
+
+    private function clearSickAttendanceAfter(LeaveRequest $leave, Carbon $recoveryDate): void
+    {
+        Attendance::query()
+            ->where('user_id', $leave->user_id)
+            ->whereDate('date', '>', $recoveryDate->toDateString())
+            ->where('status', AttendanceStatus::Sakit)
+            ->whereNull('check_in_at')
+            ->whereIn('note', [
+                'Pengajuan Sakit tercatat.',
+                'Pengajuan Sakit disetujui.',
+            ])
+            ->delete();
     }
 
     public function todayFor(User $user): ?Attendance

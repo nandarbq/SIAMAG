@@ -276,6 +276,72 @@ class LeaveTest extends TestCase
         ]);
     }
 
+    public function test_ongoing_sick_leave_marks_attendance_from_start_date(): void
+    {
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        app(AttendanceService::class)->markLeave($leave);
+
+        $attendance = Attendance::query()
+            ->where('user_id', $student->id)
+            ->whereDate('date', '2026-11-09')
+            ->firstOrFail();
+
+        $this->assertSame(AttendanceStatus::Sakit, $attendance->status);
+    }
+
+    public function test_recovery_closes_ongoing_sick_leave_and_removes_future_attendance(): void
+    {
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-10',
+            'status' => AttendanceStatus::Sakit,
+            'note' => 'Pengajuan Sakit tercatat.',
+        ]);
+
+        Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-11',
+            'status' => AttendanceStatus::Sakit,
+            'note' => 'Pengajuan Sakit tercatat.',
+        ]);
+
+        $this->travelTo(Carbon::parse('2026-11-11 10:00:00', 'Asia/Jakarta'));
+
+        app(AttendanceService::class)->closeSickLeave($leave, Carbon::parse('2026-11-10'));
+
+        $this->assertSame('2026-11-10', $leave->refresh()->end_date->toDateString());
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $student->id,
+            'date' => '2026-11-10 00:00:00',
+            'status' => AttendanceStatus::Sakit->value,
+        ]);
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $student->id,
+            'date' => '2026-11-11 00:00:00',
+        ]);
+    }
+
     private function makeStudent(): User
     {
         $student = User::factory()->mahasiswa()->create();
