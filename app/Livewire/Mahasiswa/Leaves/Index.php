@@ -272,12 +272,20 @@ class Index extends Component
             ->groupBy('status')
             ->pluck('total', 'status');
 
+        $ongoingSick = LeaveRequest::query()
+            ->where('user_id', $userId)
+            ->where('type', LeaveType::Sakit->value)
+            ->where('status', LeaveStatus::Approved->value)
+            ->whereNull('end_date')
+            ->count();
+
         return view('livewire.mahasiswa.leaves.index', [
             'leaves' => $leaves,
             'counts' => $counts,
-            'statuses' => LeaveStatus::cases(),
+            'statuses' => LeaveStatus::visibleCases(),
             'types' => LeaveType::cases(),
             'total' => $counts->sum(),
+            'ongoingSick' => $ongoingSick,
             'profile' => auth()->user()->internProfile,
         ]);
     }

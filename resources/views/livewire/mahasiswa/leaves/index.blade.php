@@ -22,8 +22,8 @@
         @php
             $stats = [
                 ['label' => 'Total Pengajuan', 'value' => $total, 'icon' => 'calendar', 'tone' => 'brand'],
-                ['label' => 'Menunggu', 'value' => $counts[App\Enums\LeaveStatus::Pending->value] ?? 0, 'icon' => 'clock', 'tone' => 'amber'],
-                ['label' => 'Disetujui', 'value' => $counts[App\Enums\LeaveStatus::Approved->value] ?? 0, 'icon' => 'check-circle', 'tone' => 'emerald'],
+                ['label' => 'Tercatat', 'value' => $counts[App\Enums\LeaveStatus::Approved->value] ?? 0, 'icon' => 'check-circle', 'tone' => 'emerald'],
+                ['label' => 'Sakit Berlangsung', 'value' => $ongoingSick, 'icon' => 'clock', 'tone' => 'amber'],
                 ['label' => 'Ditolak', 'value' => $counts[App\Enums\LeaveStatus::Rejected->value] ?? 0, 'icon' => 'x', 'tone' => 'rose'],
             ];
             $tones = [
@@ -83,8 +83,12 @@
                             <td class="table-td whitespace-nowrap">
                                 <p class="font-semibold text-slate-800">{{ $leave->start_date?->translatedFormat('d M Y') }}</p>
                                 <p class="text-xs text-slate-400">
-                                    s.d. {{ $leave->end_date?->translatedFormat('d M Y') }}
-                                    · {{ $leave->totalDays() }} hari
+                                    @if ($leave->isOngoing())
+                                        Berlangsung · {{ $leave->totalDays() }} hari
+                                    @else
+                                        s.d. {{ $leave->end_date?->translatedFormat('d M Y') }}
+                                        · {{ $leave->totalDays() }} hari
+                                    @endif
                                 </p>
                             </td>
                             <td class="table-td">
@@ -113,8 +117,16 @@
                                             <x-icon name="check-circle" class="h-4 w-4" />
                                         </button>
                                     @endif
-                                    @if ($leave->status === App\Enums\LeaveStatus::Pending)
-                                        <button type="button" wire:click="delete({{ $leave->id }})" wire:confirm="Hapus pengajuan ini?" class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50" title="Hapus pengajuan">
+
+                                    @php
+                                        $canCancel = $leave->status === App\Enums\LeaveStatus::Pending
+                                            || ($leave->status === App\Enums\LeaveStatus::Approved
+                                                && (($leave->type === App\Enums\LeaveType::Izin && $leave->start_date->greaterThanOrEqualTo(today()))
+                                                    || ($leave->type === App\Enums\LeaveType::Sakit && $leave->isOngoing())));
+                                    @endphp
+
+                                    @if ($canCancel)
+                                        <button type="button" wire:click="delete({{ $leave->id }})" wire:confirm="Batalkan pengajuan ini? Absensi terkait juga akan dihapus." class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50" title="Batalkan pengajuan">
                                             <x-icon name="trash" class="h-4 w-4" />
                                         </button>
                                     @endif
