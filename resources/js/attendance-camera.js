@@ -76,15 +76,27 @@ export default function attendanceCamera({ uploadUrl } = {}) {
             canvas.height = outputHeight;
             canvas.getContext('2d').drawImage(video, 0, 0, outputWidth, outputHeight);
 
-            let dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+            const maxPayloadLength = 2000000;
+            const qualities = [0.78, 0.55, 0.4, 0.3];
+
+            let dataUrl = canvas.toDataURL('image/jpeg', qualities[0]);
 
             if (! dataUrl.startsWith('data:image/')) {
                 this.cameraError = 'Gagal mengambil foto. Coba lagi.';
                 return;
             }
 
-            if (dataUrl.length > 800000) {
-                dataUrl = canvas.toDataURL('image/jpeg', 0.55);
+            for (const quality of qualities.slice(1)) {
+                if (dataUrl.length <= 800000) {
+                    break;
+                }
+
+                dataUrl = canvas.toDataURL('image/jpeg', quality);
+            }
+
+            if (dataUrl.length > maxPayloadLength) {
+                this.cameraError = 'Ukuran foto terlalu besar. Ambil ulang foto.';
+                return;
             }
 
             this.capturedUrl = dataUrl;
@@ -108,20 +120,38 @@ export default function attendanceCamera({ uploadUrl } = {}) {
                     body: JSON.stringify({ photo: dataUrl }),
                 });
 
+                const body = await response.text();
+                let payload = null;
+
+                if (body) {
+                    try {
+                        payload = JSON.parse(body);
+                    } catch {
+                        payload = null;
+                    }
+                }
+
                 if (! response.ok) {
-                    const payload = await response.json().catch(() => null);
                     this.cameraError = payload?.errors?.photo?.[0]
                         ?? payload?.message
-                        ?? 'Gagal menyimpan foto selfie. Coba lagi.';
+                        ?? `Gagal menyimpan foto selfie (HTTP ${response.status}). Coba lagi.`;
+
+                    console.error('Selfie upload failed', response.status, body);
 
                     return;
                 }
 
-                const payload = await response.json();
+                if (! payload?.token) {
+                    this.cameraError = 'Respons server tidak valid. Coba lagi.';
+                    console.error('Selfie upload returned an invalid payload', response.status, body);
+
+                    return;
+                }
 
                 await this.$wire.set('photoToken', payload.token);
             } catch (error) {
                 this.cameraError = 'Gagal menyimpan foto selfie. Periksa koneksi lalu coba lagi.';
+                console.error('Selfie upload request failed', error);
             } finally {
                 this.saving = false;
             }
