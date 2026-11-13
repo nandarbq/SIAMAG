@@ -155,7 +155,7 @@
                         <p class="mt-1 text-xs text-emerald-700">Masuk {{ $today->check_in_at?->format('H:i') }} · Pulang {{ $today->check_out_at?->format('H:i') }} WIB</p>
                     </div>
                 @else
-                    <div x-data="attendanceCamera()" wire:key="attendance-camera" class="space-y-5">
+                    <div x-data="attendanceCamera({ uploadUrl: @js(route('attendance.selfie')) })" wire:key="attendance-camera" class="space-y-5">
                         <div class="space-y-3">
                             <div x-cloak class="relative flex min-h-56 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-950/90 p-2">
                             <template x-if="capturedUrl">
@@ -402,7 +402,6 @@
                         <th class="table-th">Pulang</th>
                         <th class="table-th">Status</th>
                         <th class="table-th">Lokasi</th>
-                        <th class="table-th text-right">Foto</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -420,24 +419,10 @@
                                     {{ $attendance->check_in_distance !== null ? $attendance->check_in_distance.' m' : '—' }}
                                 </span>
                             </td>
-                            <td class="table-td">
-                                <div class="flex justify-end gap-1.5">
-                                    @if ($attendance->check_in_photo)
-                                        <a href="{{ route('attendance.photo', [$attendance, 'in']) }}" target="_blank" class="flex h-9 w-9 overflow-hidden rounded-lg ring-1 ring-slate-200" title="Foto masuk">
-                                            <img src="{{ route('attendance.photo', [$attendance, 'in']) }}" alt="Foto masuk" class="h-full w-full object-cover">
-                                        </a>
-                                    @endif
-                                    @if ($attendance->check_out_photo)
-                                        <a href="{{ route('attendance.photo', [$attendance, 'out']) }}" target="_blank" class="flex h-9 w-9 overflow-hidden rounded-lg ring-1 ring-slate-200" title="Foto pulang">
-                                            <img src="{{ route('attendance.photo', [$attendance, 'out']) }}" alt="Foto pulang" class="h-full w-full object-cover">
-                                        </a>
-                                    @endif
-                                </div>
-                            </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="px-5 py-12 text-center text-sm text-slate-500">Belum ada riwayat absensi.</td>
+                            <td colspan="5" class="px-5 py-12 text-center text-sm text-slate-500">Belum ada riwayat absensi.</td>
                         </tr>
                     @endforelse
                 </tbody>

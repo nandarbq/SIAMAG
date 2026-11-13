@@ -3,14 +3,18 @@
 namespace App\Services;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\LeaveStatus;
+use App\Enums\LeaveType;
 use App\Models\Attendance;
 use App\Models\Holiday;
 use App\Models\LeaveRequest;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
-use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
 use Intervention\Image\Drivers\Gd\Driver;
 use Intervention\Image\ImageManager;
@@ -55,7 +59,7 @@ class AttendanceService
 
         $status = $lateMinutes > 0 ? AttendanceStatus::Terlambat : AttendanceStatus::Hadir;
 
-        $photoPath = $this->storePhoto($user, $date, $data['photo'] ?? null, 'in');
+        $photoPath = $this->resolveSelfiePath($user, $data['photo_token'] ?? null);
 
         return Attendance::query()->updateOrCreate(
             ['user_id' => $user->id, 'date' => $date->toDateString()],
@@ -96,7 +100,7 @@ class AttendanceService
 
         [$distance, $accuracy] = $this->validateLocation($data);
 
-        $photoPath = $this->storePhoto($user, $date, $data['photo'] ?? null, 'out');
+        $photoPath = $this->resolveSelfiePath($user, $data['photo_token'] ?? null);
 
         $attendance->update([
             'check_out_at' => now(),
@@ -145,13 +149,24 @@ class AttendanceService
 
     public function markLeave(LeaveRequest $leave): void
     {
+        $endDate = $leave->end_date?->copy() ?? now()->startOfDay();
+        $profileEnd = $leave->user?->internProfile?->end_date;
+
+        if ($profileEnd && $endDate->greaterThan($profileEnd)) {
+            $endDate = $profileEnd->copy()->startOfDay();
+        }
+
+        if ($endDate->lessThan($leave->start_date)) {
+            return;
+        }
+
         $holidayDates = Holiday::query()
-            ->whereBetween('date', [$leave->start_date, $leave->end_date])
+            ->whereBetween('date', [$leave->start_date, $endDate])
             ->pluck('date')
             ->map(fn ($date) => $date->toDateString())
             ->all();
 
-        for ($date = $leave->start_date->copy(); $date->lessThanOrEqualTo($leave->end_date); $date->addDay()) {
+        for ($date = $leave->start_date->copy(); $date->lessThanOrEqualTo($endDate); $date->addDay()) {
             if ($date->isWeekend() || in_array($date->toDateString(), $holidayDates, true)) {
                 continue;
             }
@@ -165,14 +180,79 @@ class AttendanceService
                 continue;
             }
 
-            Attendance::query()->updateOrCreate(
-                ['user_id' => $leave->user_id, 'date' => $date->toDateString()],
-                [
+            if ($attendance) {
+                $attendance->update([
                     'status' => $leave->type->value,
-                    'note' => 'Pengajuan '.$leave->type->label().' disetujui.',
-                ]
-            );
+                    'note' => 'Pengajuan '.$leave->type->label().' tercatat.',
+                ]);
+
+                continue;
+            }
+
+            Attendance::query()->create([
+                'user_id' => $leave->user_id,
+                'date' => $date->toDateString(),
+                'status' => $leave->type->value,
+                'note' => 'Pengajuan '.$leave->type->label().' tercatat.',
+            ]);
         }
+    }
+
+    public function closeSickLeave(LeaveRequest $leave, Carbon $returnDate): bool
+    {
+        $returnDate = $returnDate->copy()->startOfDay();
+
+        if ($leave->type !== LeaveType::Sakit || ! $leave->isOngoing()) {
+            return false;
+        }
+
+        if ($returnDate->lessThanOrEqualTo($leave->start_date)) {
+            return false;
+        }
+
+        $leave->update([
+            'end_date' => $returnDate->copy()->subDay()->toDateString(),
+        ]);
+
+        $this->clearSickAttendanceFrom($leave, $returnDate);
+        $this->markLeave($leave);
+
+        return true;
+    }
+
+    public function cancelLeave(LeaveRequest $leave): bool
+    {
+        $attendances = Attendance::query()
+            ->where('user_id', $leave->user_id)
+            ->whereDate('date', '>=', $leave->start_date)
+            ->whereDate('date', '<=', $leave->end_date ?? today())
+            ->where('status', $leave->type->value)
+            ->whereIn('note', [
+                'Pengajuan '.$leave->type->label().' tercatat.',
+                'Pengajuan '.$leave->type->label().' disetujui.',
+            ]);
+
+        if ($attendances->clone()->whereNotNull('check_in_at')->exists()) {
+            return false;
+        }
+
+        $attendances->delete();
+
+        return true;
+    }
+
+    private function clearSickAttendanceFrom(LeaveRequest $leave, Carbon $returnDate): void
+    {
+        Attendance::query()
+            ->where('user_id', $leave->user_id)
+            ->whereDate('date', '>=', $returnDate->toDateString())
+            ->where('status', AttendanceStatus::Sakit)
+            ->whereNull('check_in_at')
+            ->whereIn('note', [
+                'Pengajuan Sakit tercatat.',
+                'Pengajuan Sakit disetujui.',
+            ])
+            ->delete();
     }
 
     public function todayFor(User $user): ?Attendance
@@ -211,6 +291,22 @@ class AttendanceService
         if (! $this->isWorkday($date)) {
             throw ValidationException::withMessages([
                 'attendance' => 'Hari ini bukan hari kerja atau merupakan hari libur.',
+            ]);
+        }
+
+        $leave = LeaveRequest::query()
+            ->where('user_id', $user->id)
+            ->where('status', LeaveStatus::Approved->value)
+            ->whereDate('start_date', '<=', $date)
+            ->where(function ($query) use ($date) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $date);
+            })
+            ->first();
+
+        if ($leave) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Anda tercatat '.$leave->type->label().' pada hari ini sehingga tidak perlu absen.',
             ]);
         }
     }
@@ -261,12 +357,93 @@ class AttendanceService
         return [$distance, $accuracy];
     }
 
-    private function storePhoto(User $user, Carbon $date, UploadedFile|string|null $photo, string $type): ?string
+    public function storeSelfie(User $user, string $photo): string
     {
-        $requireSelfie = Setting::getBool('require_selfie', true);
+        $binary = $this->decodeSelfie($user, $photo);
 
-        if (! $photo) {
-            if ($requireSelfie) {
+        try {
+            $manager = ImageManager::usingDriver(Driver::class);
+            $image = $manager->decodeBinary($binary);
+            $image = $image->scaleDown(width: 900)->encodeUsingFileExtension('jpg', quality: 80);
+        } catch (\Throwable $exception) {
+            $this->logSelfieFailure($user, 'decode', $exception, strlen($photo));
+
+            throw ValidationException::withMessages([
+                'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
+
+        $path = 'attendance/'.$user->id.'/'.Str::uuid().'.jpg';
+
+        Storage::disk('local')->put($path, (string) $image);
+
+        return Crypt::encryptString(json_encode([
+            'user_id' => $user->id,
+            'path' => $path,
+        ], JSON_THROW_ON_ERROR));
+    }
+
+    private function decodeSelfie(User $user, string $photo): string
+    {
+        $comma = strpos($photo, ',');
+
+        if (! str_starts_with($photo, 'data:image/') || $comma === false) {
+            $this->logSelfieFailure($user, 'format', null, strlen($photo));
+
+            throw ValidationException::withMessages([
+                'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
+
+        $metadata = substr($photo, 5, $comma - 5);
+        $mimeType = strtolower(explode(';', $metadata)[0]);
+
+        if (! str_contains($metadata, ';base64') || ! in_array($mimeType, ['image/jpeg', 'image/jpg', 'image/png'], true)) {
+            $this->logSelfieFailure($user, 'mime', null, strlen($photo));
+
+            throw ValidationException::withMessages([
+                'photo' => 'Format foto selfie tidak didukung. Ambil ulang foto.',
+            ]);
+        }
+
+        $binary = base64_decode(substr($photo, $comma + 1), true);
+
+        if ($binary === false || $binary === '') {
+            $this->logSelfieFailure($user, 'base64', null, strlen($photo));
+
+            throw ValidationException::withMessages([
+                'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
+
+        $info = @getimagesizefromstring($binary);
+
+        if ($info === false || ! in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) {
+            $this->logSelfieFailure($user, 'image', null, strlen($photo));
+
+            throw ValidationException::withMessages([
+                'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
+
+        return $binary;
+    }
+
+    private function logSelfieFailure(User $user, string $stage, ?\Throwable $exception, int $payloadLength): void
+    {
+        Log::warning('Attendance selfie processing failed', [
+            'user_id' => $user->id,
+            'stage' => $stage,
+            'exception' => $exception ? $exception::class : null,
+            'message' => $exception?->getMessage(),
+            'payload_length' => $payloadLength,
+        ]);
+    }
+
+    public function resolveSelfiePath(User $user, ?string $token): ?string
+    {
+        if (! $token) {
+            if (Setting::getBool('require_selfie', true)) {
                 throw ValidationException::withMessages([
                     'photo' => 'Foto selfie wajib diambil untuk absensi.',
                 ]);
@@ -275,26 +452,27 @@ class AttendanceService
             return null;
         }
 
-        $path = 'attendance/'.$user->id.'/'.$date->format('Y-m-d').'-'.$type.'.jpg';
-
         try {
-            $manager = ImageManager::usingDriver(Driver::class);
-
-            $image = $photo instanceof UploadedFile
-                ? $manager->decodePath($photo->getRealPath())
-                : $manager->decodeDataUri($photo);
-
-            $image = $image->scaleDown(width: 900)->encodeUsingFileExtension('jpg', quality: 80);
-
-            Storage::disk('local')->put($path, (string) $image);
+            $payload = json_decode(Crypt::decryptString($token), true, 512, JSON_THROW_ON_ERROR);
         } catch (\Throwable) {
-            if ($photo instanceof UploadedFile) {
-                $path = $photo->store('attendance/'.$user->id, 'local');
-            } else {
-                throw ValidationException::withMessages([
-                    'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
-                ]);
-            }
+            throw ValidationException::withMessages([
+                'photo' => 'Sesi foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
+
+        $userId = (int) ($payload['user_id'] ?? 0);
+        $path = $payload['path'] ?? null;
+
+        if ($userId !== $user->id || ! is_string($path) || ! str_starts_with($path, 'attendance/'.$user->id.'/')) {
+            throw ValidationException::withMessages([
+                'photo' => 'Sesi foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
+
+        if (! Storage::disk('local')->exists($path)) {
+            throw ValidationException::withMessages([
+                'photo' => 'Foto selfie tidak ditemukan. Ambil ulang foto.',
+            ]);
         }
 
         return $path;

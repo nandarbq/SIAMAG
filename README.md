@@ -167,6 +167,8 @@ php artisan serve
 
 Buka `http://localhost:8000`.
 
+Aplikasi web sudah berjalan, tetapi tugas otomatis belum aktif. Lihat bagian **Scheduler dan Tugas Otomatis** untuk mengaktifkan sinkronisasi absensi sakit dan pembersihan foto.
+
 ## Mode Pengembangan
 
 Satu perintah untuk menjalankan server Laravel, queue listener, dan Vite:
@@ -183,6 +185,52 @@ npm run dev
 ```
 
 Jika halaman tampil tanpa gaya atau JavaScript, pastikan `npm run dev` sedang berjalan atau jalankan `npm run build`.
+
+## Scheduler dan Tugas Otomatis
+
+Aplikasi memiliki dua tugas terjadwal di `routes/console.php`:
+
+| Tugas | Jadwal | Fungsi |
+| --- | --- | --- |
+| `attendance:sync-ongoing-sick-leaves` | Setiap hari pukul `00:05` | Mencatat absensi **Sakit** untuk pengajuan sakit yang masih berlangsung sampai hari ini. |
+| `attendance:prune-photos` | Setiap hari pukul `02:00` | Menghapus foto absensi yang lebih lama dari 30 hari. |
+
+Jadwal ini **tidak langsung aktif** setelah repo di-clone. Laravel hanya menyimpan definisi jadwal; pemicunya harus dijalankan di komputer atau server.
+
+### Menjalankan Scheduler di Lokal
+
+Jalankan di terminal terpisah dan biarkan terminal tetap terbuka:
+
+```bash
+php artisan schedule:work
+```
+
+`composer run dev` hanya menjalankan server Laravel, queue listener, dan Vite; scheduler tidak termasuk. Jika terminal ditutup, tugas otomatis berhenti.
+
+Untuk menjalankan tugas tertentu secara manual:
+
+```bash
+php artisan attendance:sync-ongoing-sick-leaves
+php artisan attendance:prune-photos
+```
+
+### Menjalankan Scheduler di Server Linux
+
+Tambahkan cron yang memanggil scheduler setiap menit:
+
+```bash
+* * * * * cd /path/ke/SIAMAG && php artisan schedule:run >> /dev/null 2>&1
+```
+
+### Menjalankan Scheduler di Windows
+
+Gunakan `php artisan schedule:work` di terminal yang tetap terbuka, atau buat Task Scheduler yang menjalankan `php artisan schedule:run` setiap menit. Pastikan task diarahkan ke `php.exe` dan folder proyek yang benar.
+
+### Jika Scheduler Tidak Berjalan
+
+- Absensi Sakit harian tidak dibuat otomatis. Data tetap bisa terisi saat mahasiswa menekan “Saya sudah sembuh” atau saat command sync dijalankan manual.
+- Foto absensi lama tidak terhapus otomatis. Jalankan `php artisan attendance:prune-photos` secara manual.
+- Gunakan `php artisan schedule:list` untuk melihat daftar tugas dan jadwalnya.
 
 ## Akun Demo
 
@@ -251,6 +299,7 @@ tests/                         Unit dan feature test
 ## Catatan Operasional
 
 - Zona waktu aplikasi diatur melalui `APP_TIMEZONE`. Nilai default di `.env.example` adalah `Asia/Jakarta`.
+- Tugas terjadwal tidak aktif otomatis setelah repo di-clone. Lihat bagian **Scheduler dan Tugas Otomatis** untuk setup di lokal, Linux, dan Windows.
 - Jam kerja, radius geofence, batas akurasi GPS, dan toleransi keterlambatan dapat diubah dari menu **Pengaturan** admin.
 - Persetujuan izin/sakit tidak menimpa absensi yang sudah memiliki jam masuk.
 - Foto selfie dan lampiran izin disimpan di `storage/app/private` dan disajikan melalui route terproteksi. `php artisan storage:link` tidak diperlukan untuk file privat ini.

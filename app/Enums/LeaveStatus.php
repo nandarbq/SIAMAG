@@ -12,7 +12,7 @@ enum LeaveStatus: string
     {
         return match ($this) {
             self::Pending => 'Menunggu',
-            self::Approved => 'Disetujui',
+            self::Approved => 'Tercatat',
             self::Rejected => 'Ditolak',
         };
     }
@@ -24,5 +24,13 @@ enum LeaveStatus: string
             self::Approved => 'emerald',
             self::Rejected => 'rose',
         };
+    }
+
+    public static function visibleCases(): array
+    {
+        return array_values(array_filter(
+            self::cases(),
+            fn (self $status) => $status !== self::Pending,
+        ));
     }
 }

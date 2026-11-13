@@ -112,10 +112,10 @@
             <div class="card">
                 <div class="card-header">
                     <div>
-                        <h2 class="text-base font-bold text-slate-900">Perlu Tindakan</h2>
-                        <p class="mt-0.5 text-xs text-slate-500">Antrian persetujuan izin & kehadiran</p>
+                        <h2 class="text-base font-bold text-slate-900">Monitoring</h2>
+                        <p class="mt-0.5 text-xs text-slate-500">Izin, sakit, dan kehadiran hari ini</p>
                     </div>
-                    <span class="badge-amber">{{ $pendingLeaves }} item</span>
+                    <span class="badge-amber">{{ $permit }} item</span>
                 </div>
                 <div class="divide-y divide-slate-100">
                     <a href="{{ route('admin.leaves') }}" class="flex items-center gap-3 px-5 py-4 transition hover:bg-slate-50">
@@ -123,8 +123,18 @@
                             <x-icon name="calendar" class="h-5 w-5" />
                         </span>
                         <div class="min-w-0 flex-1">
-                            <p class="text-sm font-semibold text-slate-800">Persetujuan Izin</p>
-                            <p class="text-xs text-slate-500">{{ $pendingLeaves }} pengajuan menunggu keputusan</p>
+                            <p class="text-sm font-semibold text-slate-800">Izin & Sakit Hari Ini</p>
+                            <p class="text-xs text-slate-500">{{ $permit }} mahasiswa tercatat izin atau sakit</p>
+                        </div>
+                        <x-icon name="chevron-down" class="h-4 w-4 -rotate-90 text-slate-400" />
+                    </a>
+                    <a href="{{ route('admin.leaves') }}" class="flex items-center gap-3 px-5 py-4 transition hover:bg-slate-50">
+                        <span class="stat-icon bg-amber-50 text-amber-600">
+                            <x-icon name="clock" class="h-5 w-5" />
+                        </span>
+                        <div class="min-w-0 flex-1">
+                            <p class="text-sm font-semibold text-slate-800">Sakit Berlangsung</p>
+                            <p class="text-xs text-slate-500">{{ $ongoingSick }} pengajuan sakit belum ditutup</p>
                         </div>
                         <x-icon name="chevron-down" class="h-4 w-4 -rotate-90 text-slate-400" />
                     </a>

@@ -5,7 +5,6 @@ namespace Tests\Feature;
 use App\Livewire\Mahasiswa\Attendance\Index;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
-use Illuminate\Http\UploadedFile;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -26,6 +25,7 @@ class AttendanceCameraTest extends TestCase
         $response->assertSee('Mulai Absen');
         $response->assertSee('@click="startCamera()"', false);
         $response->assertSee('Ambil foto selfie terlebih dahulu.');
+        $response->assertSee('uploadUrl', false);
         $response->assertDontSee('type="file"', false);
     }
 
@@ -36,16 +36,9 @@ class AttendanceCameraTest extends TestCase
         Livewire::actingAs($student)
             ->test(Index::class)
             ->assertSee('Ambil foto selfie terlebih dahulu.')
-            ->set('photo', $this->selfieDataUri())
+            ->set('photoToken', 'valid-photo-token')
             ->assertDontSee('Ambil foto selfie terlebih dahulu.')
             ->assertSee('x-bind:disabled="saving || ! true"', false);
-    }
-
-    private function selfieDataUri(): string
-    {
-        $image = UploadedFile::fake()->image('selfie.jpg', 600, 600)->getContent();
-
-        return 'data:image/jpeg;base64,'.base64_encode($image);
     }
 
     private function makeStudent(): User

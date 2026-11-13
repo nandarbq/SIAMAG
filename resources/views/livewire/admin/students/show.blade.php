@@ -162,7 +162,7 @@
             <div class="card overflow-hidden">
                 <div class="card-header">
                     <div>
-                        <h2 class="text-base font-bold text-slate-900">Pengajuan Izin</h2>
+                        <h2 class="text-base font-bold text-slate-900">Pengajuan Izin & Sakit</h2>
                         <p class="mt-0.5 text-xs text-slate-500">5 data terakhir</p>
                     </div>
                 </div>
@@ -171,7 +171,10 @@
                         <div class="flex items-center justify-between gap-3 px-5 py-3.5">
                             <div>
                                 <p class="text-sm font-semibold text-slate-800">{{ $leave->type->label() }}</p>
-                                <p class="text-xs text-slate-400">{{ $leave->start_date?->translatedFormat('d M') }} — {{ $leave->end_date?->translatedFormat('d M Y') }}</p>
+                                <p class="text-xs text-slate-400">
+                                    {{ $leave->periodLabel() }}
+                                    · {{ $leave->isOngoing() ? 'Berlangsung' : $leave->totalDays().' hari' }}
+                                </p>
                             </div>
                             <x-leave-status :status="$leave->status" />
                         </div>

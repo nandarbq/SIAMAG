@@ -43,7 +43,7 @@ class AttendanceTest extends TestCase
     {
         $student = $this->makeStudent();
 
-        $attendance = app(AttendanceService::class)->checkIn($student, $this->payload());
+        $attendance = app(AttendanceService::class)->checkIn($student, $this->payload($student));
 
         $this->assertSame(AttendanceStatus::Hadir, $attendance->status);
         $this->assertNotNull($attendance->check_in_at);
@@ -55,7 +55,9 @@ class AttendanceTest extends TestCase
     {
         $this->travel(1)->hours();
 
-        $attendance = app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload());
+        $student = $this->makeStudent();
+
+        $attendance = app(AttendanceService::class)->checkIn($student, $this->payload($student));
 
         $this->assertSame(AttendanceStatus::Terlambat, $attendance->status);
         $this->assertSame(15, $attendance->late_minutes);
@@ -65,7 +67,9 @@ class AttendanceTest extends TestCase
     {
         $this->expectException(ValidationException::class);
 
-        app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
+        $student = $this->makeStudent();
+
+        app(AttendanceService::class)->checkIn($student, $this->payload($student, [
             'lat' => self::OFFICE_LAT + 0.01,
         ]));
     }
@@ -74,7 +78,9 @@ class AttendanceTest extends TestCase
     {
         Setting::put('require_geofence', '0');
 
-        $attendance = app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
+        $student = $this->makeStudent();
+
+        $attendance = app(AttendanceService::class)->checkIn($student, $this->payload($student, [
             'lat' => self::OFFICE_LAT + 0.01,
         ]));
 
@@ -87,7 +93,9 @@ class AttendanceTest extends TestCase
     {
         $this->expectException(ValidationException::class);
 
-        app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
+        $student = $this->makeStudent();
+
+        app(AttendanceService::class)->checkIn($student, $this->payload($student, [
             'accuracy' => null,
         ]));
     }
@@ -96,7 +104,9 @@ class AttendanceTest extends TestCase
     {
         $this->expectException(ValidationException::class);
 
-        app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
+        $student = $this->makeStudent();
+
+        app(AttendanceService::class)->checkIn($student, $this->payload($student, [
             'accuracy' => 500,
         ]));
     }
@@ -105,17 +115,34 @@ class AttendanceTest extends TestCase
     {
         $this->expectException(ValidationException::class);
 
-        app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
-            'photo' => null,
+        $student = $this->makeStudent();
+
+        app(AttendanceService::class)->checkIn($student, $this->payload($student, [
+            'photo_token' => null,
         ]));
     }
 
-    public function test_check_in_rejects_invalid_photo_data_uri(): void
+    public function test_check_in_rejects_invalid_photo_token(): void
     {
         $this->expectException(ValidationException::class);
 
-        app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
-            'photo' => 'data:image/jpeg;base64,not-an-image',
+        $student = $this->makeStudent();
+
+        app(AttendanceService::class)->checkIn($student, $this->payload($student, [
+            'photo_token' => 'invalid-token',
+        ]));
+    }
+
+    public function test_check_in_rejects_photo_token_belonging_to_another_student(): void
+    {
+        $this->expectException(ValidationException::class);
+
+        $student = $this->makeStudent();
+        $other = $this->makeStudent();
+        $token = app(AttendanceService::class)->storeSelfie($other, $this->selfieDataUri());
+
+        app(AttendanceService::class)->checkIn($student, $this->payload($student, [
+            'photo_token' => $token,
         ]));
     }
 
@@ -123,7 +150,9 @@ class AttendanceTest extends TestCase
     {
         $this->expectException(ValidationException::class);
 
-        app(AttendanceService::class)->checkOut($this->makeStudent(), $this->payload());
+        $student = $this->makeStudent();
+
+        app(AttendanceService::class)->checkOut($student, $this->payload($student));
     }
 
     public function test_student_can_check_out_after_check_in(): void
@@ -131,10 +160,10 @@ class AttendanceTest extends TestCase
         $student = $this->makeStudent();
         $service = app(AttendanceService::class);
 
-        $service->checkIn($student, $this->payload());
+        $service->checkIn($student, $this->payload($student));
         $this->travelTo(Carbon::parse('2026-11-09 16:05:00', 'Asia/Jakarta'));
 
-        $attendance = $service->checkOut($student, $this->payload());
+        $attendance = $service->checkOut($student, $this->payload($student));
 
         $this->assertNotNull($attendance->check_out_at);
         $this->assertNotNull($attendance->check_out_photo);
@@ -145,7 +174,9 @@ class AttendanceTest extends TestCase
     {
         Setting::put('require_geofence', '0');
 
-        $attendance = app(AttendanceService::class)->checkIn($this->makeStudent(), $this->payload([
+        $student = $this->makeStudent();
+
+        $attendance = app(AttendanceService::class)->checkIn($student, $this->payload($student, [
             'lat' => null,
             'lng' => null,
             'accuracy' => null,
@@ -165,10 +196,10 @@ class AttendanceTest extends TestCase
         $student = $this->makeStudent();
         $service = app(AttendanceService::class);
 
-        $service->checkIn($student, $this->payload());
+        $service->checkIn($student, $this->payload($student));
         $this->travelTo(Carbon::parse('2026-11-09 16:05:00', 'Asia/Jakarta'));
 
-        $attendance = $service->checkOut($student, $this->payload([
+        $attendance = $service->checkOut($student, $this->payload($student, [
             'lat' => self::OFFICE_LAT + 0.01,
         ]));
 
@@ -191,13 +222,13 @@ class AttendanceTest extends TestCase
         return $student;
     }
 
-    private function payload(array $overrides = []): array
+    private function payload(User $student, array $overrides = []): array
     {
         return array_merge([
             'lat' => self::OFFICE_LAT,
             'lng' => self::OFFICE_LNG,
             'accuracy' => 10,
-            'photo' => $this->selfieDataUri(),
+            'photo_token' => app(AttendanceService::class)->storeSelfie($student, $this->selfieDataUri()),
         ], $overrides);
     }
 

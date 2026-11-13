@@ -15,7 +15,7 @@ class Index extends Component
 {
     use WithPagination;
 
-    public ?string $photo = null;
+    public ?string $photoToken = null;
 
     public ?float $lat = null;
 
@@ -31,10 +31,10 @@ class Index extends Component
             'lat' => $this->lat,
             'lng' => $this->lng,
             'accuracy' => $this->accuracy,
-            'photo' => $this->photo,
+            'photo_token' => $this->photoToken,
         ]);
 
-        $this->reset('photo');
+        $this->reset('photoToken');
         session()->flash('success', 'Absen masuk berhasil dicatat.');
     }
 
@@ -46,20 +46,20 @@ class Index extends Component
             'lat' => $this->lat,
             'lng' => $this->lng,
             'accuracy' => $this->accuracy,
-            'photo' => $this->photo,
+            'photo_token' => $this->photoToken,
         ]);
 
-        $this->reset('photo');
+        $this->reset('photoToken');
         session()->flash('success', 'Absen pulang berhasil dicatat.');
     }
 
     private function validatePhoto(): void
     {
         $this->validate([
-            'photo' => ['nullable', 'string', 'max:800000'],
+            'photoToken' => ['nullable', 'string', 'max:2048'],
         ], [
-            'photo.string' => 'Format foto tidak valid.',
-            'photo.max' => 'Ukuran foto terlalu besar. Ambil ulang foto.',
+            'photoToken.string' => 'Sesi foto selfie tidak valid.',
+            'photoToken.max' => 'Sesi foto selfie tidak valid.',
         ]);
     }
 
@@ -79,7 +79,7 @@ class Index extends Component
             'maxAccuracy' => Setting::getInt('max_accuracy_m', 100),
             'requireSelfie' => $requireSelfie,
             'requireGeofence' => Setting::getBool('require_geofence', true),
-            'photoReady' => ! $requireSelfie || filled($this->photo),
+            'photoReady' => ! $requireSelfie || filled($this->photoToken),
         ]);
     }
 }

@@ -45,8 +45,33 @@ class LeaveRequest extends Model
         return $this->belongsTo(User::class, 'reviewed_by');
     }
 
+    public function isOngoing(): bool
+    {
+        return $this->end_date === null;
+    }
+
+    public function periodLabel(): string
+    {
+        if ($this->isOngoing()) {
+            return 'Sejak '.$this->start_date->translatedFormat('d M Y');
+        }
+
+        if ($this->start_date->isSameDay($this->end_date)) {
+            return $this->start_date->translatedFormat('d M Y');
+        }
+
+        return $this->start_date->translatedFormat('d M Y')
+            .' – '.$this->end_date->translatedFormat('d M Y');
+    }
+
     public function totalDays(): int
     {
-        return (int) $this->start_date->diffInDays($this->end_date) + 1;
+        $end = $this->end_date?->copy() ?? now()->startOfDay();
+
+        if ($end->lessThan($this->start_date)) {
+            return 0;
+        }
+
+        return (int) $this->start_date->diffInDays($end) + 1;
     }
 }

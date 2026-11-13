@@ -23,7 +23,15 @@ class LeaveRequestFactory extends Factory
             'start_date' => $start,
             'end_date' => $start->copy()->addDays(fake()->numberBetween(0, 2)),
             'reason' => fake()->sentence(12),
-            'status' => LeaveStatus::Pending,
+            'status' => LeaveStatus::Approved,
         ];
+    }
+
+    public function ongoingSick(): static
+    {
+        return $this->state(fn () => [
+            'type' => LeaveType::Sakit,
+            'end_date' => null,
+        ]);
     }
 }
