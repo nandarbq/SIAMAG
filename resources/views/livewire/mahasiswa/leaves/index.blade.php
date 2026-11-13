@@ -195,7 +195,7 @@
 
                             @if ($type === App\Enums\LeaveType::Sakit->value)
                                 <p class="mt-2 text-xs leading-relaxed text-slate-500">
-                                    Tanggal selesai tidak diperlukan. Setelah sembuh, tandai “Saya sudah sembuh” pada riwayat pengajuan.
+                                    Tanggal selesai tidak diperlukan. Setelah sembuh, tandai “Saya sudah sembuh” dan pilih tanggal kembali masuk.
                                 </p>
                             @endif
                         </div>
@@ -249,8 +249,8 @@
                 <div class="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/5">
                     <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
                         <div>
-                            <h2 class="text-lg font-bold text-slate-900">Tandai Sembuh</h2>
-                            <p class="mt-0.5 text-xs text-slate-500">Absensi sampai tanggal ini dicatat sebagai sakit.</p>
+                            <h2 class="text-lg font-bold text-slate-900">Saya Sudah Sembuh</h2>
+                            <p class="mt-0.5 text-xs text-slate-500">Masukkan tanggal kamu kembali masuk. Absensi sakit dicatat sampai H-1.</p>
                         </div>
                         <button type="button" wire:click="closeRecoveryModal" class="btn-ghost btn-sm" title="Tutup">
                             <x-icon name="x" class="h-5 w-5" />
@@ -259,8 +259,9 @@
 
                     <form wire:submit="markRecovered" class="space-y-5 p-6">
                         <div>
-                            <label class="form-label">Tanggal Sembuh</label>
+                            <label class="form-label">Tanggal Kembali Masuk</label>
                             <input type="date" wire:model="recoveryDate" class="input">
+                            <p class="mt-1 text-xs text-slate-500">Jika sembuh dan masuk hari ini, pilih hari ini.</p>
                             @error('recoveryDate') <p class="form-error">{{ $message }}</p> @enderror
                         </div>
 
