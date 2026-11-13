@@ -213,12 +213,30 @@ class Index extends Component
         session()->flash('success', 'Masa sakit berhasil ditutup dan absensi telah disesuaikan.');
     }
 
-    public function delete(int $leaveId): void
+    public function delete(int $leaveId, AttendanceService $attendanceService): void
     {
         $leave = auth()->user()->leaveRequests()->findOrFail($leaveId);
 
-        if ($leave->status !== LeaveStatus::Pending) {
-            session()->flash('error', 'Pengajuan yang sudah diproses tidak dapat dihapus.');
+        if (! in_array($leave->status, [LeaveStatus::Approved, LeaveStatus::Pending], true)) {
+            session()->flash('error', 'Pengajuan ini tidak dapat dibatalkan.');
+
+            return;
+        }
+
+        if ($leave->type === LeaveType::Izin && $leave->start_date->lessThan(today())) {
+            session()->flash('error', 'Izin yang sudah lewat tidak dapat dibatalkan.');
+
+            return;
+        }
+
+        if ($leave->type === LeaveType::Sakit && ! $leave->isOngoing()) {
+            session()->flash('error', 'Sakit yang sudah ditutup tidak dapat dibatalkan.');
+
+            return;
+        }
+
+        if (! $attendanceService->cancelLeave($leave)) {
+            session()->flash('error', 'Pengajuan tidak dapat dibatalkan karena sudah ada absensi masuk.');
 
             return;
         }
@@ -228,7 +246,7 @@ class Index extends Component
         }
 
         $leave->delete();
-        session()->flash('success', 'Pengajuan berhasil dihapus.');
+        session()->flash('success', 'Pengajuan berhasil dibatalkan.');
     }
 
     public function resetFilters(): void

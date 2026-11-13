@@ -90,7 +90,7 @@ class LeaveTest extends TestCase
             ->assertHasErrors(['startDate']);
     }
 
-    public function test_student_can_delete_a_pending_request(): void
+    public function test_student_can_cancel_future_leave_request(): void
     {
         $student = $this->makeStudent();
 
@@ -100,7 +100,7 @@ class LeaveTest extends TestCase
             'start_date' => '2026-11-10',
             'end_date' => '2026-11-10',
             'reason' => 'Kegiatan keluarga di luar kota.',
-            'status' => LeaveStatus::Pending,
+            'status' => LeaveStatus::Approved,
         ]);
 
         Livewire::actingAs($student)
@@ -223,7 +223,27 @@ class LeaveTest extends TestCase
         ]);
     }
 
-    public function test_student_cannot_delete_a_processed_leave_request(): void
+    public function test_student_cannot_cancel_past_leave_request(): void
+    {
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Izin,
+            'start_date' => '2026-11-08',
+            'end_date' => '2026-11-08',
+            'reason' => 'Kegiatan keluarga di luar kota.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('delete', $leave->id);
+
+        $this->assertDatabaseHas('leave_requests', ['id' => $leave->id]);
+    }
+
+    public function test_cancelling_leave_removes_recorded_attendance(): void
     {
         $student = $this->makeStudent();
 
@@ -233,6 +253,60 @@ class LeaveTest extends TestCase
             'start_date' => '2026-11-10',
             'end_date' => '2026-11-10',
             'reason' => 'Kegiatan keluarga di luar kota.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        app(AttendanceService::class)->markLeave($leave);
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('delete', $leave->id);
+
+        $this->assertDatabaseMissing('leave_requests', ['id' => $leave->id]);
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $student->id,
+            'date' => '2026-11-10 00:00:00',
+        ]);
+    }
+
+    public function test_student_cannot_cancel_leave_with_check_in_attendance(): void
+    {
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Izin,
+            'start_date' => '2026-11-09',
+            'end_date' => '2026-11-09',
+            'reason' => 'Kegiatan keluarga di luar kota.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'check_in_at' => now(),
+            'status' => AttendanceStatus::Izin,
+            'note' => 'Pengajuan Izin tercatat.',
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('delete', $leave->id);
+
+        $this->assertDatabaseHas('leave_requests', ['id' => $leave->id]);
+    }
+
+    public function test_student_cannot_cancel_closed_sick_leave(): void
+    {
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-08',
+            'end_date' => '2026-11-08',
+            'reason' => 'Demam dan perlu istirahat di rumah.',
             'status' => LeaveStatus::Approved,
         ]);
 

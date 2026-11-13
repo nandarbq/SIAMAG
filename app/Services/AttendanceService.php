@@ -217,6 +217,27 @@ class AttendanceService
         $this->markLeave($leave);
     }
 
+    public function cancelLeave(LeaveRequest $leave): bool
+    {
+        $attendances = Attendance::query()
+            ->where('user_id', $leave->user_id)
+            ->whereDate('date', '>=', $leave->start_date)
+            ->whereDate('date', '<=', $leave->end_date ?? today())
+            ->where('status', $leave->type->value)
+            ->whereIn('note', [
+                'Pengajuan '.$leave->type->label().' tercatat.',
+                'Pengajuan '.$leave->type->label().' disetujui.',
+            ]);
+
+        if ($attendances->clone()->whereNotNull('check_in_at')->exists()) {
+            return false;
+        }
+
+        $attendances->delete();
+
+        return true;
+    }
+
     private function clearSickAttendanceAfter(LeaveRequest $leave, Carbon $recoveryDate): void
     {
         Attendance::query()
