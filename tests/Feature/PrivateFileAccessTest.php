@@ -109,7 +109,7 @@ class PrivateFileAccessTest extends TestCase
             'start_date' => '2026-11-10',
             'end_date' => '2026-11-10',
             'reason' => 'Demam dan perlu istirahat di rumah.',
-            'status' => LeaveStatus::Pending,
+            'status' => LeaveStatus::Approved,
             'attachment_path' => 'leaves/surat.pdf',
         ]);
 
@@ -134,7 +134,7 @@ class PrivateFileAccessTest extends TestCase
             'start_date' => '2026-11-10',
             'end_date' => '2026-11-10',
             'reason' => 'Demam dan perlu istirahat di rumah.',
-            'status' => LeaveStatus::Pending,
+            'status' => LeaveStatus::Approved,
             'attachment_path' => 'leaves/surat.pdf',
         ]);
 

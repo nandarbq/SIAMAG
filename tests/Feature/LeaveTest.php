@@ -56,6 +56,64 @@ class LeaveTest extends TestCase
         $this->assertSame(AttendanceStatus::Izin, $attendance->status);
     }
 
+    public function test_sick_leave_submission_is_recorded_as_ongoing(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('openCreate')
+            ->set('type', LeaveType::Sakit->value)
+            ->set('startDate', '2026-11-09')
+            ->set('reason', 'Demam dan perlu istirahat di rumah.')
+            ->call('submit')
+            ->assertHasNoErrors();
+
+        $leave = LeaveRequest::query()->where('user_id', $student->id)->firstOrFail();
+
+        $this->assertSame(LeaveStatus::Approved, $leave->status);
+        $this->assertNull($leave->end_date);
+
+        $attendance = Attendance::query()
+            ->where('user_id', $student->id)
+            ->whereDate('date', '2026-11-09')
+            ->firstOrFail();
+
+        $this->assertSame(AttendanceStatus::Sakit, $attendance->status);
+    }
+
+    public function test_ongoing_sick_leave_blocks_future_leave_submission(): void
+    {
+        $student = $this->makeStudent();
+
+        LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->set('type', LeaveType::Izin->value)
+            ->set('startDate', '2026-11-10')
+            ->set('reason', 'Kegiatan keluarga di luar kota.')
+            ->call('submit')
+            ->assertHasErrors(['startDate']);
+    }
+
+    public function test_leave_page_hides_pending_status(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->assertDontSee('Menunggu')
+            ->assertSee('Sakit Berlangsung');
+    }
+
     public function test_student_can_open_leave_form_on_final_internship_day(): void
     {
         $this->travelTo(Carbon::parse('2026-12-31 10:00:00', 'Asia/Jakarta'));
