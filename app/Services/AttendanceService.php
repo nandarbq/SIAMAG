@@ -10,6 +10,7 @@ use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Crypt;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
 use Illuminate\Validation\ValidationException;
@@ -264,17 +265,15 @@ class AttendanceService
 
     public function storeSelfie(User $user, string $photo): string
     {
-        if (! str_starts_with($photo, 'data:image/')) {
-            throw ValidationException::withMessages([
-                'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
-            ]);
-        }
+        $binary = $this->decodeSelfie($user, $photo);
 
         try {
             $manager = ImageManager::usingDriver(Driver::class);
-            $image = $manager->decodeDataUri($photo);
+            $image = $manager->decodeBinary($binary);
             $image = $image->scaleDown(width: 900)->encodeUsingFileExtension('jpg', quality: 80);
-        } catch (\Throwable) {
+        } catch (\Throwable $exception) {
+            $this->logSelfieFailure($user, 'decode', $exception, strlen($photo));
+
             throw ValidationException::withMessages([
                 'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
             ]);
@@ -288,6 +287,63 @@ class AttendanceService
             'user_id' => $user->id,
             'path' => $path,
         ], JSON_THROW_ON_ERROR));
+    }
+
+    private function decodeSelfie(User $user, string $photo): string
+    {
+        $comma = strpos($photo, ',');
+
+        if (! str_starts_with($photo, 'data:image/') || $comma === false) {
+            $this->logSelfieFailure($user, 'format', null, strlen($photo));
+
+            throw ValidationException::withMessages([
+                'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
+
+        $metadata = substr($photo, 5, $comma - 5);
+        $mimeType = strtolower(explode(';', $metadata)[0]);
+
+        if (! str_contains($metadata, ';base64') || ! in_array($mimeType, ['image/jpeg', 'image/jpg', 'image/png'], true)) {
+            $this->logSelfieFailure($user, 'mime', null, strlen($photo));
+
+            throw ValidationException::withMessages([
+                'photo' => 'Format foto selfie tidak didukung. Ambil ulang foto.',
+            ]);
+        }
+
+        $binary = base64_decode(substr($photo, $comma + 1), true);
+
+        if ($binary === false || $binary === '') {
+            $this->logSelfieFailure($user, 'base64', null, strlen($photo));
+
+            throw ValidationException::withMessages([
+                'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
+
+        $info = @getimagesizefromstring($binary);
+
+        if ($info === false || ! in_array($info[2], [IMAGETYPE_JPEG, IMAGETYPE_PNG], true)) {
+            $this->logSelfieFailure($user, 'image', null, strlen($photo));
+
+            throw ValidationException::withMessages([
+                'photo' => 'Foto selfie tidak valid. Ambil ulang foto.',
+            ]);
+        }
+
+        return $binary;
+    }
+
+    private function logSelfieFailure(User $user, string $stage, ?\Throwable $exception, int $payloadLength): void
+    {
+        Log::warning('Attendance selfie processing failed', [
+            'user_id' => $user->id,
+            'stage' => $stage,
+            'exception' => $exception ? $exception::class : null,
+            'message' => $exception?->getMessage(),
+            'payload_length' => $payloadLength,
+        ]);
     }
 
     public function resolveSelfiePath(User $user, ?string $token): ?string
