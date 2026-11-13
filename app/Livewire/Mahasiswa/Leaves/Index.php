@@ -5,6 +5,7 @@ namespace App\Livewire\Mahasiswa\Leaves;
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
 use App\Models\LeaveRequest;
+use App\Services\AttendanceService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
@@ -27,8 +28,6 @@ class Index extends Component
     public string $type = LeaveType::Izin->value;
 
     public string $startDate = '';
-
-    public string $endDate = '';
 
     public string $reason = '';
 
@@ -55,7 +54,6 @@ class Index extends Component
         }
 
         $this->startDate = now()->toDateString();
-        $this->endDate = now()->toDateString();
         $this->showModal = true;
     }
 
@@ -66,7 +64,7 @@ class Index extends Component
         $this->resetValidation();
     }
 
-    public function submit(): void
+    public function submit(AttendanceService $attendanceService): void
     {
         $userId = auth()->id();
         $profile = auth()->user()->internProfile;
@@ -84,23 +82,7 @@ class Index extends Component
                     $date = Carbon::parse($value);
 
                     if ($date->lessThan($profile->start_date) || $date->greaterThan($profile->end_date)) {
-                        $fail('Tanggal mulai harus berada di dalam periode magang.');
-                    }
-                },
-            ],
-            'endDate' => [
-                'required',
-                'date',
-                'after_or_equal:startDate',
-                function (string $attribute, mixed $value, \Closure $fail) use ($profile) {
-                    if (! $profile) {
-                        return;
-                    }
-
-                    $date = Carbon::parse($value);
-
-                    if ($date->lessThan($profile->start_date) || $date->greaterThan($profile->end_date)) {
-                        $fail('Tanggal selesai harus berada di dalam periode magang.');
+                        $fail('Tanggal harus berada di dalam periode magang.');
                     }
                 },
             ],
@@ -109,20 +91,24 @@ class Index extends Component
         ], [
             'type.required' => 'Pilih jenis pengajuan.',
             'type.in' => 'Jenis pengajuan tidak valid.',
-            'startDate.required' => 'Tanggal mulai wajib diisi.',
-            'endDate.required' => 'Tanggal selesai wajib diisi.',
-            'endDate.after_or_equal' => 'Tanggal selesai tidak boleh sebelum tanggal mulai.',
+            'startDate.required' => 'Tanggal wajib diisi.',
             'reason.required' => 'Alasan pengajuan wajib diisi.',
             'reason.min' => 'Alasan minimal 10 karakter.',
             'attachment.mimes' => 'Lampiran harus berupa JPG, PNG, atau PDF.',
             'attachment.max' => 'Ukuran lampiran maksimal 4 MB.',
         ]);
 
+        $type = LeaveType::from($this->type);
+        $endDate = $type === LeaveType::Sakit ? null : $this->startDate;
+
         $conflict = LeaveRequest::query()
             ->where('user_id', $userId)
             ->whereIn('status', [LeaveStatus::Pending->value, LeaveStatus::Approved->value])
-            ->whereDate('start_date', '<=', $this->endDate)
-            ->whereDate('end_date', '>=', $this->startDate)
+            ->whereDate('start_date', '<=', $endDate ?? '9999-12-31')
+            ->where(function ($query) {
+                $query->whereNull('end_date')
+                    ->orWhereDate('end_date', '>=', $this->startDate);
+            })
             ->exists();
 
         if ($conflict) {
@@ -135,18 +121,20 @@ class Index extends Component
             ? $this->attachment->store('leave-attachments/'.$userId, 'local')
             : null;
 
-        LeaveRequest::query()->create([
+        $leave = LeaveRequest::query()->create([
             'user_id' => $userId,
-            'type' => $this->type,
+            'type' => $type,
             'start_date' => $this->startDate,
-            'end_date' => $this->endDate,
+            'end_date' => $endDate,
             'reason' => $this->reason,
             'attachment_path' => $attachmentPath,
-            'status' => LeaveStatus::Pending,
+            'status' => LeaveStatus::Approved,
         ]);
 
+        $attendanceService->markLeave($leave);
+
         $this->closeModal();
-        session()->flash('success', 'Pengajuan izin berhasil dikirim dan menunggu persetujuan admin.');
+        session()->flash('success', 'Pengajuan '.$type->label().' berhasil dicatat.');
     }
 
     public function delete(int $leaveId): void
@@ -202,7 +190,7 @@ class Index extends Component
 
     private function resetForm(): void
     {
-        $this->reset(['type', 'startDate', 'endDate', 'reason', 'attachment']);
+        $this->reset(['type', 'startDate', 'reason', 'attachment']);
         $this->type = LeaveType::Izin->value;
     }
 }

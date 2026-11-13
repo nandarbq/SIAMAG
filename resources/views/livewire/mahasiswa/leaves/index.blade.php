@@ -7,7 +7,7 @@
         </div>
         <button type="button" wire:click="openCreate" class="btn-primary">
             <x-icon name="plus" class="h-4 w-4" />
-            Ajukan Izin
+            Ajukan Izin/Sakit
         </button>
     </section>
 
@@ -169,17 +169,18 @@
                             @error('type') <p class="form-error">{{ $message }}</p> @enderror
                         </div>
 
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label class="form-label">Tanggal Mulai</label>
-                                <input type="date" wire:model="startDate" class="input">
-                                @error('startDate') <p class="form-error">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="form-label">Tanggal Selesai</label>
-                                <input type="date" wire:model="endDate" class="input">
-                                @error('endDate') <p class="form-error">{{ $message }}</p> @enderror
-                            </div>
+                        <div>
+                            <label class="form-label">
+                                {{ $type === App\Enums\LeaveType::Sakit->value ? 'Tanggal Mulai Sakit' : 'Tanggal Izin' }}
+                            </label>
+                            <input type="date" wire:model="startDate" class="input">
+                            @error('startDate') <p class="form-error">{{ $message }}</p> @enderror
+
+                            @if ($type === App\Enums\LeaveType::Sakit->value)
+                                <p class="mt-2 text-xs leading-relaxed text-slate-500">
+                                    Tanggal selesai tidak diperlukan. Setelah sembuh, tandai “Saya sudah sembuh” pada riwayat pengajuan.
+                                </p>
+                            @endif
                         </div>
 
                         <div>
