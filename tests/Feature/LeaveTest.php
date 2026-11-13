@@ -131,7 +131,7 @@ class LeaveTest extends TestCase
             ->assertSee(route('leave.attachment', $leave));
     }
 
-    public function test_admin_approval_marks_attendance_days_as_leave(): void
+    public function test_admin_can_view_recorded_leave_detail(): void
     {
         $admin = User::factory()->admin()->create();
         $student = $this->makeStudent();
@@ -140,87 +140,27 @@ class LeaveTest extends TestCase
             'user_id' => $student->id,
             'type' => LeaveType::Sakit,
             'start_date' => '2026-11-10',
-            'end_date' => '2026-11-11',
+            'end_date' => null,
             'reason' => 'Demam dan perlu istirahat di rumah.',
-            'status' => LeaveStatus::Pending,
+            'status' => LeaveStatus::Approved,
         ]);
 
         Livewire::actingAs($admin)
             ->test(AdminLeaveIndex::class)
+            ->assertSet('status', LeaveStatus::Approved->value)
             ->call('openReview', $leave->id)
-            ->set('reviewNote', 'Disetujui, semoga lekas sembuh.')
-            ->call('approve', $leave->id)
-            ->assertHasNoErrors();
-
-        $leave->refresh();
-
-        $this->assertSame(LeaveStatus::Approved, $leave->status);
-        $this->assertSame($admin->id, $leave->reviewed_by);
-
-        foreach (['2026-11-10', '2026-11-11'] as $date) {
-            $attendance = Attendance::query()
-                ->where('user_id', $student->id)
-                ->whereDate('date', $date)
-                ->firstOrFail();
-
-            $this->assertSame(AttendanceStatus::Sakit, $attendance->status);
-        }
+            ->assertSet('reviewingId', $leave->id)
+            ->assertSee('Masih berlangsung');
     }
 
-    public function test_admin_must_add_a_note_when_rejecting_a_leave_request(): void
+    public function test_admin_leave_page_does_not_offer_approval_actions(): void
     {
         $admin = User::factory()->admin()->create();
-        $student = $this->makeStudent();
-
-        $leave = LeaveRequest::query()->create([
-            'user_id' => $student->id,
-            'type' => LeaveType::Izin,
-            'start_date' => '2026-11-10',
-            'end_date' => '2026-11-10',
-            'reason' => 'Kegiatan keluarga di luar kota.',
-            'status' => LeaveStatus::Pending,
-        ]);
 
         Livewire::actingAs($admin)
             ->test(AdminLeaveIndex::class)
-            ->call('openReview', $leave->id)
-            ->set('reviewNote', '')
-            ->call('reject', $leave->id)
-            ->assertHasErrors(['reviewNote']);
-
-        $this->assertSame(LeaveStatus::Pending, $leave->fresh()->status);
-    }
-
-    public function test_admin_can_reject_a_leave_request_with_a_note(): void
-    {
-        $admin = User::factory()->admin()->create();
-        $student = $this->makeStudent();
-
-        $leave = LeaveRequest::query()->create([
-            'user_id' => $student->id,
-            'type' => LeaveType::Izin,
-            'start_date' => '2026-11-10',
-            'end_date' => '2026-11-10',
-            'reason' => 'Kegiatan keluarga di luar kota.',
-            'status' => LeaveStatus::Pending,
-        ]);
-
-        Livewire::actingAs($admin)
-            ->test(AdminLeaveIndex::class)
-            ->call('openReview', $leave->id)
-            ->set('reviewNote', 'Lampiran surat belum lengkap.')
-            ->call('reject', $leave->id)
-            ->assertHasNoErrors();
-
-        $leave->refresh();
-
-        $this->assertSame(LeaveStatus::Rejected, $leave->status);
-        $this->assertSame('Lampiran surat belum lengkap.', $leave->review_note);
-        $this->assertSame($admin->id, $leave->reviewed_by);
-        $this->assertDatabaseHas('notifications', [
-            'notifiable_id' => $student->id,
-            'notifiable_type' => User::class,
-        ]);
+            ->assertDontSee('Setujui')
+            ->assertDontSee('Tolak');
     }
 
     public function test_student_cannot_cancel_past_leave_request(): void

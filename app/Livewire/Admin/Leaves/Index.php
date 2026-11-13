@@ -5,8 +5,6 @@ namespace App\Livewire\Admin\Leaves;
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
 use App\Models\LeaveRequest;
-use App\Notifications\WorkflowNotification;
-use App\Services\AttendanceService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -18,7 +16,7 @@ class Index extends Component
 {
     use WithPagination;
 
-    public string $status = LeaveStatus::Pending->value;
+    public string $status = LeaveStatus::Approved->value;
 
     public string $type = '';
 
@@ -27,8 +25,6 @@ class Index extends Component
     public int $perPage = 12;
 
     public ?int $reviewingId = null;
-
-    public string $reviewNote = '';
 
     public function updating(string $property): void
     {
@@ -42,86 +38,18 @@ class Index extends Component
         $leave = LeaveRequest::query()->findOrFail($leaveId);
 
         $this->reviewingId = $leave->id;
-        $this->reviewNote = $leave->review_note ?? '';
     }
 
     public function closeReview(): void
     {
-        $this->reset(['reviewingId', 'reviewNote']);
+        $this->reset('reviewingId');
         $this->resetValidation();
-    }
-
-    public function approve(int $leaveId, AttendanceService $attendanceService): void
-    {
-        $leave = LeaveRequest::query()->with('user')->findOrFail($leaveId);
-
-        if ($leave->status !== LeaveStatus::Pending) {
-            $this->closeReview();
-            session()->flash('error', 'Pengajuan ini sudah diproses.');
-
-            return;
-        }
-
-        $leave->update([
-            'status' => LeaveStatus::Approved,
-            'review_note' => $this->reviewNote ?: 'Pengajuan disetujui.',
-            'reviewed_by' => auth()->id(),
-            'reviewed_at' => now(),
-        ]);
-
-        $attendanceService->markLeave($leave);
-
-        $leave->user?->notify(new WorkflowNotification(
-            'Pengajuan '.$leave->type->label().' disetujui',
-            'Pengajuan '.$leave->type->label().' Anda untuk periode '
-                .$leave->start_date->translatedFormat('d M').' — '.$leave->end_date->translatedFormat('d M Y').' telah disetujui.',
-            route('mahasiswa.leaves'),
-            'calendar',
-        ));
-
-        $this->closeReview();
-        session()->flash('success', 'Pengajuan berhasil disetujui dan absensi telah diperbarui.');
-    }
-
-    public function reject(int $leaveId): void
-    {
-        $this->validate([
-            'reviewNote' => ['required', 'string', 'max:500'],
-        ], [
-            'reviewNote.required' => 'Alasan penolakan wajib diisi.',
-        ]);
-
-        $leave = LeaveRequest::query()->with('user')->findOrFail($leaveId);
-
-        if ($leave->status !== LeaveStatus::Pending) {
-            $this->closeReview();
-            session()->flash('error', 'Pengajuan ini sudah diproses.');
-
-            return;
-        }
-
-        $leave->update([
-            'status' => LeaveStatus::Rejected,
-            'review_note' => $this->reviewNote,
-            'reviewed_by' => auth()->id(),
-            'reviewed_at' => now(),
-        ]);
-
-        $leave->user?->notify(new WorkflowNotification(
-            'Pengajuan '.$leave->type->label().' ditolak',
-            'Pengajuan Anda ditolak: '.$this->reviewNote,
-            route('mahasiswa.leaves'),
-            'calendar',
-        ));
-
-        $this->closeReview();
-        session()->flash('success', 'Pengajuan ditolak dengan catatan.');
     }
 
     public function resetFilters(): void
     {
         $this->reset(['type', 'search']);
-        $this->status = LeaveStatus::Pending->value;
+        $this->status = LeaveStatus::Approved->value;
         $this->resetPage();
     }
 
@@ -148,7 +76,7 @@ class Index extends Component
         return view('livewire.admin.leaves.index', [
             'leaves' => $leaves,
             'counts' => $counts,
-            'statuses' => LeaveStatus::cases(),
+            'statuses' => LeaveStatus::visibleCases(),
             'types' => LeaveType::cases(),
             'reviewing' => $this->reviewingId ? LeaveRequest::query()->with('user')->find($this->reviewingId) : null,
         ]);
