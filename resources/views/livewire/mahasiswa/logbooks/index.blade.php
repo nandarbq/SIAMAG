@@ -186,6 +186,12 @@
                                 @if ($logbook->description)
                                     <p class="mt-1 line-clamp-2 max-w-xl text-xs leading-relaxed text-slate-500">{{ $logbook->description }}</p>
                                 @endif
+                                @if ($logbook->attachment_path)
+                                    <a href="{{ route('logbook.photo', $logbook) }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700">
+                                        <x-icon name="camera" class="h-3.5 w-3.5" />
+                                        Foto kegiatan
+                                    </a>
+                                @endif
                             </td>
                             <td class="table-td whitespace-nowrap text-xs text-slate-500">
                                 @if ($logbook->start_time && $logbook->end_time)
@@ -288,6 +294,45 @@
                                 <textarea wire:model="obstacle" rows="3" placeholder="Kendala yang dihadapi (opsional)..." class="input resize-none"></textarea>
                                 @error('obstacle') <p class="form-error">{{ $message }}</p> @enderror
                             </div>
+                        </div>
+
+                        <div>
+                            <label class="form-label">Foto Kegiatan <span class="font-normal text-slate-400">(opsional)</span></label>
+                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
+                                @if ($existingPhoto && ! $photoRemoved && $logbookId)
+                                    <a href="{{ route('logbook.photo', $logbookId) }}" target="_blank" class="block shrink-0">
+                                        <img src="{{ route('logbook.photo', $logbookId) }}" alt="Foto kegiatan" class="h-16 w-16 rounded-xl object-cover ring-1 ring-slate-200">
+                                    </a>
+                                @endif
+                                <label for="logbook-photo" class="flex flex-1 cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-brand-300 hover:bg-brand-50/40">
+                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm ring-1 ring-slate-200">
+                                        <x-icon name="camera" class="h-4 w-4" />
+                                    </span>
+                                    <span class="min-w-0 flex-1 text-xs">
+                                        @if ($photo)
+                                            <span class="block truncate font-semibold text-slate-700">{{ $photo->getClientOriginalName() }}</span>
+                                            <span class="text-slate-400">Klik untuk mengganti foto</span>
+                                        @elseif ($existingPhoto && ! $photoRemoved)
+                                            <span class="block font-semibold text-slate-700">Foto kegiatan sudah tersimpan</span>
+                                            <span class="text-slate-400">Klik untuk mengganti foto</span>
+                                        @else
+                                            <span class="block font-semibold text-slate-700">Unggah foto kegiatan</span>
+                                            <span class="text-slate-400">JPG, PNG, atau WEBP maksimal 4 MB</span>
+                                        @endif
+                                    </span>
+                                    <span wire:loading wire:target="photo" class="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600"></span>
+                                    <input id="logbook-photo" type="file" accept=".jpg,.jpeg,.png,.webp" wire:model="photo" class="sr-only">
+                                </label>
+                                @if ($existingPhoto && ! $photoRemoved)
+                                    <button type="button" wire:click="removePhoto" class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50">Hapus</button>
+                                @elseif ($photoRemoved)
+                                    <button type="button" wire:click="undoRemovePhoto" class="btn-ghost btn-sm">Urungkan</button>
+                                @endif
+                            </div>
+                            @if ($photoRemoved)
+                                <p class="mt-1 text-xs font-medium text-rose-600">Foto akan dihapus saat logbook disimpan.</p>
+                            @endif
+                            @error('photo') <p class="form-error">{{ $message }}</p> @enderror
                         </div>
 
                         <div class="flex flex-col-reverse gap-2 border-t border-slate-100 pt-5 sm:flex-row sm:items-center sm:justify-between">

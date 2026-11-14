@@ -7,6 +7,7 @@ use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
 use App\Models\Attendance;
 use App\Models\LeaveRequest;
+use App\Models\Logbook;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -141,5 +142,62 @@ class PrivateFileAccessTest extends TestCase
         $this->actingAs($other)
             ->get(route('leave.attachment', $leave))
             ->assertForbidden();
+    }
+
+    public function test_owner_and_admin_can_view_logbook_photo(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create();
+        Storage::disk('local')->put('logbook-photos/foto.jpg', 'image-bytes');
+
+        $logbook = Logbook::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'activity' => 'Analisis data curah hujan',
+            'attachment_path' => 'logbook-photos/foto.jpg',
+        ]);
+
+        $this->actingAs($student)
+            ->get(route('logbook.photo', $logbook))
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->get(route('logbook.photo', $logbook))
+            ->assertOk();
+    }
+
+    public function test_other_students_cannot_view_logbook_photo(): void
+    {
+        $owner = User::factory()->mahasiswa()->create();
+        $other = User::factory()->mahasiswa()->create();
+        Storage::disk('local')->put('logbook-photos/foto.jpg', 'image-bytes');
+
+        $logbook = Logbook::query()->create([
+            'user_id' => $owner->id,
+            'date' => '2026-11-09',
+            'activity' => 'Analisis data curah hujan',
+            'attachment_path' => 'logbook-photos/foto.jpg',
+        ]);
+
+        $this->actingAs($other)
+            ->get(route('logbook.photo', $logbook))
+            ->assertForbidden();
+    }
+
+    public function test_logbook_photo_returns_not_found_when_file_is_missing(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create();
+
+        $logbook = Logbook::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'activity' => 'Analisis data curah hujan',
+            'attachment_path' => 'logbook-photos/missing.jpg',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('logbook.photo', $logbook))
+            ->assertNotFound();
     }
 }

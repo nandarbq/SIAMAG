@@ -152,6 +152,12 @@
                         <div class="px-5 py-3.5">
                             <p class="truncate text-sm font-semibold text-slate-800">{{ $logbook->activity }}</p>
                             <p class="mt-1 text-xs text-slate-400">{{ $logbook->date?->translatedFormat('d M Y') }}</p>
+                            @if ($logbook->attachment_path)
+                                <a href="{{ route('logbook.photo', $logbook) }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700">
+                                    <x-icon name="camera" class="h-3.5 w-3.5" />
+                                    Lihat foto
+                                </a>
+                            @endif
                         </div>
                     @empty
                         <p class="empty-state">Belum ada logbook.</p>
