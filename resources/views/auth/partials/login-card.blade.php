@@ -1,10 +1,10 @@
 <div class="auth-card auth-reveal auth-reveal--delay-2">
     <div class="flex">
-        <aside class="auth-card-spine hidden w-12 shrink-0 sm:block" aria-hidden="true"></aside>
+        <aside class="auth-card-spine hidden w-3 shrink-0 sm:block" aria-hidden="true"></aside>
 
         <div class="auth-card-paper relative flex-1 p-6 sm:p-8">
-            <div>
-                <h2 class="text-2xl font-semibold tracking-[-0.03em] text-slate-950">Masuk</h2>
+            <div class="pr-12">
+                <h2 id="login-title" class="text-2xl font-semibold tracking-[-0.03em] text-slate-950">Masuk</h2>
                 <p class="mt-2 text-sm leading-6 text-slate-500">Gunakan akun yang diberikan admin.</p>
             </div>
 
@@ -33,7 +33,7 @@
                             type="email"
                             value="{{ old('email') }}"
                             required
-                            autofocus
+                            x-ref="loginEmail"
                             autocomplete="username"
                             placeholder="nama@bmkg.go.id"
                             class="auth-input auth-input--with-icon @error('email') border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 @enderror"
