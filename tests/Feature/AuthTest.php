@@ -22,16 +22,28 @@ class AuthTest extends TestCase
             ->assertSee('livewire', false);
     }
 
-    public function test_login_page_uses_atmospheric_station_redesign(): void
+    public function test_login_page_uses_calm_institutional_redesign(): void
     {
         $this->get(route('login'))
             ->assertOk()
             ->assertSee('Stasiun Meteorologi Banyuwangi')
-            ->assertSee('Magang yang')
-            ->assertSee('Selamat datang kembali.')
-            ->assertSee('Akses terverifikasi')
-            ->assertSee('Koneksi aman', false)
-            ->assertSee('WIB / UTC+7')
+            ->assertSee('Portal Magang')
+            ->assertSee('Absensi, logbook, dan laporan magang dalam satu akun.')
+            ->assertSee('Absensi harian')
+            ->assertSee('Logbook kegiatan')
+            ->assertSee('Laporan magang')
+            ->assertSee('Masuk')
+            ->assertSee('Gunakan akun yang diberikan admin.')
+            ->assertSee('Ingat saya')
+            ->assertSee('Lupa password?')
+            ->assertSee('Sistem Informasi Absensi & Logbook Magang')
+            ->assertDontSee('Magang yang')
+            ->assertDontSee('Akses terverifikasi')
+            ->assertDontSee('Koneksi aman')
+            ->assertDontSee('Sistem operasional')
+            ->assertDontSee('WIB / UTC+7')
+            ->assertDontSee('Observasi stasiun')
+            ->assertDontSee('Terhubung')
             ->assertSee('images/logo-bmkg.png', false)
             ->assertSee('name="theme-color"', false)
             ->assertSee('name="email"', false)
