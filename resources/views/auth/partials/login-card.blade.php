@@ -1,29 +1,11 @@
 <div class="auth-card auth-reveal auth-reveal--delay-2">
     <div class="flex">
-        <aside class="auth-card-spine hidden w-12 shrink-0 flex-col items-center justify-between py-6 sm:flex" aria-hidden="true">
-            <span class="auth-spine-label">SIAMAG</span>
-            <span class="h-10 w-px bg-white/15"></span>
-            <span class="auth-spine-label">BMKG</span>
-        </aside>
+        <aside class="auth-card-spine hidden w-12 shrink-0 sm:block" aria-hidden="true"></aside>
 
         <div class="auth-card-paper relative flex-1 p-6 sm:p-8">
-            <div class="flex items-start justify-between gap-4">
-                <div>
-                    <span class="auth-card-badge">
-                        <span class="auth-status-dot"></span>
-                        Akses terverifikasi
-                    </span>
-                    <h2 class="mt-5 text-2xl font-semibold tracking-[-0.04em] text-slate-950 sm:text-[1.75rem]">
-                        Selamat datang kembali.
-                    </h2>
-                    <p class="mt-2 text-sm leading-6 text-slate-500">
-                        Masuk ke ruang kerja magang BMKG Banyuwangi.
-                    </p>
-                </div>
-
-                <span class="hidden rounded-full border border-slate-900/10 bg-white/50 px-2.5 py-1 font-mono text-[9px] font-bold uppercase tracking-[0.18em] text-slate-400 sm:inline-flex">
-                    SIAMAG / {{ now()->year }}
-                </span>
+            <div>
+                <h2 class="text-2xl font-semibold tracking-[-0.03em] text-slate-950">Masuk</h2>
+                <p class="mt-2 text-sm leading-6 text-slate-500">Gunakan akun yang diberikan admin.</p>
             </div>
 
             @if (session('status'))
@@ -42,7 +24,7 @@
                 @csrf
 
                 <div>
-                    <label for="email" class="auth-field-label">Email institusi</label>
+                    <label for="email" class="auth-field-label">Email</label>
                     <div class="relative">
                         <x-icon name="mail" class="auth-input-icon h-4 w-4" />
                         <input
@@ -109,23 +91,16 @@
                 </div>
 
                 <button type="submit" class="auth-submit" :disabled="submitting">
-                    <span x-show="! submitting" class="inline-flex items-center gap-2">
-                        Masuk ke SIAMAG
-                        <x-icon name="arrow-right" class="h-4 w-4" />
-                    </span>
+                    <span x-show="! submitting">Masuk</span>
                     <span x-show="submitting" x-cloak class="inline-flex items-center gap-2">
                         <span class="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white"></span>
-                        Memverifikasi...
+                        Memproses...
                     </span>
                 </button>
             </form>
 
-            <div class="auth-meta mt-6 flex flex-col gap-3 pt-4 text-[10px] text-slate-500 sm:flex-row sm:items-center sm:justify-between">
-                <span class="inline-flex items-center gap-1.5 font-medium">
-                    <x-icon name="shield" class="h-3.5 w-3.5 text-brand-700" />
-                    Koneksi aman &amp; terenkripsi
-                </span>
-                <span class="font-mono uppercase tracking-[0.16em]">BMKG Banyuwangi</span>
+            <div class="auth-meta mt-6 pt-4 text-xs text-slate-500">
+                BMKG Banyuwangi
             </div>
         </div>
     </div>
