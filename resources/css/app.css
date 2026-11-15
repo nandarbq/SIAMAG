@@ -642,6 +642,7 @@
     letter-spacing: 0.04em;
     color: #fff;
     box-shadow: 0 18px 30px -18px rgb(15 42 74 / 0.9);
+    cursor: pointer;
     transition:
         transform 200ms ease,
         box-shadow 200ms ease;
@@ -668,6 +669,11 @@
 
 .auth-submit:hover::after {
     transform: translateX(120%);
+}
+
+.auth-submit > * {
+    position: relative;
+    z-index: 1;
 }
 
 .auth-meta {
