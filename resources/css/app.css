@@ -240,6 +240,7 @@
         linear-gradient(160deg, #0b1220 0%, #14213d 55%, #0b1220 100%);
 }
 
+@layer components {
 .auth-page {
     background:
         radial-gradient(1100px 760px at 10% -10%, rgb(37 99 235 / 0.18), transparent 62%),
@@ -694,6 +695,7 @@
 
 .auth-reveal--delay-3 {
     animation-delay: 240ms;
+}
 }
 
 @keyframes auth-drift {

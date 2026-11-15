@@ -54,7 +54,7 @@
                             autofocus
                             autocomplete="username"
                             placeholder="nama@bmkg.go.id"
-                            class="auth-input auth-input--with-icon @error('email') border-rose-400 focus:border-rose-500 focus:ring-rose-500/10 @enderror"
+                            class="auth-input auth-input--with-icon @error('email') border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 @enderror"
                         >
                     </div>
                     @error('email')
@@ -77,7 +77,7 @@
                             required
                             autocomplete="current-password"
                             placeholder="Masukkan password"
-                            class="auth-input auth-input--with-icon pr-11 @error('password') border-rose-400 focus:border-rose-500 focus:ring-rose-500/10 @enderror"
+                            class="auth-input auth-input--with-icon pr-11 @error('password') border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 @enderror"
                         >
                         <button
                             type="button"
