@@ -22,6 +22,43 @@ class AuthTest extends TestCase
             ->assertSee('livewire', false);
     }
 
+    public function test_login_page_uses_atmospheric_station_redesign(): void
+    {
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('Stasiun Meteorologi Banyuwangi')
+            ->assertSee('Magang yang')
+            ->assertSee('Selamat datang kembali.')
+            ->assertSee('Akses terverifikasi')
+            ->assertSee('Koneksi aman', false)
+            ->assertSee('WIB / UTC+7')
+            ->assertSee('images/logo-bmkg.png', false)
+            ->assertSee('name="theme-color"', false)
+            ->assertSee('name="email"', false)
+            ->assertSee('name="password"', false)
+            ->assertSee('name="remember"', false)
+            ->assertSee('type="password"', false)
+            ->assertSee('x-bind:type', false)
+            ->assertSee('autocomplete="current-password"', false)
+            ->assertSee('action="'.route('login.store').'"', false);
+    }
+
+    public function test_login_page_renders_validation_errors_inside_the_card(): void
+    {
+        User::factory()->create(['email' => 'user@example.com']);
+
+        $this->from(route('login'))->post(route('login.store'), [
+            'email' => 'user@example.com',
+            'password' => 'wrong-password',
+        ]);
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('Email atau password salah.')
+            ->assertSee('value="user@example.com"', false)
+            ->assertSee('role="alert"', false);
+    }
+
     public function test_guests_are_redirected_from_protected_pages(): void
     {
         $this->get(route('admin.dashboard'))->assertRedirect(route('login'));
