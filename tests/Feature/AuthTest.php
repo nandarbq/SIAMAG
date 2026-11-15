@@ -22,7 +22,7 @@ class AuthTest extends TestCase
             ->assertSee('livewire', false);
     }
 
-    public function test_login_page_uses_calm_institutional_redesign(): void
+    public function test_login_page_uses_calm_institutional_landing_with_login_modal(): void
     {
         $this->get(route('login'))
             ->assertOk()
@@ -32,16 +32,26 @@ class AuthTest extends TestCase
             ->assertSee('Absensi harian')
             ->assertSee('Logbook kegiatan')
             ->assertSee('Laporan magang')
-            ->assertSee('Masuk')
+            ->assertSee('Masuk ke SIAMAG')
             ->assertSee('Gunakan akun yang diberikan admin.')
             ->assertSee('Ingat saya')
             ->assertSee('Lupa password?')
             ->assertSee('Sistem Informasi Absensi & Logbook Magang')
+            ->assertSee('Tanggal')
+            ->assertSee('Zona waktu')
+            ->assertSee('WIB / UTC+7')
+            ->assertSee('Lokasi')
+            ->assertSee('Banyuwangi, Jawa Timur')
+            ->assertSee('auth-radar', false)
+            ->assertSee('role="dialog"', false)
+            ->assertSee('aria-modal="true"', false)
+            ->assertSee('id="login-title"', false)
+            ->assertSee('data-login-modal-open="false"', false)
             ->assertDontSee('Magang yang')
             ->assertDontSee('Akses terverifikasi')
             ->assertDontSee('Koneksi aman')
             ->assertDontSee('Sistem operasional')
-            ->assertDontSee('WIB / UTC+7')
+            ->assertDontSee('Operasional')
             ->assertDontSee('Observasi stasiun')
             ->assertDontSee('Terhubung')
             ->assertSee('images/logo-bmkg.png', false)
@@ -68,7 +78,8 @@ class AuthTest extends TestCase
             ->assertOk()
             ->assertSee('Email atau password salah.')
             ->assertSee('value="user@example.com"', false)
-            ->assertSee('role="alert"', false);
+            ->assertSee('role="alert"', false)
+            ->assertSee('data-login-modal-open="true"', false);
     }
 
     public function test_guests_are_redirected_from_protected_pages(): void
