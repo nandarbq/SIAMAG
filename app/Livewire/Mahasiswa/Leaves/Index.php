@@ -25,12 +25,6 @@ class Index extends Component
 
     public bool $showModal = false;
 
-    public bool $showRecoveryModal = false;
-
-    public ?int $recoveryLeaveId = null;
-
-    public string $recoveryDate = '';
-
     public string $type = LeaveType::Izin->value;
 
     public string $startDate = '';
@@ -141,94 +135,6 @@ class Index extends Component
 
         $this->closeModal();
         session()->flash('success', 'Pengajuan '.$type->label().' berhasil dicatat.');
-    }
-
-    public function openRecovery(int $leaveId): void
-    {
-        $leave = auth()->user()->leaveRequests()
-            ->where('type', LeaveType::Sakit->value)
-            ->whereNull('end_date')
-            ->find($leaveId);
-
-        if (! $leave) {
-            session()->flash('error', 'Pengajuan sakit yang sedang berlangsung tidak ditemukan.');
-
-            return;
-        }
-
-        $this->resetValidation();
-        $this->recoveryLeaveId = $leave->id;
-        $this->recoveryDate = now()->toDateString();
-        $this->showRecoveryModal = true;
-    }
-
-    public function closeRecoveryModal(): void
-    {
-        $this->showRecoveryModal = false;
-        $this->recoveryLeaveId = null;
-        $this->recoveryDate = '';
-        $this->resetValidation();
-    }
-
-    public function markRecovered(AttendanceService $attendanceService): void
-    {
-        $leave = auth()->user()->leaveRequests()
-            ->where('type', LeaveType::Sakit->value)
-            ->whereNull('end_date')
-            ->findOrFail($this->recoveryLeaveId);
-
-        $profile = auth()->user()->internProfile;
-
-        $this->validate([
-            'recoveryDate' => [
-                'required',
-                'date',
-                function (string $attribute, mixed $value, \Closure $fail) use ($leave, $profile) {
-                    $date = Carbon::parse($value)->startOfDay();
-
-                    if ($date->lessThan($leave->start_date)) {
-                        $fail('Tanggal kembali masuk tidak boleh sebelum tanggal mulai sakit.');
-
-                        return;
-                    }
-
-                    if ($date->greaterThan(today())) {
-                        $fail('Tanggal kembali masuk tidak boleh melewati hari ini.');
-
-                        return;
-                    }
-
-                    if ($profile && $date->greaterThan($profile->end_date)) {
-                        $fail('Tanggal kembali masuk harus berada di dalam periode magang.');
-                    }
-                },
-            ],
-        ], [
-            'recoveryDate.required' => 'Tanggal kembali masuk wajib diisi.',
-        ]);
-
-        $returnDate = Carbon::parse($this->recoveryDate);
-
-        if (! $attendanceService->closeSickLeave($leave, $returnDate)) {
-            if (! $attendanceService->cancelLeave($leave)) {
-                session()->flash('error', 'Pengajuan sakit tidak dapat dibatalkan karena sudah ada absensi masuk.');
-
-                return;
-            }
-
-            if ($leave->attachment_path) {
-                Storage::disk('local')->delete($leave->attachment_path);
-            }
-
-            $leave->delete();
-            $this->closeRecoveryModal();
-            session()->flash('success', 'Pengajuan sakit dibatalkan karena kamu kembali masuk di hari yang sama.');
-
-            return;
-        }
-
-        $this->closeRecoveryModal();
-        session()->flash('success', 'Masa sakit ditutup sampai '.$leave->refresh()->end_date->translatedFormat('d M Y').'. Kamu sudah bisa absen masuk.');
     }
 
     public function delete(int $leaveId, AttendanceService $attendanceService): void
