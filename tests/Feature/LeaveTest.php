@@ -488,6 +488,63 @@ class LeaveTest extends TestCase
         ]);
     }
 
+    public function test_confirm_sick_recovery_closes_ongoing_leave_until_yesterday(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-11 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        app(AttendanceService::class)->markLeave($leave);
+
+        $this->assertTrue(app(AttendanceService::class)->confirmSickRecovery($student));
+        $this->assertSame('2026-11-10', $leave->refresh()->end_date->toDateString());
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $student->id,
+            'date' => '2026-11-11 00:00:00',
+        ]);
+    }
+
+    public function test_confirm_sick_recovery_cancels_leave_started_today(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-09 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        app(AttendanceService::class)->markLeave($leave);
+
+        $this->assertTrue(app(AttendanceService::class)->confirmSickRecovery($student));
+        $this->assertDatabaseMissing('leave_requests', ['id' => $leave->id]);
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $student->id,
+            'date' => '2026-11-09 00:00:00',
+        ]);
+    }
+
+    public function test_confirm_sick_recovery_returns_false_without_ongoing_leave(): void
+    {
+        $student = $this->makeStudent();
+
+        $this->assertFalse(app(AttendanceService::class)->confirmSickRecovery($student));
+    }
+
     public function test_student_cannot_check_in_during_ongoing_sick_leave(): void
     {
         $student = $this->makeStudent();
