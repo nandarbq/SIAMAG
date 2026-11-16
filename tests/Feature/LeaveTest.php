@@ -6,6 +6,7 @@ use App\Enums\AttendanceStatus;
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
 use App\Livewire\Admin\Leaves\Index as AdminLeaveIndex;
+use App\Livewire\Mahasiswa\Attendance\Index as StudentAttendanceIndex;
 use App\Livewire\Mahasiswa\Leaves\Index as StudentLeaveIndex;
 use App\Models\Attendance;
 use App\Models\LeaveRequest;
@@ -543,6 +544,36 @@ class LeaveTest extends TestCase
         $student = $this->makeStudent();
 
         $this->assertFalse(app(AttendanceService::class)->confirmSickRecovery($student));
+    }
+
+    public function test_attendance_page_prompts_for_sick_recovery_and_closes_leave(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-11 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        app(AttendanceService::class)->markLeave($leave);
+
+        Livewire::actingAs($student)
+            ->test(StudentAttendanceIndex::class)
+            ->assertSee('Sudah siap kembali masuk?')
+            ->assertSee('Saya sudah sembuh, buka absensi')
+            ->assertDontSee('Absen Masuk')
+            ->call('confirmRecovery')
+            ->assertHasNoErrors()
+            ->assertDontSee('Sudah siap kembali masuk?')
+            ->assertSee('Absen Masuk');
+
+        $this->assertSame('2026-11-10', $leave->refresh()->end_date->toDateString());
     }
 
     public function test_student_cannot_check_in_during_ongoing_sick_leave(): void

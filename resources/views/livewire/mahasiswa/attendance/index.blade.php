@@ -1,4 +1,12 @@
 <div class="space-y-6">
+    <div
+        @class([
+            'space-y-6 transition duration-300',
+            'pointer-events-none select-none blur-[6px] opacity-60' => $ongoingSickLeave,
+        ])
+        @if ($ongoingSickLeave) inert @endif
+        aria-hidden="{{ $ongoingSickLeave ? 'true' : 'false' }}"
+    >
     <section class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
             <p class="page-eyebrow">Kehadiran</p>
@@ -432,4 +440,69 @@
             <div class="border-t border-slate-100 px-5 py-4">{{ $history->links() }}</div>
         @endif
     </div>
+    </div>
+
+    @if ($ongoingSickLeave)
+        <div
+            class="fixed inset-0 z-50 overflow-y-auto"
+            role="alertdialog"
+            aria-modal="true"
+            aria-labelledby="sick-recovery-title"
+            aria-describedby="sick-recovery-description"
+        >
+            <div class="fixed inset-0 bg-slate-950/45 backdrop-blur-sm"></div>
+
+            <div class="relative flex min-h-full items-center justify-center p-4">
+                <div class="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/5">
+                    <div class="border-b border-slate-100 px-6 py-5">
+                        <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
+                            <x-icon name="check-circle" class="h-6 w-6" />
+                        </span>
+                        <p class="mt-4 text-[11px] font-bold uppercase tracking-[0.18em] text-emerald-700">Masa Sakit</p>
+                        <h2 id="sick-recovery-title" class="mt-1 text-xl font-bold tracking-[-0.02em] text-slate-900">
+                            Sudah siap kembali masuk?
+                        </h2>
+                        <p id="sick-recovery-description" class="mt-2 text-sm leading-6 text-slate-500">
+                            Kami mencatat kamu sedang menjalani masa sakit. Jika kondisi sudah membaik dan siap beraktivitas hari ini, konfirmasi kesembuhan untuk menutup masa sakit dan membuka absensi masuk.
+                        </p>
+                    </div>
+
+                    <div class="space-y-5 p-6">
+                        <div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-xs leading-5 text-emerald-800">
+                            Masa sakit dicatat selesai hingga H-1. Setelah konfirmasi, kamu bisa langsung melakukan absen masuk hari ini.
+                        </div>
+
+                        @if (session('error'))
+                            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800" role="alert">
+                                {{ session('error') }}
+                            </div>
+                        @endif
+
+                        <div class="space-y-2">
+                            <button
+                                type="button"
+                                wire:click="confirmRecovery"
+                                wire:loading.attr="disabled"
+                                wire:target="confirmRecovery"
+                                class="btn-primary w-full"
+                                autofocus
+                            >
+                                <x-icon name="check-circle" class="h-4 w-4" />
+                                <span wire:loading.remove wire:target="confirmRecovery">Saya sudah sembuh, buka absensi</span>
+                                <span wire:loading wire:target="confirmRecovery">Menyimpan konfirmasi...</span>
+                            </button>
+
+                            <a href="{{ route('mahasiswa.dashboard') }}" class="btn-ghost w-full">
+                                Masih perlu istirahat? Kembali ke dashboard
+                            </a>
+                        </div>
+
+                        <p class="text-center text-[11px] leading-5 text-slate-400">
+                            Jika masih sakit, kamu tidak perlu melakukan absensi hari ini.
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
