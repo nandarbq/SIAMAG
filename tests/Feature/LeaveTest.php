@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\AttendanceService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -527,6 +528,69 @@ class LeaveTest extends TestCase
             ->assertSee('Absen Masuk');
 
         $this->assertSame('2026-11-10', $leave->refresh()->end_date->toDateString());
+    }
+
+    public function test_attendance_page_prompts_for_sick_recovery_on_weekend(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-14 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        app(AttendanceService::class)->markLeave($leave);
+
+        Livewire::actingAs($student)
+            ->test(StudentAttendanceIndex::class)
+            ->assertSee('Sudah siap kembali masuk?')
+            ->call('confirmRecovery')
+            ->assertHasNoErrors();
+
+        $this->assertSame('2026-11-13', $leave->refresh()->end_date->toDateString());
+    }
+
+    public function test_attendance_page_recovery_removes_attachment_when_sick_leave_starts_today(): void
+    {
+        Storage::fake('local');
+
+        $this->travelTo(Carbon::parse('2026-11-09 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+        $attachmentPath = 'leave-attachments/'.$student->id.'/surat-dokter.pdf';
+
+        Storage::disk('local')->put($attachmentPath, 'dokumen');
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'attachment_path' => $attachmentPath,
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        app(AttendanceService::class)->markLeave($leave);
+
+        Livewire::actingAs($student)
+            ->test(StudentAttendanceIndex::class)
+            ->assertSee('Sudah siap kembali masuk?')
+            ->call('confirmRecovery')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseMissing('leave_requests', ['id' => $leave->id]);
+        $this->assertDatabaseMissing('attendances', [
+            'user_id' => $student->id,
+            'date' => '2026-11-09 00:00:00',
+        ]);
+        Storage::disk('local')->assertMissing($attachmentPath);
     }
 
     public function test_student_cannot_check_in_during_ongoing_sick_leave(): void
