@@ -360,7 +360,7 @@
     );
     -webkit-mask: radial-gradient(circle, transparent 0 10%, #000 10% 100%);
     mask: radial-gradient(circle, transparent 0 10%, #000 10% 100%);
-    animation: auth-spin 18s linear infinite;
+    animation: auth-spin 10s linear infinite;
 }
 
 .auth-radar::after {
@@ -369,7 +369,21 @@
     inset: 24%;
     border-radius: inherit;
     border: 1px dashed rgb(147 197 253 / 0.16);
-    animation: auth-spin 30s linear infinite reverse;
+    animation: auth-spin 24s linear infinite reverse;
+}
+
+.auth-radar-ticks {
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: repeating-conic-gradient(
+        from 0deg,
+        rgb(147 197 253 / 0.24) 0deg 0.6deg,
+        transparent 0.6deg 15deg
+    );
+    -webkit-mask: radial-gradient(circle, transparent 0 90%, #000 90% 100%);
+    mask: radial-gradient(circle, transparent 0 90%, #000 90% 100%);
+    opacity: 0.7;
 }
 
 .auth-radar-cross {
@@ -381,60 +395,105 @@
         linear-gradient(90deg, transparent calc(50% - 0.5px), rgb(147 197 253 / 0.12) 50%, transparent calc(50% + 0.5px));
 }
 
-.auth-radar-dot {
+.auth-radar-label {
     position: absolute;
-    height: 0.45rem;
-    width: 0.45rem;
+    z-index: 2;
+    font-size: 0.6rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: rgb(186 230 253 / 0.5);
+}
+
+.auth-radar-blip {
+    position: absolute;
+    z-index: 2;
+    height: 0.4rem;
+    width: 0.4rem;
     border-radius: 9999px;
     background: #7dd3fc;
     box-shadow:
-        0 0 0 4px rgb(125 211 252 / 0.12),
-        0 0 18px rgb(125 211 252 / 0.8);
+        0 0 0 4px rgb(125 211 252 / 0.1),
+        0 0 18px rgb(125 211 252 / 0.65);
+    opacity: 0;
+    animation: auth-blip 4.8s ease-out infinite;
+    animation-delay: var(--blip-delay, 0s);
+}
+
+.auth-radar-blip::after {
+    content: "";
+    position: absolute;
+    inset: -0.35rem;
+    border: 1px solid rgb(125 211 252 / 0.4);
+    border-radius: inherit;
+    opacity: 0;
+    animation: auth-blip-ring 4.8s ease-out infinite;
+    animation-delay: var(--blip-delay, 0s);
+}
+
+.auth-radar-center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 2;
+    display: flex;
+    align-items: center;
+    gap: 0.35rem;
+    transform: translate(-50%, -50%);
+}
+
+.auth-radar-center-dot {
+    height: 0.45rem;
+    width: 0.45rem;
+    border-radius: 9999px;
+    background: #fbbf24;
+    box-shadow:
+        0 0 0 4px rgb(251 191 36 / 0.12),
+        0 0 18px rgb(251 191 36 / 0.45);
+}
+
+.auth-radar-center-label {
+    font-size: 0.55rem;
+    font-weight: 700;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: rgb(253 230 138 / 0.65);
 }
 
 .auth-card {
     position: relative;
     overflow: hidden;
-    border-radius: 2rem;
-    background: linear-gradient(145deg, #fbfaf7 0%, #f1eee6 100%);
+    border-radius: 1.75rem;
+    background: #fff;
     color: #0f172a;
     box-shadow:
-        0 40px 90px -36px rgb(2 6 23 / 0.9),
-        0 0 0 1px rgb(255 255 255 / 0.5) inset;
+        0 40px 90px -36px rgb(2 6 23 / 0.85),
+        0 0 0 1px rgb(15 23 42 / 0.06);
 }
 
 .auth-card::before {
     content: "";
     position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    padding: 1px;
-    background: linear-gradient(135deg, rgb(255 255 255 / 0.95), rgb(251 191 36 / 0.4) 40%, rgb(37 99 235 / 0.25) 100%);
-    -webkit-mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-    -webkit-mask-composite: xor;
-    mask:
-        linear-gradient(#000 0 0) content-box,
-        linear-gradient(#000 0 0);
-    mask-composite: exclude;
-    pointer-events: none;
+    inset: 0 0 auto;
+    height: 3px;
+    background: linear-gradient(90deg, #0f2a4a, #2563eb 55%, #fbbf24);
 }
 
-.auth-card-paper {
-    background-image:
-        linear-gradient(180deg, rgb(255 255 255 / 0.55), transparent 35%),
-        repeating-linear-gradient(0deg, rgb(15 23 42 / 0.02) 0 1px, transparent 1px 28px);
-}
-
-.auth-card-spine {
-    background: linear-gradient(180deg, #08111f 0%, #10203a 55%, #08111f 100%);
+.auth-card-mark {
+    display: flex;
+    height: 2.75rem;
+    width: 2.75rem;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    border-radius: 0.9rem;
+    background: #f8fafc;
+    box-shadow: inset 0 0 0 1px rgb(15 23 42 / 0.06);
 }
 
 .auth-field-label {
     display: block;
     margin-bottom: 0.45rem;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 600;
     color: #475569;
 }
@@ -442,13 +501,13 @@
 .auth-input {
     display: block;
     width: 100%;
-    border: 1px solid #d8d4ca;
-    border-radius: 0.9rem;
-    background: rgb(255 255 255 / 0.72);
-    padding: 0.85rem 1rem;
+    border: 1px solid #dbe2ea;
+    border-radius: 0.8rem;
+    background: #fff;
+    padding: 0.8rem 1rem;
     font-size: 0.9rem;
     color: #0f172a;
-    box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.8);
+    box-shadow: inset 0 1px 2px rgb(15 23 42 / 0.02);
     transition:
         border-color 200ms ease,
         box-shadow 200ms ease,
@@ -485,10 +544,10 @@
     align-items: center;
     justify-content: center;
     gap: 0.6rem;
-    border-radius: 0.9rem;
+    border-radius: 0.8rem;
     background: linear-gradient(135deg, #0f2a4a, #0b3b66);
-    padding: 0.9rem 1rem;
-    font-size: 0.875rem;
+    padding: 0.95rem 1rem;
+    font-size: 0.9rem;
     font-weight: 700;
     color: #fff;
     box-shadow: 0 18px 30px -18px rgb(15 42 74 / 0.9);
@@ -503,13 +562,16 @@
     box-shadow: 0 22px 34px -18px rgb(15 42 74 / 0.95);
 }
 
+.auth-submit:focus-visible {
+    outline: none;
+    box-shadow:
+        0 0 0 4px rgb(37 99 235 / 0.16),
+        0 22px 34px -18px rgb(15 42 74 / 0.95);
+}
+
 .auth-submit:disabled {
     cursor: wait;
     opacity: 0.75;
-}
-
-.auth-meta {
-    border-top: 1px solid rgb(15 23 42 / 0.08);
 }
 
 .auth-reveal {
@@ -535,6 +597,44 @@
     }
 }
 
+@keyframes auth-blip {
+    0%,
+    12% {
+        opacity: 0;
+        transform: scale(0.7);
+    }
+
+    18% {
+        opacity: 1;
+        transform: scale(1);
+    }
+
+    42%,
+    100% {
+        opacity: 0.18;
+        transform: scale(1);
+    }
+}
+
+@keyframes auth-blip-ring {
+    0%,
+    12% {
+        opacity: 0;
+        transform: scale(0.5);
+    }
+
+    18% {
+        opacity: 0.7;
+        transform: scale(0.8);
+    }
+
+    55%,
+    100% {
+        opacity: 0;
+        transform: scale(1.8);
+    }
+}
+
 @keyframes auth-reveal {
     from {
         opacity: 0;
@@ -549,7 +649,13 @@
 @media (prefers-reduced-motion: reduce) {
     .auth-radar::before,
     .auth-radar::after,
+    .auth-radar-blip,
+    .auth-radar-blip::after,
     .auth-reveal {
         animation: none !important;
+    }
+
+    .auth-radar-blip {
+        opacity: 0.7;
     }
 }
