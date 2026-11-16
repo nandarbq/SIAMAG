@@ -350,6 +350,28 @@ class LeaveTest extends TestCase
         ]);
     }
 
+    public function test_leave_history_no_longer_exposes_sick_recovery_action(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-11 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->assertDontSee('Saya sudah sembuh')
+            ->assertDontSee('Saya Sudah Sembuh')
+            ->assertSee('Batalkan pengajuan');
+    }
+
     public function test_student_can_mark_ongoing_sick_leave_as_recovered(): void
     {
         $this->travelTo(Carbon::parse('2026-11-11 10:00:00', 'Asia/Jakarta'));
