@@ -170,6 +170,32 @@ class AttendanceTest extends TestCase
         Storage::disk('local')->assertExists($attendance->check_out_photo);
     }
 
+    public function test_checking_out_before_work_end_records_early_leave_minutes(): void
+    {
+        $student = $this->makeStudent();
+        $service = app(AttendanceService::class);
+
+        $service->checkIn($student, $this->payload($student));
+        $this->travelTo(Carbon::parse('2026-11-09 15:00:00', 'Asia/Jakarta'));
+
+        $attendance = $service->checkOut($student, $this->payload($student));
+
+        $this->assertSame(60, $attendance->early_leave_minutes);
+    }
+
+    public function test_checking_out_after_work_end_records_zero_early_leave_minutes(): void
+    {
+        $student = $this->makeStudent();
+        $service = app(AttendanceService::class);
+
+        $service->checkIn($student, $this->payload($student));
+        $this->travelTo(Carbon::parse('2026-11-09 16:05:00', 'Asia/Jakarta'));
+
+        $attendance = $service->checkOut($student, $this->payload($student));
+
+        $this->assertSame(0, $attendance->early_leave_minutes);
+    }
+
     public function test_check_in_without_gps_data_is_allowed_when_disabled(): void
     {
         Setting::put('require_geofence', '0');

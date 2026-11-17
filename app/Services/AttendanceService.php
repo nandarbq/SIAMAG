@@ -101,9 +101,13 @@ class AttendanceService
         [$distance, $accuracy] = $this->validateLocation($data);
 
         $photoPath = $this->resolveSelfiePath($user, $data['photo_token'] ?? null);
+        $now = now();
+        $workEnd = Carbon::parse($date->toDateString().' '.Setting::get('work_end', '16:00'));
+        $earlyLeaveMinutes = $now->lessThan($workEnd) ? (int) $now->diffInMinutes($workEnd) : 0;
 
         $attendance->update([
-            'check_out_at' => now(),
+            'check_out_at' => $now,
+            'early_leave_minutes' => $earlyLeaveMinutes,
             'check_out_photo' => $photoPath,
             'check_out_lat' => $this->valueOrNull($data, 'lat'),
             'check_out_lng' => $this->valueOrNull($data, 'lng'),
@@ -136,12 +140,23 @@ class AttendanceService
                 : 0;
         }
 
+        $earlyLeaveMinutes = 0;
+
+        if ($checkOutAt) {
+            $workEnd = Carbon::parse($checkOutAt->toDateString().' '.Setting::get('work_end', '16:00'));
+
+            $earlyLeaveMinutes = $checkOutAt->lessThan($workEnd)
+                ? (int) $checkOutAt->diffInMinutes($workEnd)
+                : 0;
+        }
+
         $attendance->update([
             'status' => $data['status'],
             'note' => $data['note'] ?? null,
             'check_in_at' => $checkInAt,
             'check_out_at' => $checkOutAt,
             'late_minutes' => $lateMinutes,
+            'early_leave_minutes' => $earlyLeaveMinutes,
         ]);
 
         return $attendance->refresh();
