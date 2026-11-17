@@ -116,10 +116,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="empty-state">
-                                <x-icon name="clipboard-check" class="h-10 w-10 text-slate-300" />
-                                <p class="font-semibold text-slate-600">Tidak ada data absensi</p>
-                                <p class="text-xs">Ubah filter tanggal atau status untuk melihat data lain.</p>
+                            <td colspan="7" class="px-5 py-12">
+                                <div class="mx-auto flex max-w-sm flex-col items-center gap-2 text-center">
+                                    <x-icon name="clipboard-check" class="h-10 w-10 text-slate-300" />
+                                    <p class="font-semibold text-slate-600">Tidak ada data absensi</p>
+                                    <p class="text-xs text-slate-500">Ubah filter tanggal atau status untuk melihat data lain.</p>
+                                </div>
                             </td>
                         </tr>
                     @endforelse

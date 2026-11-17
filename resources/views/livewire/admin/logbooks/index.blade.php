@@ -66,10 +66,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="empty-state">
-                                <x-icon name="book" class="h-10 w-10 text-slate-300" />
-                                <p class="font-semibold text-slate-600">Tidak ada logbook</p>
-                                <p class="text-xs">Belum ada data pada filter yang dipilih.</p>
+                            <td colspan="5" class="px-5 py-12">
+                                <div class="mx-auto flex max-w-sm flex-col items-center gap-2 text-center">
+                                    <x-icon name="book" class="h-10 w-10 text-slate-300" />
+                                    <p class="font-semibold text-slate-600">Tidak ada logbook</p>
+                                    <p class="text-xs text-slate-500">Belum ada data pada filter yang dipilih.</p>
+                                </div>
                             </td>
                         </tr>
                     @endforelse
