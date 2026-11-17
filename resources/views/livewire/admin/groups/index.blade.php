@@ -39,14 +39,9 @@
                         @foreach ($groups as $group)
                             <tr wire:key="{{ $group->id }}" class="transition hover:bg-slate-50/60">
                                 <td class="table-td">
-                                    <div class="flex items-center gap-3">
-                                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-600">
-                                            <x-icon name="building" class="h-5 w-5" />
-                                        </span>
-                                        <div class="min-w-0">
-                                            <p class="truncate font-semibold text-slate-900">{{ $group->name }}</p>
-                                            <p class="text-[11px] font-medium uppercase tracking-wide text-slate-400">{{ $group->code }}</p>
-                                        </div>
+                                    <div class="min-w-0">
+                                        <p class="truncate font-semibold text-slate-900">{{ $group->name }}</p>
+                                        <p class="text-[11px] font-medium uppercase tracking-wide text-slate-400">{{ $group->code }}</p>
                                     </div>
                                 </td>
                                 <td class="table-td">

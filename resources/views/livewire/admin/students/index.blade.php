@@ -92,15 +92,10 @@
                             @foreach ($students as $student)
                                 <tr wire:key="{{ $student->id }}" class="transition hover:bg-slate-50/60">
                                     <td class="table-td">
-                                        <div class="flex items-center gap-3">
-                                            <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-brand-500 to-brand-700 text-sm font-bold text-white">
-                                                {{ strtoupper(substr($student->name, 0, 1)) }}
-                                            </span>
-                                            <div class="min-w-0">
-                                                <p class="truncate font-semibold text-slate-900">{{ $student->name }}</p>
-                                                <p class="truncate text-xs text-slate-500">{{ $student->email }}</p>
-                                                <p class="text-[11px] text-slate-400">NIM {{ $student->nim ?: '-' }}</p>
-                                            </div>
+                                        <div class="min-w-0">
+                                            <p class="truncate font-semibold text-slate-900">{{ $student->name }}</p>
+                                            <p class="truncate text-xs text-slate-500">{{ $student->email }}</p>
+                                            <p class="text-[11px] text-slate-400">NIM {{ $student->nim ?: '-' }}</p>
                                         </div>
                                     </td>
                                     <td class="table-td">
