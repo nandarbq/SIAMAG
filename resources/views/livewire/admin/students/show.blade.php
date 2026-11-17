@@ -42,6 +42,12 @@
 
                 <h2 class="mt-4 text-xl font-bold text-slate-900">{{ $student->name }}</h2>
                 <p class="text-sm text-slate-500">{{ $profile?->institution ?? 'Institusi belum diisi' }}</p>
+                @if ($profile?->group)
+                    <a href="{{ route('admin.students', ['tab' => 'groups', 'group' => $profile->group->id]) }}" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700">
+                        <x-icon name="building" class="h-3.5 w-3.5" />
+                        {{ $profile->group->code }} · {{ $profile->group->name }}
+                    </a>
+                @endif
 
                 <div class="mt-5 grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2">
                     <div>

@@ -23,6 +23,7 @@ use App\Livewire\Mahasiswa\Dashboard as MahasiswaDashboard;
 use App\Livewire\Mahasiswa\Leaves\Index as StudentLeave;
 use App\Livewire\Mahasiswa\Logbooks\Index as StudentLogbook;
 use App\Livewire\Mahasiswa\Profile as StudentProfile;
+use App\Models\InternGroup;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -61,6 +62,11 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', AdminDashboard::class)->name('dashboard');
+
+        Route::get('/groups', fn () => redirect()->route('admin.students', ['tab' => 'groups']))->name('groups');
+        Route::get('/groups/create', fn () => redirect()->route('admin.students', ['tab' => 'groups', 'new' => 1]));
+        Route::get('/groups/{group}', fn (InternGroup $group) => redirect()->route('admin.students', ['tab' => 'groups', 'group' => $group->id]));
+        Route::get('/groups/{group}/edit', fn (InternGroup $group) => redirect()->route('admin.students', ['tab' => 'groups', 'group' => $group->id, 'edit' => 1]));
 
         Route::get('/students', StudentIndex::class)->name('students');
         Route::get('/students/create', StudentForm::class)->name('students.create');

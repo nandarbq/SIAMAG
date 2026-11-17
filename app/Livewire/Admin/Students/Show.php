@@ -22,7 +22,7 @@ class Show extends Component
     {
         abort_unless($student->role === UserRole::Mahasiswa, 404);
 
-        $this->student = $student->load('internProfile');
+        $this->student = $student->load('internProfile.group');
     }
 
     public function toggleActive(): void
