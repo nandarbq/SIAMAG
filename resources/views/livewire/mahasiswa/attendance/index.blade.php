@@ -172,7 +172,7 @@
                         <p class="mt-3 text-sm font-bold text-emerald-900">Absensi hari ini selesai</p>
                         <p class="mt-1 text-xs text-emerald-700">Masuk {{ $today->check_in_at?->format('H:i') }} · Pulang {{ $today->check_out_at?->format('H:i') }} WIB</p>
                         @if ($today->early_leave_minutes > 0)
-                            <p class="mt-1 text-xs font-semibold text-amber-700">Pulang lebih awal {{ $today->early_leave_minutes }} menit</p>
+                            <p class="mt-1 text-xs font-semibold text-amber-700">Pulang lebih awal {{ $today->early_leave_duration }}</p>
                         @endif
                     </div>
                 @else
@@ -348,12 +348,12 @@
                         </div>
                         <div class="flex items-center justify-between px-4 py-3 text-sm">
                             <span class="text-slate-500">Keterlambatan</span>
-                            <span class="font-semibold text-slate-800">{{ $today?->late_minutes ? $today->late_minutes.' menit' : '—' }}</span>
+                            <span class="font-semibold text-slate-800">{{ $today?->late_duration ?? '—' }}</span>
                         </div>
                         @if ($today?->early_leave_minutes > 0)
                             <div class="flex items-center justify-between px-4 py-3 text-sm">
                                 <span class="text-slate-500">Pulang lebih awal</span>
-                                <span class="font-semibold text-amber-600">{{ $today->early_leave_minutes }} menit</span>
+                                <span class="font-semibold text-amber-600">{{ $today->early_leave_duration }}</span>
                             </div>
                         @endif
                         @if ($requireGeofence)
@@ -442,7 +442,7 @@
                             <td class="table-td font-medium text-slate-700">
                                 {{ $attendance->check_out_at?->format('H:i') ?? '—' }}
                                 @if ($attendance->early_leave_minutes > 0)
-                                    <p class="text-[11px] font-medium text-amber-600">Pulang lebih awal {{ $attendance->early_leave_minutes }} menit</p>
+                                    <p class="text-[11px] font-medium text-amber-600">Pulang lebih awal {{ $attendance->early_leave_duration }}</p>
                                 @endif
                             </td>
                             <td class="table-td"><x-attendance-status :status="$attendance->status" /></td>

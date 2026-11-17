@@ -84,6 +84,36 @@ class Attendance extends Model
         return sprintf('%d jam %02d menit', intdiv($minutes, 60), $minutes % 60);
     }
 
+    public function getLateDurationAttribute(): ?string
+    {
+        return $this->formatDuration($this->late_minutes);
+    }
+
+    public function getEarlyLeaveDurationAttribute(): ?string
+    {
+        return $this->formatDuration($this->early_leave_minutes);
+    }
+
+    private function formatDuration(?int $minutes): ?string
+    {
+        if (! $minutes) {
+            return null;
+        }
+
+        $hours = intdiv($minutes, 60);
+        $remaining = $minutes % 60;
+
+        if ($hours > 0 && $remaining > 0) {
+            return "{$hours} jam {$remaining} menit";
+        }
+
+        if ($hours > 0) {
+            return "{$hours} jam";
+        }
+
+        return "{$minutes} menit";
+    }
+
     public function isLate(): bool
     {
         return $this->status === AttendanceStatus::Terlambat;

@@ -214,7 +214,27 @@ class AttendanceTest extends TestCase
 
         Livewire::actingAs($student)
             ->test(StudentAttendanceIndex::class)
-            ->assertSee('Pulang lebih awal 60 menit');
+            ->assertSee('Pulang lebih awal 1 jam');
+    }
+
+    public function test_attendance_page_formats_late_and_early_leave_durations(): void
+    {
+        $student = $this->makeStudent();
+
+        Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'status' => AttendanceStatus::Terlambat,
+            'check_in_at' => Carbon::parse('2026-11-09 08:00:00'),
+            'check_out_at' => Carbon::parse('2026-11-09 14:30:00'),
+            'late_minutes' => 90,
+            'early_leave_minutes' => 90,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentAttendanceIndex::class)
+            ->assertSee('1 jam 30 menit')
+            ->assertSee('Pulang lebih awal 1 jam 30 menit');
     }
 
     public function test_check_in_without_gps_data_is_allowed_when_disabled(): void

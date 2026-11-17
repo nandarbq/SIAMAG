@@ -99,6 +99,25 @@ class AdminAttendanceTest extends TestCase
         $this->assertSame(60, $attendance->fresh()->early_leave_minutes);
     }
 
+    public function test_admin_attendance_page_formats_early_leave_duration(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create();
+
+        Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'status' => AttendanceStatus::Hadir,
+            'check_in_at' => Carbon::parse('2026-11-09 07:30:00'),
+            'check_out_at' => Carbon::parse('2026-11-09 14:30:00'),
+            'early_leave_minutes' => 90,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminAttendanceIndex::class)
+            ->assertSee('Pulang lebih awal 1 jam 30 menit');
+    }
+
     public function test_admin_can_clear_attendance_times_and_late_minutes(): void
     {
         $admin = User::factory()->admin()->create();
