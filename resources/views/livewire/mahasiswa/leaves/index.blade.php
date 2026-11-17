@@ -112,12 +112,6 @@
                                             <x-icon name="document" class="h-4 w-4" />
                                         </a>
                                     @endif
-                                    @if ($leave->type === App\Enums\LeaveType::Sakit && $leave->isOngoing() && $leave->status === App\Enums\LeaveStatus::Approved)
-                                        <button type="button" wire:click="openRecovery({{ $leave->id }})" class="btn-ghost btn-sm text-emerald-600 hover:bg-emerald-50" title="Saya sudah sembuh">
-                                            <x-icon name="check-circle" class="h-4 w-4" />
-                                        </button>
-                                    @endif
-
                                     @php
                                         $canCancel = $leave->status === App\Enums\LeaveStatus::Pending
                                             || ($leave->status === App\Enums\LeaveStatus::Approved
@@ -195,7 +189,7 @@
 
                             @if ($type === App\Enums\LeaveType::Sakit->value)
                                 <p class="mt-2 text-xs leading-relaxed text-slate-500">
-                                    Tanggal selesai tidak diperlukan. Setelah sembuh, tandai “Saya sudah sembuh” dan pilih tanggal kembali masuk.
+                                    Tanggal selesai tidak diperlukan. Konfirmasi kesembuhan dilakukan di halaman Absensi saat kamu siap kembali masuk.
                                 </p>
                             @endif
                         </div>
@@ -241,41 +235,4 @@
         </div>
     @endif
 
-    @if ($showRecoveryModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
-            <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" wire:click="closeRecoveryModal"></div>
-
-            <div class="relative flex min-h-full items-center justify-center p-4">
-                <div class="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/5">
-                    <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
-                        <div>
-                            <h2 class="text-lg font-bold text-slate-900">Saya Sudah Sembuh</h2>
-                            <p class="mt-0.5 text-xs text-slate-500">Masukkan tanggal kamu kembali masuk. Absensi sakit dicatat sampai H-1.</p>
-                        </div>
-                        <button type="button" wire:click="closeRecoveryModal" class="btn-ghost btn-sm" title="Tutup">
-                            <x-icon name="x" class="h-5 w-5" />
-                        </button>
-                    </div>
-
-                    <form wire:submit="markRecovered" class="space-y-5 p-6">
-                        <div>
-                            <label class="form-label">Tanggal Kembali Masuk</label>
-                            <input type="date" wire:model="recoveryDate" class="input">
-                            <p class="mt-1 text-xs text-slate-500">Jika sembuh dan masuk hari ini, pilih hari ini.</p>
-                            @error('recoveryDate') <p class="form-error">{{ $message }}</p> @enderror
-                        </div>
-
-                        <div class="flex justify-end gap-2 border-t border-slate-100 pt-5">
-                            <button type="button" wire:click="closeRecoveryModal" class="btn-ghost">Batal</button>
-                            <button type="submit" wire:loading.attr="disabled" wire:target="markRecovered" class="btn-primary">
-                                <x-icon name="check-circle" class="h-4 w-4" />
-                                <span wire:loading.remove wire:target="markRecovered">Saya sudah sembuh</span>
-                                <span wire:loading wire:target="markRecovered">Menyimpan...</span>
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    @endif
 </div>

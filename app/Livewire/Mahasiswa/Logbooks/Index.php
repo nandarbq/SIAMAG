@@ -7,15 +7,18 @@ use App\Models\Setting;
 use App\Services\LogbookExportService;
 use App\Services\LogbookProgressService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 #[Title('Logbook Harian')]
 class Index extends Component
 {
+    use WithFileUploads;
     use WithPagination;
 
     public string $search = '';
@@ -37,6 +40,12 @@ class Index extends Component
     public string $result = '';
 
     public string $obstacle = '';
+
+    public $photo;
+
+    public ?string $existingPhoto = null;
+
+    public bool $photoRemoved = false;
 
     public function updating(string $property): void
     {
@@ -125,6 +134,9 @@ class Index extends Component
         $this->endTime = $logbook->end_time ? substr($logbook->end_time, 0, 5) : '';
         $this->result = $logbook->result ?? '';
         $this->obstacle = $logbook->obstacle ?? '';
+        $this->photo = null;
+        $this->existingPhoto = $logbook->attachment_path;
+        $this->photoRemoved = false;
         $this->showModal = true;
     }
 
@@ -133,6 +145,22 @@ class Index extends Component
         $this->showModal = false;
         $this->resetForm();
         $this->resetValidation();
+    }
+
+    public function updatedPhoto(): void
+    {
+        $this->photoRemoved = false;
+    }
+
+    public function removePhoto(): void
+    {
+        $this->photo = null;
+        $this->photoRemoved = true;
+    }
+
+    public function undoRemovePhoto(): void
+    {
+        $this->photoRemoved = false;
     }
 
     public function save(): void
@@ -148,6 +176,10 @@ class Index extends Component
             session()->flash('error', 'Logbook yang sudah terkunci tidak dapat dihapus.');
 
             return;
+        }
+
+        if ($logbook->attachment_path) {
+            Storage::disk('local')->delete($logbook->attachment_path);
         }
 
         $logbook->delete();
@@ -238,6 +270,7 @@ class Index extends Component
             'endTime' => ['nullable', 'date_format:H:i', 'after:startTime'],
             'result' => ['nullable', 'string', 'max:2000'],
             'obstacle' => ['nullable', 'string', 'max:2000'],
+            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
         ], [
             'date.required' => 'Tanggal logbook wajib diisi.',
             'date.before_or_equal' => 'Logbook tidak dapat diisi untuk tanggal yang akan datang.',
@@ -245,9 +278,21 @@ class Index extends Component
             'activity.required' => 'Aktivitas utama wajib diisi.',
             'activity.max' => 'Aktivitas maksimal 200 karakter.',
             'endTime.after' => 'Jam selesai harus setelah jam mulai.',
+            'photo.image' => 'Foto kegiatan harus berupa gambar.',
+            'photo.mimes' => 'Foto kegiatan harus berformat JPG, PNG, atau WEBP.',
+            'photo.max' => 'Ukuran foto kegiatan maksimal 4 MB.',
         ]);
 
         $logbook ??= new Logbook(['user_id' => $userId]);
+
+        $oldPhoto = $logbook->attachment_path;
+        $attachmentPath = $oldPhoto;
+
+        if ($this->photo) {
+            $attachmentPath = $this->photo->store('logbook-photos/'.$userId, 'local');
+        } elseif ($this->photoRemoved) {
+            $attachmentPath = null;
+        }
 
         $attendance = auth()->user()->attendances()
             ->whereDate('date', $this->date)
@@ -262,7 +307,12 @@ class Index extends Component
             'end_time' => $this->endTime ?: null,
             'result' => $this->result ?: null,
             'obstacle' => $this->obstacle ?: null,
+            'attachment_path' => $attachmentPath,
         ])->save();
+
+        if ($oldPhoto && $oldPhoto !== $attachmentPath) {
+            Storage::disk('local')->delete($oldPhoto);
+        }
 
         $this->closeModal();
 
@@ -280,6 +330,9 @@ class Index extends Component
             'endTime',
             'result',
             'obstacle',
+            'photo',
+            'existingPhoto',
+            'photoRemoved',
         ]);
     }
 }

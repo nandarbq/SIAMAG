@@ -22,6 +22,78 @@ class AuthTest extends TestCase
             ->assertSee('livewire', false);
     }
 
+    public function test_login_page_uses_calm_institutional_landing_with_login_modal(): void
+    {
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('Stasiun Meteorologi Banyuwangi')
+            ->assertSee('Portal Magang')
+            ->assertSee('Absensi, logbook, dan laporan magang dalam satu akun.')
+            ->assertSee('Absensi harian')
+            ->assertSee('Logbook kegiatan')
+            ->assertSee('Laporan magang')
+            ->assertSee('Masuk ke SIAMAG')
+            ->assertSee('Gunakan akun yang diberikan admin.')
+            ->assertSee('Ingat saya')
+            ->assertSee('Lupa password?')
+            ->assertSee('Sistem Informasi Absensi & Logbook Magang')
+            ->assertSee('Tanggal')
+            ->assertSee('Zona waktu')
+            ->assertSee('WIB / UTC+7')
+            ->assertSee('Lokasi')
+            ->assertSee('Banyuwangi, Jawa Timur')
+            ->assertSee('Stasiun Banyuwangi')
+            ->assertSee('auth-radar', false)
+            ->assertSee('auth-radar-ticks', false)
+            ->assertSee('auth-radar-label', false)
+            ->assertSee('auth-radar-blip', false)
+            ->assertSee('auth-radar-center', false)
+            ->assertSee('--blip-delay', false)
+            ->assertSee('auth-card-mark', false)
+            ->assertSee('will-change-transform', false)
+            ->assertSee('x-transition:enter', false)
+            ->assertSee('cubic-bezier(0.16,1,0.3,1)', false)
+            ->assertSee('role="dialog"', false)
+            ->assertSee('aria-modal="true"', false)
+            ->assertSee('id="login-title"', false)
+            ->assertSee('data-login-modal-open="false"', false)
+            ->assertDontSee('auth-card-paper', false)
+            ->assertDontSee('auth-card-spine', false)
+            ->assertDontSee('Magang yang')
+            ->assertDontSee('Akses terverifikasi')
+            ->assertDontSee('Koneksi aman')
+            ->assertDontSee('Sistem operasional')
+            ->assertDontSee('Operasional')
+            ->assertDontSee('Observasi stasiun')
+            ->assertDontSee('Terhubung')
+            ->assertSee('images/logo-bmkg.png', false)
+            ->assertSee('name="theme-color"', false)
+            ->assertSee('name="email"', false)
+            ->assertSee('name="password"', false)
+            ->assertSee('name="remember"', false)
+            ->assertSee('type="password"', false)
+            ->assertSee('x-bind:type', false)
+            ->assertSee('autocomplete="current-password"', false)
+            ->assertSee('action="'.route('login.store').'"', false);
+    }
+
+    public function test_login_page_renders_validation_errors_inside_the_card(): void
+    {
+        User::factory()->create(['email' => 'user@example.com']);
+
+        $this->from(route('login'))->post(route('login.store'), [
+            'email' => 'user@example.com',
+            'password' => 'wrong-password',
+        ]);
+
+        $this->get(route('login'))
+            ->assertOk()
+            ->assertSee('Email atau password salah.')
+            ->assertSee('value="user@example.com"', false)
+            ->assertSee('role="alert"', false)
+            ->assertSee('data-login-modal-open="true"', false);
+    }
+
     public function test_guests_are_redirected_from_protected_pages(): void
     {
         $this->get(route('admin.dashboard'))->assertRedirect(route('login'));

@@ -8,6 +8,8 @@ use App\Models\Logbook;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -20,6 +22,7 @@ class LogbookTest extends TestCase
         parent::setUp();
 
         $this->travelTo(Carbon::parse('2026-11-09 10:00:00', 'Asia/Jakarta'));
+        Storage::fake('local');
     }
 
     public function test_student_can_save_a_logbook(): void
@@ -169,6 +172,107 @@ class LogbookTest extends TestCase
             ->assertHasNoErrors();
 
         $this->assertSame('Aktivitas asli', $logbook->fresh()->activity);
+    }
+
+    public function test_student_can_upload_a_logbook_photo(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreate')
+            ->set('date', '2026-11-09')
+            ->set('activity', 'Analisis data curah hujan')
+            ->set('photo', UploadedFile::fake()->image('kegiatan.jpg'))
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $logbook = Logbook::query()->where('user_id', $student->id)->firstOrFail();
+
+        $this->assertNotNull($logbook->attachment_path);
+        Storage::disk('local')->assertExists($logbook->attachment_path);
+    }
+
+    public function test_replacing_a_logbook_photo_deletes_the_old_file(): void
+    {
+        $student = $this->makeStudent();
+        $oldPath = 'logbook-photos/'.$student->id.'/old.jpg';
+        Storage::disk('local')->put($oldPath, 'old-image');
+
+        $logbook = Logbook::factory()->for($student)->create([
+            'date' => '2026-11-08',
+            'attachment_path' => $oldPath,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openEdit', $logbook->id)
+            ->set('photo', UploadedFile::fake()->image('baru.jpg'))
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $logbook->refresh();
+
+        $this->assertNotSame($oldPath, $logbook->attachment_path);
+        Storage::disk('local')->assertMissing($oldPath);
+        Storage::disk('local')->assertExists($logbook->attachment_path);
+    }
+
+    public function test_student_can_remove_a_logbook_photo(): void
+    {
+        $student = $this->makeStudent();
+        $path = 'logbook-photos/'.$student->id.'/old.jpg';
+        Storage::disk('local')->put($path, 'old-image');
+
+        $logbook = Logbook::factory()->for($student)->create([
+            'date' => '2026-11-08',
+            'attachment_path' => $path,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openEdit', $logbook->id)
+            ->call('removePhoto')
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertNull($logbook->fresh()->attachment_path);
+        Storage::disk('local')->assertMissing($path);
+    }
+
+    public function test_logbook_photo_must_be_an_image(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreate')
+            ->set('date', '2026-11-09')
+            ->set('activity', 'Analisis data curah hujan')
+            ->set('photo', UploadedFile::fake()->create('dokumen.pdf', 100, 'application/pdf'))
+            ->call('save')
+            ->assertHasErrors(['photo']);
+
+        $this->assertDatabaseMissing('logbooks', ['user_id' => $student->id]);
+    }
+
+    public function test_deleting_a_logbook_deletes_its_photo(): void
+    {
+        $student = $this->makeStudent();
+        $path = 'logbook-photos/'.$student->id.'/old.jpg';
+        Storage::disk('local')->put($path, 'old-image');
+
+        $logbook = Logbook::factory()->for($student)->create([
+            'date' => '2026-11-09',
+            'attachment_path' => $path,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('delete', $logbook->id);
+
+        $this->assertDatabaseMissing('logbooks', ['id' => $logbook->id]);
+        Storage::disk('local')->assertMissing($path);
     }
 
     public function test_admin_can_view_logbook_details_read_only(): void

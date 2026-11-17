@@ -53,6 +53,18 @@ class Index extends Component
         session()->flash('success', 'Absen pulang berhasil dicatat.');
     }
 
+    public function confirmRecovery(AttendanceService $attendanceService): void
+    {
+        if (! $attendanceService->confirmSickRecovery(auth()->user())) {
+            session()->flash('error', 'Masa sakit tidak dapat dikonfirmasi. Pastikan pengajuan sakit masih berlangsung, lalu coba lagi.');
+
+            return;
+        }
+
+        $this->reset('photoToken');
+        session()->flash('success', 'Konfirmasi kesembuhan berhasil. Absensi masuk hari ini sudah dibuka.');
+    }
+
     private function validatePhoto(): void
     {
         $this->validate([
@@ -66,11 +78,13 @@ class Index extends Component
     public function render()
     {
         $user = auth()->user();
-        $today = app(AttendanceService::class)->todayFor($user);
+        $attendanceService = app(AttendanceService::class);
+        $today = $attendanceService->todayFor($user);
         $requireSelfie = Setting::getBool('require_selfie', true);
 
         return view('livewire.mahasiswa.attendance.index', [
             'today' => $today,
+            'ongoingSickLeave' => $attendanceService->ongoingSickLeaveFor($user),
             'profile' => $user->internProfile,
             'history' => $user->attendances()->latest('date')->paginate(10),
             'officeLat' => (float) Setting::get('office_lat', '-8.2192000'),

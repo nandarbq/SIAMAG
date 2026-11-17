@@ -198,6 +198,43 @@ class AttendanceService
         }
     }
 
+    public function ongoingSickLeaveFor(User $user): ?LeaveRequest
+    {
+        return LeaveRequest::query()
+            ->where('user_id', $user->id)
+            ->where('type', LeaveType::Sakit->value)
+            ->where('status', LeaveStatus::Approved->value)
+            ->whereDate('start_date', '<=', today()->toDateString())
+            ->whereNull('end_date')
+            ->latest('start_date')
+            ->first();
+    }
+
+    public function confirmSickRecovery(User $user): bool
+    {
+        $leave = $this->ongoingSickLeaveFor($user);
+
+        if (! $leave) {
+            return false;
+        }
+
+        if ($this->closeSickLeave($leave, today())) {
+            return true;
+        }
+
+        if (! $this->cancelLeave($leave)) {
+            return false;
+        }
+
+        if ($leave->attachment_path) {
+            Storage::disk('local')->delete($leave->attachment_path);
+        }
+
+        $leave->delete();
+
+        return true;
+    }
+
     public function closeSickLeave(LeaveRequest $leave, Carbon $returnDate): bool
     {
         $returnDate = $returnDate->copy()->startOfDay();
