@@ -109,8 +109,9 @@ class AdminAttendanceTest extends TestCase
             'date' => '2026-11-09',
             'status' => AttendanceStatus::Terlambat,
             'late_minutes' => 30,
+            'early_leave_minutes' => 45,
             'check_in_at' => Carbon::parse('2026-11-09 08:00:00'),
-            'check_out_at' => Carbon::parse('2026-11-09 16:00:00'),
+            'check_out_at' => Carbon::parse('2026-11-09 15:15:00'),
         ]);
 
         Livewire::actingAs($admin)
@@ -128,6 +129,7 @@ class AdminAttendanceTest extends TestCase
         $this->assertNull($attendance->check_in_at);
         $this->assertNull($attendance->check_out_at);
         $this->assertSame(0, $attendance->late_minutes);
+        $this->assertSame(0, $attendance->early_leave_minutes);
     }
 
     public function test_admin_correction_rejects_invalid_time_format(): void

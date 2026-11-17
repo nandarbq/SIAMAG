@@ -862,6 +862,90 @@ class LeaveTest extends TestCase
         $this->assertSame(AttendanceStatus::Terlambat, $attendance->status);
     }
 
+    public function test_failed_check_in_keeps_requested_sick_recovery_active(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-11 10:00:00', 'Asia/Jakarta'));
+
+        Setting::put('require_geofence', '0');
+        Setting::put('require_selfie', '1');
+
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        $service = app(AttendanceService::class);
+        $service->markLeave($leave);
+        $service->requestSickRecovery($student);
+
+        try {
+            $service->checkIn($student, [
+                'lat' => -8.2192,
+                'lng' => 114.3692,
+                'accuracy' => 10,
+            ]);
+
+            $this->fail('Check-in seharusnya gagal karena foto selfie tidak tersedia.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('photo', $exception->errors());
+        }
+
+        $leave->refresh();
+
+        $this->assertNull($leave->end_date);
+        $this->assertTrue($leave->hasRecoveryRequestToday());
+
+        $attendance = Attendance::query()
+            ->where('user_id', $student->id)
+            ->whereDate('date', '2026-11-11')
+            ->first();
+
+        $this->assertNotNull($attendance);
+        $this->assertSame(AttendanceStatus::Sakit, $attendance->status);
+        $this->assertNull($attendance->check_in_at);
+    }
+
+    public function test_recovery_request_expires_and_prompt_returns_next_day(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-11 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        app(AttendanceService::class)->markLeave($leave);
+        app(AttendanceService::class)->requestSickRecovery($student);
+
+        $this->travelTo(Carbon::parse('2026-11-12 10:00:00', 'Asia/Jakarta'));
+
+        $this->assertFalse($leave->refresh()->hasRecoveryRequestToday());
+
+        Livewire::actingAs($student)
+            ->test(StudentAttendanceIndex::class)
+            ->assertSee('Sudah siap kembali masuk?');
+
+        $this->expectException(ValidationException::class);
+
+        app(AttendanceService::class)->checkIn($student, [
+            'lat' => -8.2192,
+            'lng' => 114.3692,
+            'accuracy' => 10,
+        ]);
+    }
+
     private function makeStudent(): User
     {
         $student = User::factory()->mahasiswa()->create();
