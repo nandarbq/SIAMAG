@@ -450,7 +450,7 @@
             aria-labelledby="sick-recovery-title"
             aria-describedby="sick-recovery-description"
         >
-            <div class="fixed inset-0 bg-slate-950/45 backdrop-blur-sm"></div>
+            <div class="fixed inset-0 bg-slate-950/45"></div>
 
             <div class="relative flex min-h-full items-center justify-center p-4">
                 <div class="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/5">
