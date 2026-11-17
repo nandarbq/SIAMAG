@@ -186,12 +186,6 @@ class Index extends Component
         session()->flash('success', 'Logbook berhasil dihapus.');
     }
 
-    public function resetFilters(): void
-    {
-        $this->reset('search');
-        $this->resetPage();
-    }
-
     public function render()
     {
         $userId = auth()->id();

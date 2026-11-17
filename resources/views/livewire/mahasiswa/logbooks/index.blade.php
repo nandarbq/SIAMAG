@@ -158,9 +158,6 @@
                     <x-icon name="search" class="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
                     <input type="search" wire:model.live.debounce.400ms="search" placeholder="Cari aktivitas..." class="input pl-9 sm:w-56">
                 </div>
-                @if ($search !== '')
-                    <button type="button" wire:click="resetFilters" class="btn-ghost btn-sm">Reset</button>
-                @endif
             </div>
         </div>
 
