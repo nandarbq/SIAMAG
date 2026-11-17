@@ -4,6 +4,7 @@ namespace App\Livewire\Mahasiswa\Leaves;
 
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
+use App\Models\Attendance;
 use App\Models\LeaveRequest;
 use App\Services\AttendanceService;
 use Carbon\Carbon;
@@ -100,6 +101,20 @@ class Index extends Component
 
         $type = LeaveType::from($this->type);
         $endDate = $type === LeaveType::Sakit ? null : $this->startDate;
+        $attendanceEnd = $endDate ?: today()->toDateString();
+
+        $hasCheckedIn = Attendance::query()
+            ->where('user_id', $userId)
+            ->whereDate('date', '>=', $this->startDate)
+            ->whereDate('date', '<=', $attendanceEnd)
+            ->whereNotNull('check_in_at')
+            ->exists();
+
+        if ($hasCheckedIn) {
+            $this->addError('startDate', 'Tidak dapat mengajukan izin/sakit karena sudah ada absen masuk pada tanggal tersebut.');
+
+            return;
+        }
 
         $conflict = LeaveRequest::query()
             ->where('user_id', $userId)

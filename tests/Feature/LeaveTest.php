@@ -59,6 +59,53 @@ class LeaveTest extends TestCase
         $this->assertSame(AttendanceStatus::Izin, $attendance->status);
     }
 
+    public function test_student_cannot_submit_leave_after_checking_in_on_same_date(): void
+    {
+        $student = $this->makeStudent();
+
+        Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'check_in_at' => Carbon::parse('2026-11-09 07:45:00'),
+            'status' => AttendanceStatus::Hadir,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->set('type', LeaveType::Izin->value)
+            ->set('startDate', '2026-11-09')
+            ->set('reason', 'Mengurus keperluan keluarga yang mendesak.')
+            ->call('submit')
+            ->assertHasErrors(['startDate']);
+
+        $this->assertDatabaseCount('leave_requests', 0);
+    }
+
+    public function test_student_can_submit_future_leave_after_checking_in_today(): void
+    {
+        $student = $this->makeStudent();
+
+        Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'check_in_at' => Carbon::parse('2026-11-09 07:45:00'),
+            'status' => AttendanceStatus::Hadir,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->set('type', LeaveType::Izin->value)
+            ->set('startDate', '2026-11-10')
+            ->set('reason', 'Mengurus keperluan keluarga yang mendesak.')
+            ->call('submit')
+            ->assertHasNoErrors();
+
+        $this->assertDatabaseHas('leave_requests', [
+            'user_id' => $student->id,
+            'start_date' => '2026-11-10 00:00:00',
+        ]);
+    }
+
     public function test_sick_leave_submission_is_recorded_as_ongoing(): void
     {
         $student = $this->makeStudent();
