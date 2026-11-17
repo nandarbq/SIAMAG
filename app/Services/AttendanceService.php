@@ -29,6 +29,9 @@ class AttendanceService
 
         $this->ensureCanAttend($user, $date);
 
+        $recoveryLeave = $this->ongoingSickLeaveFor($user);
+        $recoveryRequested = $recoveryLeave?->hasRecoveryRequestToday() ?? false;
+
         $attendance = Attendance::query()
             ->where('user_id', $user->id)
             ->whereDate('date', $date)
@@ -40,7 +43,7 @@ class AttendanceService
             ]);
         }
 
-        if ($attendance && in_array($attendance->status, [AttendanceStatus::Izin, AttendanceStatus::Sakit, AttendanceStatus::Libur], true)) {
+        if (! $recoveryRequested && $attendance && in_array($attendance->status, [AttendanceStatus::Izin, AttendanceStatus::Sakit, AttendanceStatus::Libur], true)) {
             throw ValidationException::withMessages([
                 'attendance' => 'Anda tercatat '.$attendance->status->label().' pada hari ini sehingga tidak perlu absen.',
             ]);
@@ -60,6 +63,12 @@ class AttendanceService
         $status = $lateMinutes > 0 ? AttendanceStatus::Terlambat : AttendanceStatus::Hadir;
 
         $photoPath = $this->resolveSelfiePath($user, $data['photo_token'] ?? null);
+
+        if ($recoveryRequested && ! $this->completeSickRecovery($recoveryLeave)) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Masa sakit tidak dapat ditutup. Hubungi admin.',
+            ]);
+        }
 
         return Attendance::query()->updateOrCreate(
             ['user_id' => $user->id, 'date' => $date->toDateString()],
@@ -225,11 +234,22 @@ class AttendanceService
             ->first();
     }
 
-    public function confirmSickRecovery(User $user): bool
+    public function requestSickRecovery(User $user): bool
     {
         $leave = $this->ongoingSickLeaveFor($user);
 
         if (! $leave) {
+            return false;
+        }
+
+        $leave->update(['recovery_requested_at' => now()]);
+
+        return true;
+    }
+
+    public function completeSickRecovery(LeaveRequest $leave): bool
+    {
+        if ($leave->type !== LeaveType::Sakit || ! $leave->isOngoing()) {
             return false;
         }
 
@@ -248,6 +268,13 @@ class AttendanceService
         $leave->delete();
 
         return true;
+    }
+
+    public function confirmSickRecovery(User $user): bool
+    {
+        $leave = $this->ongoingSickLeaveFor($user);
+
+        return $leave ? $this->completeSickRecovery($leave) : false;
     }
 
     public function closeSickLeave(LeaveRequest $leave, Carbon $returnDate): bool
@@ -357,9 +384,13 @@ class AttendanceService
             ->first();
 
         if ($leave) {
-            throw ValidationException::withMessages([
-                'attendance' => 'Anda tercatat '.$leave->type->label().' pada hari ini sehingga tidak perlu absen.',
-            ]);
+            $canRecover = $leave->type === LeaveType::Sakit && $leave->hasRecoveryRequestToday();
+
+            if (! $canRecover) {
+                throw ValidationException::withMessages([
+                    'attendance' => 'Anda tercatat '.$leave->type->label().' pada hari ini sehingga tidak perlu absen.',
+                ]);
+            }
         }
     }
 

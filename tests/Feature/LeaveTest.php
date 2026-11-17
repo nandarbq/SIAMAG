@@ -547,6 +547,90 @@ class LeaveTest extends TestCase
         $this->assertFalse(app(AttendanceService::class)->confirmSickRecovery($student));
     }
 
+    public function test_requesting_sick_recovery_keeps_leave_active_until_check_in(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-11 10:00:00', 'Asia/Jakarta'));
+
+        Setting::put('require_geofence', '0');
+        Setting::put('require_selfie', '0');
+
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        $service = app(AttendanceService::class);
+        $service->markLeave($leave);
+
+        $this->assertTrue($service->requestSickRecovery($student));
+        $this->assertNull($leave->refresh()->end_date);
+        $this->assertTrue($leave->hasRecoveryRequestToday());
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $student->id,
+            'date' => '2026-11-11 00:00:00',
+            'status' => AttendanceStatus::Sakit->value,
+        ]);
+
+        $attendance = $service->checkIn($student, [
+            'lat' => -8.2192,
+            'lng' => 114.3692,
+            'accuracy' => 10,
+        ]);
+
+        $this->assertSame('2026-11-10', $leave->refresh()->end_date->toDateString());
+        $this->assertNotNull($attendance->check_in_at);
+    }
+
+    public function test_requesting_sick_recovery_on_start_date_keeps_leave_active_until_check_in(): void
+    {
+        Setting::put('require_geofence', '0');
+        Setting::put('require_selfie', '0');
+
+        $student = $this->makeStudent();
+
+        $leave = LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Sakit,
+            'start_date' => '2026-11-09',
+            'end_date' => null,
+            'reason' => 'Demam dan perlu istirahat di rumah.',
+            'status' => LeaveStatus::Approved,
+        ]);
+
+        $service = app(AttendanceService::class);
+        $service->markLeave($leave);
+
+        $this->assertTrue($service->requestSickRecovery($student));
+        $this->assertDatabaseHas('leave_requests', ['id' => $leave->id]);
+        $this->assertDatabaseHas('attendances', [
+            'user_id' => $student->id,
+            'date' => '2026-11-09 00:00:00',
+            'status' => AttendanceStatus::Sakit->value,
+        ]);
+
+        $attendance = $service->checkIn($student, [
+            'lat' => -8.2192,
+            'lng' => 114.3692,
+            'accuracy' => 10,
+        ]);
+
+        $this->assertDatabaseMissing('leave_requests', ['id' => $leave->id]);
+        $this->assertNotNull($attendance->check_in_at);
+    }
+
+    public function test_requesting_sick_recovery_returns_false_without_ongoing_leave(): void
+    {
+        $student = $this->makeStudent();
+
+        $this->assertFalse(app(AttendanceService::class)->requestSickRecovery($student));
+    }
+
     public function test_attendance_page_prompts_for_sick_recovery_and_closes_leave(): void
     {
         $this->travelTo(Carbon::parse('2026-11-11 10:00:00', 'Asia/Jakarta'));
