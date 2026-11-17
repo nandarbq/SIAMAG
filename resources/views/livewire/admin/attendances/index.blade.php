@@ -12,7 +12,13 @@
     </div>
 
     <div class="card card-body">
-        <div class="grid gap-3 lg:grid-cols-[170px_180px_1fr]">
+        <div class="grid gap-3 lg:grid-cols-[1fr_170px_180px]">
+            <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                    <x-icon name="search" class="h-4 w-4" />
+                </span>
+                <input wire:model.live.debounce.300ms="search" type="search" placeholder="Cari nama atau NIM..." class="input pl-10">
+            </div>
             <input wire:model.live="date" type="date" class="input">
             <select wire:model.live="status" class="input">
                 <option value="">Semua status</option>
@@ -20,12 +26,6 @@
                     <option value="{{ $statusOption->value }}">{{ $statusOption->label() }}</option>
                 @endforeach
             </select>
-            <div class="relative">
-                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                    <x-icon name="search" class="h-4 w-4" />
-                </span>
-                <input wire:model.live.debounce.300ms="search" type="search" placeholder="Cari nama atau NIM..." class="input pl-10">
-            </div>
         </div>
 
         <div class="mt-4 flex flex-wrap gap-2">
