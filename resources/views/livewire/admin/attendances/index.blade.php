@@ -75,6 +75,9 @@
                             <td class="table-td">
                                 <p><span class="text-[11px] font-semibold uppercase text-slate-400">In</span> {{ $attendance->check_in_at?->format('H:i') ?? '-' }}</p>
                                 <p><span class="text-[11px] font-semibold uppercase text-slate-400">Out</span> {{ $attendance->check_out_at?->format('H:i') ?? '-' }}</p>
+                                @if ($attendance->early_leave_minutes > 0)
+                                    <p class="text-[11px] font-medium text-amber-600">Pulang lebih awal {{ $attendance->early_leave_minutes }} menit</p>
+                                @endif
                             </td>
                             <td class="table-td">
                                 @if ($attendance->check_in_distance !== null)

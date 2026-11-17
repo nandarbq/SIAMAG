@@ -76,6 +76,29 @@ class AdminAttendanceTest extends TestCase
         $this->assertSame(15, $attendance->fresh()->late_minutes);
     }
 
+    public function test_admin_correction_recalculates_early_leave_minutes(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create();
+
+        $attendance = Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'status' => AttendanceStatus::Hadir,
+            'check_in_at' => Carbon::parse('2026-11-09 07:30:00'),
+            'check_out_at' => Carbon::parse('2026-11-09 16:00:00'),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminAttendanceIndex::class)
+            ->call('openCorrect', $attendance->id)
+            ->set('editCheckOut', '15:00')
+            ->call('saveCorrect')
+            ->assertHasNoErrors();
+
+        $this->assertSame(60, $attendance->fresh()->early_leave_minutes);
+    }
+
     public function test_admin_can_clear_attendance_times_and_late_minutes(): void
     {
         $admin = User::factory()->admin()->create();

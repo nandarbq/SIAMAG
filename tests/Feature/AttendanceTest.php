@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Enums\AttendanceStatus;
+use App\Livewire\Mahasiswa\Attendance\Index as StudentAttendanceIndex;
+use App\Models\Attendance;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\AttendanceService;
@@ -11,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class AttendanceTest extends TestCase
@@ -194,6 +197,24 @@ class AttendanceTest extends TestCase
         $attendance = $service->checkOut($student, $this->payload($student));
 
         $this->assertSame(0, $attendance->early_leave_minutes);
+    }
+
+    public function test_attendance_page_shows_early_leave_note(): void
+    {
+        $student = $this->makeStudent();
+
+        Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'status' => AttendanceStatus::Hadir,
+            'check_in_at' => Carbon::parse('2026-11-09 07:30:00'),
+            'check_out_at' => Carbon::parse('2026-11-09 15:00:00'),
+            'early_leave_minutes' => 60,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentAttendanceIndex::class)
+            ->assertSee('Pulang lebih awal 60 menit');
     }
 
     public function test_check_in_without_gps_data_is_allowed_when_disabled(): void
