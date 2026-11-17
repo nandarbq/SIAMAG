@@ -1,7 +1,7 @@
 <div class="space-y-5">
     <div class="card card-body">
-        <div class="grid gap-3 sm:grid-cols-2 lg:grid-cols-[minmax(0,1fr)_180px_auto]">
-            <div class="relative sm:col-span-2 lg:col-span-1">
+        <div class="grid gap-3 sm:grid-cols-2">
+            <div class="relative">
                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                     <x-icon name="search" class="h-4 w-4" />
                 </span>
@@ -12,10 +12,6 @@
                 <option value="active">Aktif</option>
                 <option value="inactive">Nonaktif</option>
             </select>
-            <button type="button" wire:click="resetFilters" class="btn-secondary w-full sm:w-auto">
-                <x-icon name="filter" class="h-4 w-4" />
-                Reset
-            </button>
         </div>
     </div>
 

@@ -23,6 +23,11 @@ class Index extends Component
         }
     }
 
+    public function updatedSearch(mixed $value): void
+    {
+        $this->status = '';
+    }
+
     public function delete(InternGroup $group): void
     {
         if ($group->students()->exists()) {
@@ -35,12 +40,6 @@ class Index extends Component
         $group->delete();
 
         $this->dispatch('group-deleted', message: "Kelompok {$code} berhasil dihapus.");
-    }
-
-    public function resetFilters(): void
-    {
-        $this->reset(['search', 'status']);
-        $this->resetPage();
     }
 
     public function render()

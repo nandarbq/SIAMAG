@@ -87,6 +87,20 @@ class StudentsTest extends TestCase
         InternProfile::factory()->for($student)->create();
     }
 
+    public function test_search_changes_reset_the_status_filter(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(StudentIndex::class)
+            ->set('status', 'active')
+            ->set('search', 'Budi')
+            ->assertSet('status', '')
+            ->set('status', 'active')
+            ->set('search', '')
+            ->assertSet('status', '');
+    }
+
     public function test_student_list_can_be_searched(): void
     {
         $admin = User::factory()->admin()->create();

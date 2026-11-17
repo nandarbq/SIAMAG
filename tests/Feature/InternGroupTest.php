@@ -126,6 +126,17 @@ class InternGroupTest extends TestCase
         $this->assertModelMissing($group);
     }
 
+    public function test_group_search_changes_reset_the_status_filter(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(GroupIndex::class)
+            ->set('status', 'active')
+            ->set('search', 'Poliwangi')
+            ->assertSet('status', '');
+    }
+
     public function test_group_management_lives_in_students_page_tabs(): void
     {
         $admin = User::factory()->admin()->create();

@@ -61,6 +61,11 @@ class Index extends Component
         }
     }
 
+    public function updatedSearch(mixed $value): void
+    {
+        $this->status = '';
+    }
+
     #[On('create-group')]
     public function createGroup(): void
     {
@@ -143,12 +148,6 @@ class Index extends Component
         $user->delete();
 
         session()->flash('success', "Data mahasiswa {$name} berhasil dihapus.");
-    }
-
-    public function resetFilters(): void
-    {
-        $this->reset(['search', 'status']);
-        $this->resetPage();
     }
 
     public function render()
