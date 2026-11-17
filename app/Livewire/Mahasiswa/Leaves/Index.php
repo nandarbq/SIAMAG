@@ -22,8 +22,6 @@ class Index extends Component
     use WithFileUploads;
     use WithPagination;
 
-    public string $status = '';
-
     public bool $showModal = false;
 
     public string $type = LeaveType::Izin->value;
@@ -33,13 +31,6 @@ class Index extends Component
     public string $reason = '';
 
     public $attachment;
-
-    public function updating(string $property): void
-    {
-        if ($property === 'status') {
-            $this->resetPage();
-        }
-    }
 
     public function openCreate(): void
     {
@@ -118,7 +109,7 @@ class Index extends Component
 
         $conflict = LeaveRequest::query()
             ->where('user_id', $userId)
-            ->whereIn('status', [LeaveStatus::Pending->value, LeaveStatus::Approved->value])
+            ->where('status', LeaveStatus::Approved->value)
             ->whereDate('start_date', '<=', $endDate ?? '9999-12-31')
             ->where(function ($query) {
                 $query->whereNull('end_date')
@@ -156,7 +147,7 @@ class Index extends Component
     {
         $leave = auth()->user()->leaveRequests()->findOrFail($leaveId);
 
-        if (! in_array($leave->status, [LeaveStatus::Approved, LeaveStatus::Pending], true)) {
+        if ($leave->status !== LeaveStatus::Approved) {
             session()->flash('error', 'Pengajuan ini tidak dapat dibatalkan.');
 
             return;
@@ -188,43 +179,20 @@ class Index extends Component
         session()->flash('success', 'Pengajuan berhasil dibatalkan.');
     }
 
-    public function resetFilters(): void
-    {
-        $this->reset('status');
-        $this->resetPage();
-    }
-
     public function render()
     {
         $userId = auth()->id();
 
         $leaves = LeaveRequest::query()
             ->where('user_id', $userId)
-            ->when($this->status !== '', fn ($query) => $query->where('status', $this->status))
+            ->where('status', LeaveStatus::Approved->value)
             ->latest('start_date')
             ->latest()
             ->paginate(8);
 
-        $counts = LeaveRequest::query()
-            ->where('user_id', $userId)
-            ->selectRaw('status, count(*) as total')
-            ->groupBy('status')
-            ->pluck('total', 'status');
-
-        $ongoingSick = LeaveRequest::query()
-            ->where('user_id', $userId)
-            ->where('type', LeaveType::Sakit->value)
-            ->where('status', LeaveStatus::Approved->value)
-            ->whereNull('end_date')
-            ->count();
-
         return view('livewire.mahasiswa.leaves.index', [
             'leaves' => $leaves,
-            'counts' => $counts,
-            'statuses' => LeaveStatus::visibleCases(),
             'types' => LeaveType::cases(),
-            'total' => $counts->sum(),
-            'ongoingSick' => $ongoingSick,
             'profile' => auth()->user()->internProfile,
         ]);
     }

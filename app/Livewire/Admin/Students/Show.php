@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Students;
 
 use App\Enums\AttendanceStatus;
+use App\Enums\LeaveStatus;
 use App\Enums\UserRole;
 use App\Models\User;
 use App\Services\LogbookProgressService;
@@ -60,7 +61,7 @@ class Show extends Component
             'logbookProgress' => app(LogbookProgressService::class)->for($this->student),
             'attendances' => $this->student->attendances()->latest('date')->limit(10)->get(),
             'logbooks' => $this->student->logbooks()->latest('date')->limit(8)->get(),
-            'leaves' => $this->student->leaveRequests()->latest()->limit(5)->get(),
+            'leaves' => $this->student->leaveRequests()->where('status', LeaveStatus::Approved->value)->latest()->limit(5)->get(),
         ]);
     }
 }

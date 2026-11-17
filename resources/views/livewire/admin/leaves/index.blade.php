@@ -5,23 +5,6 @@
         <p class="page-subtitle">Pantau pengajuan ketidakhadiran yang tercatat otomatis pada absensi mahasiswa.</p>
     </div>
 
-    <div class="grid gap-3 sm:grid-cols-2">
-        @foreach ($statuses as $statusOption)
-            @php($count = (int) ($counts[$statusOption->value] ?? 0))
-            <button
-                type="button"
-                wire:click="$set('status', '{{ $statusOption->value }}')"
-                class="card card-body text-left transition hover:-translate-y-0.5 hover:shadow-card {{ $status === $statusOption->value ? 'ring-2 ring-brand-500/40' : '' }}"
-            >
-                <div class="flex items-center justify-between">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $statusOption->label() }}</p>
-                    <x-leave-status :status="$statusOption" />
-                </div>
-                <p class="mt-2 text-2xl font-bold text-slate-900">{{ $count }}</p>
-            </button>
-        @endforeach
-    </div>
-
     <div class="card card-body">
         <div class="grid gap-3 md:grid-cols-[1fr_180px_auto]">
             <div class="relative">
@@ -52,7 +35,6 @@
                         <th class="table-th">Jenis</th>
                         <th class="table-th">Periode</th>
                         <th class="table-th">Alasan</th>
-                        <th class="table-th">Status</th>
                         <th class="table-th text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -75,7 +57,6 @@
                             <td class="table-td">
                                 <p class="max-w-xs truncate text-sm text-slate-600">{{ $leave->reason }}</p>
                             </td>
-                            <td class="table-td"><x-leave-status :status="$leave->status" /></td>
                             <td class="table-td">
                                 <div class="flex justify-end">
                                     <button type="button" wire:click="openReview({{ $leave->id }})" class="btn-ghost btn-sm">
@@ -87,7 +68,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="6" class="empty-state">
+                            <td colspan="5" class="empty-state">
                                 <x-icon name="calendar" class="h-10 w-10 text-slate-300" />
                                 <p class="font-semibold text-slate-600">Tidak ada pengajuan</p>
                                 <p class="text-xs">Belum ada pengajuan tercatat pada filter yang dipilih.</p>
@@ -155,16 +136,7 @@
                         </div>
                     @endif
 
-                    <div class="rounded-xl bg-slate-50 p-4">
-                        <div class="flex items-center gap-2">
-                            <span class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Status</span>
-                            <x-leave-status :status="$reviewing->status" />
-                        </div>
-                        @if ($reviewing->review_note)
-                            <p class="mt-2 text-sm text-slate-700">{{ $reviewing->review_note }}</p>
-                        @endif
-                        <p class="mt-2 text-xs text-slate-400">Dicatat {{ $reviewing->created_at?->translatedFormat('d M Y H:i') }}</p>
-                    </div>
+                    <p class="text-xs text-slate-400">Dicatat {{ $reviewing->created_at?->translatedFormat('d M Y H:i') }}</p>
                 </div>
             </div>
         </div>

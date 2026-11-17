@@ -174,15 +174,12 @@
                 </div>
                 <div class="divide-y divide-slate-100">
                     @forelse ($leaves as $leave)
-                        <div class="flex items-center justify-between gap-3 px-5 py-3.5">
-                            <div>
-                                <p class="text-sm font-semibold text-slate-800">{{ $leave->type->label() }}</p>
-                                <p class="text-xs text-slate-400">
-                                    {{ $leave->periodLabel() }}
-                                    · {{ $leave->isOngoing() ? 'Berlangsung' : $leave->totalDays().' hari' }}
-                                </p>
-                            </div>
-                            <x-leave-status :status="$leave->status" />
+                        <div class="px-5 py-3.5">
+                            <p class="text-sm font-semibold text-slate-800">{{ $leave->type->label() }}</p>
+                            <p class="text-xs text-slate-400">
+                                {{ $leave->periodLabel() }}
+                                · {{ $leave->isOngoing() ? 'Berlangsung' : $leave->totalDays().' hari' }}
+                            </p>
                         </div>
                     @empty
                         <p class="empty-state">Belum ada pengajuan.</p>

@@ -154,14 +154,27 @@ class LeaveTest extends TestCase
             ->assertHasErrors(['startDate']);
     }
 
-    public function test_leave_page_hides_pending_status(): void
+    public function test_leave_page_does_not_show_approval_ui(): void
     {
         $student = $this->makeStudent();
 
+        LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Izin,
+            'start_date' => '2026-11-10',
+            'end_date' => '2026-11-10',
+            'reason' => 'Pengajuan lama yang sudah ditolak.',
+            'status' => LeaveStatus::Rejected,
+        ]);
+
         Livewire::actingAs($student)
             ->test(StudentLeaveIndex::class)
-            ->assertDontSee('Menunggu')
-            ->assertSee('Sakit Berlangsung');
+            ->assertDontSee('Total Pengajuan')
+            ->assertDontSee('Tercatat')
+            ->assertDontSee('Sakit Berlangsung')
+            ->assertDontSee('Ditolak')
+            ->assertDontSee('Semua status')
+            ->assertDontSee('Pengajuan lama yang sudah ditolak.');
     }
 
     public function test_student_can_open_leave_form_on_final_internship_day(): void
@@ -186,7 +199,7 @@ class LeaveTest extends TestCase
             'start_date' => '2026-11-10',
             'end_date' => '2026-11-11',
             'reason' => 'Kegiatan keluarga di luar kota.',
-            'status' => LeaveStatus::Pending,
+            'status' => LeaveStatus::Approved,
         ]);
 
         Livewire::actingAs($student)
@@ -230,7 +243,7 @@ class LeaveTest extends TestCase
             'end_date' => '2026-11-10',
             'reason' => 'Kegiatan keluarga di luar kota.',
             'attachment_path' => 'leave-attachments/'.$student->id.'/surat.pdf',
-            'status' => LeaveStatus::Pending,
+            'status' => LeaveStatus::Approved,
         ]);
 
         Livewire::actingAs($admin)
@@ -255,20 +268,33 @@ class LeaveTest extends TestCase
 
         Livewire::actingAs($admin)
             ->test(AdminLeaveIndex::class)
-            ->assertSet('status', LeaveStatus::Approved->value)
             ->call('openReview', $leave->id)
             ->assertSet('reviewingId', $leave->id)
-            ->assertSee('Masih berlangsung');
+            ->assertSee('Masih berlangsung')
+            ->assertDontSee('Status');
     }
 
     public function test_admin_leave_page_does_not_offer_approval_actions(): void
     {
         $admin = User::factory()->admin()->create();
+        $student = $this->makeStudent();
+
+        LeaveRequest::query()->create([
+            'user_id' => $student->id,
+            'type' => LeaveType::Izin,
+            'start_date' => '2026-11-10',
+            'end_date' => '2026-11-10',
+            'reason' => 'Pengajuan lama yang sudah ditolak.',
+            'status' => LeaveStatus::Rejected,
+        ]);
 
         Livewire::actingAs($admin)
             ->test(AdminLeaveIndex::class)
             ->assertDontSee('Setujui')
-            ->assertDontSee('Tolak');
+            ->assertDontSee('Tolak')
+            ->assertDontSee('Tercatat')
+            ->assertDontSee('Ditolak')
+            ->assertDontSee('Pengajuan lama yang sudah ditolak.');
     }
 
     public function test_student_cannot_cancel_past_leave_request(): void

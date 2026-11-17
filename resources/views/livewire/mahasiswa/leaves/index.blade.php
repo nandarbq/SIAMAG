@@ -18,51 +18,11 @@
         </div>
     @endif
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        @php
-            $stats = [
-                ['label' => 'Total Pengajuan', 'value' => $total, 'icon' => 'calendar', 'tone' => 'brand'],
-                ['label' => 'Tercatat', 'value' => $counts[App\Enums\LeaveStatus::Approved->value] ?? 0, 'icon' => 'check-circle', 'tone' => 'emerald'],
-                ['label' => 'Sakit Berlangsung', 'value' => $ongoingSick, 'icon' => 'clock', 'tone' => 'amber'],
-                ['label' => 'Ditolak', 'value' => $counts[App\Enums\LeaveStatus::Rejected->value] ?? 0, 'icon' => 'x', 'tone' => 'rose'],
-            ];
-            $tones = [
-                'brand' => 'bg-brand-50 text-brand-600',
-                'amber' => 'bg-amber-50 text-amber-600',
-                'emerald' => 'bg-emerald-50 text-emerald-600',
-                'rose' => 'bg-rose-50 text-rose-600',
-            ];
-        @endphp
-
-        @foreach ($stats as $stat)
-            <div class="card card-body animate-fade-up">
-                <div class="flex items-center justify-between">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $stat['label'] }}</p>
-                    <span class="flex h-9 w-9 items-center justify-center rounded-lg {{ $tones[$stat['tone']] }}">
-                        <x-icon :name="$stat['icon']" class="h-4 w-4" />
-                    </span>
-                </div>
-                <p class="mt-2 text-2xl font-bold text-slate-900">{{ $stat['value'] }}</p>
-            </div>
-        @endforeach
-    </section>
-
     <div class="card">
-        <div class="card-header flex-col items-start gap-3 sm:flex-row sm:items-center">
+        <div class="card-header">
             <div>
                 <h2 class="text-base font-bold text-slate-900">Riwayat Pengajuan</h2>
-                <p class="mt-0.5 text-xs text-slate-500">{{ $total }} pengajuan tercatat</p>
-            </div>
-            <div class="flex w-full items-center gap-2 sm:w-auto">
-                <select wire:model.live="status" class="input sm:w-44">
-                    <option value="">Semua status</option>
-                    @foreach ($statuses as $statusOption)
-                        <option value="{{ $statusOption->value }}">{{ $statusOption->label() }}</option>
-                    @endforeach
-                </select>
-                @if ($status !== '')
-                    <button type="button" wire:click="resetFilters" class="btn-ghost btn-sm">Reset</button>
-                @endif
+                <p class="mt-0.5 text-xs text-slate-500">{{ $leaves->total() }} pengajuan tercatat</p>
             </div>
         </div>
 
@@ -73,7 +33,6 @@
                         <th class="table-th">Tanggal</th>
                         <th class="table-th">Jenis</th>
                         <th class="table-th">Alasan</th>
-                        <th class="table-th">Status</th>
                         <th class="table-th text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -98,13 +57,7 @@
                             </td>
                             <td class="table-td">
                                 <p class="max-w-md text-sm leading-relaxed text-slate-600">{{ $leave->reason }}</p>
-                                @if ($leave->status === App\Enums\LeaveStatus::Rejected && $leave->review_note)
-                                    <p class="mt-2 rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs text-rose-700">
-                                        <span class="font-semibold">Catatan admin:</span> {{ $leave->review_note }}
-                                    </p>
-                                @endif
                             </td>
-                            <td class="table-td"><x-leave-status :status="$leave->status" /></td>
                             <td class="table-td">
                                 <div class="flex items-center justify-end gap-1.5">
                                     @if ($leave->attachment_path)
@@ -113,10 +66,8 @@
                                         </a>
                                     @endif
                                     @php
-                                        $canCancel = $leave->status === App\Enums\LeaveStatus::Pending
-                                            || ($leave->status === App\Enums\LeaveStatus::Approved
-                                                && (($leave->type === App\Enums\LeaveType::Izin && $leave->start_date->greaterThanOrEqualTo(today()))
-                                                    || ($leave->type === App\Enums\LeaveType::Sakit && $leave->isOngoing())));
+                                        $canCancel = ($leave->type === App\Enums\LeaveType::Izin && $leave->start_date->greaterThanOrEqualTo(today()))
+                                            || ($leave->type === App\Enums\LeaveType::Sakit && $leave->isOngoing());
                                     @endphp
 
                                     @if ($canCancel)
@@ -129,7 +80,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-5 py-16 text-center">
+                            <td colspan="4" class="px-5 py-16 text-center">
                                 <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
                                     <x-icon name="calendar" class="h-6 w-6" />
                                 </span>
