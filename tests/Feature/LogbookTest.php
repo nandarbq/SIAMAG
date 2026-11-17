@@ -293,6 +293,24 @@ class LogbookTest extends TestCase
             ->assertDontSee('Tolak & Minta Revisi');
     }
 
+    public function test_admin_logbook_search_changes_reset_the_date_filters(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(AdminLogbookIndex::class)
+            ->set('dateFrom', '2026-11-01')
+            ->set('dateTo', '2026-11-30')
+            ->set('search', 'Budi')
+            ->assertSet('dateFrom', '')
+            ->assertSet('dateTo', '')
+            ->set('dateFrom', '2026-11-01')
+            ->set('dateTo', '2026-11-30')
+            ->set('search', '')
+            ->assertSet('dateFrom', '')
+            ->assertSet('dateTo', '');
+    }
+
     private function makeStudent(): User
     {
         $student = User::factory()->mahasiswa()->create();

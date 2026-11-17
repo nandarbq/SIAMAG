@@ -297,6 +297,20 @@ class LeaveTest extends TestCase
             ->assertDontSee('Pengajuan lama yang sudah ditolak.');
     }
 
+    public function test_admin_leave_search_changes_reset_the_type_filter(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(AdminLeaveIndex::class)
+            ->set('type', LeaveType::Sakit->value)
+            ->set('search', 'Budi')
+            ->assertSet('type', '')
+            ->set('type', LeaveType::Sakit->value)
+            ->set('search', '')
+            ->assertSet('type', '');
+    }
+
     public function test_student_cannot_cancel_past_leave_request(): void
     {
         $student = $this->makeStudent();

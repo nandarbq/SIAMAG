@@ -8,7 +8,7 @@
     </div>
 
     <div class="card card-body">
-        <div class="grid gap-3 lg:grid-cols-[1fr_160px_160px_auto]">
+        <div class="grid gap-3 lg:grid-cols-[1fr_160px_160px]">
             <div class="relative">
                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                     <x-icon name="search" class="h-4 w-4" />
@@ -17,10 +17,6 @@
             </div>
             <input wire:model.live="dateFrom" type="date" class="input" title="Dari tanggal">
             <input wire:model.live="dateTo" type="date" class="input" title="Sampai tanggal">
-            <button type="button" wire:click="resetFilters" class="btn-secondary">
-                <x-icon name="filter" class="h-4 w-4" />
-                Reset
-            </button>
         </div>
     </div>
 

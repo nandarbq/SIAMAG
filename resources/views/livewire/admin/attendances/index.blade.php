@@ -12,7 +12,7 @@
     </div>
 
     <div class="card card-body">
-        <div class="grid gap-3 lg:grid-cols-[170px_180px_1fr_auto]">
+        <div class="grid gap-3 lg:grid-cols-[170px_180px_1fr]">
             <input wire:model.live="date" type="date" class="input">
             <select wire:model.live="status" class="input">
                 <option value="">Semua status</option>
@@ -26,10 +26,6 @@
                 </span>
                 <input wire:model.live.debounce.300ms="search" type="search" placeholder="Cari nama atau NIM..." class="input pl-10">
             </div>
-            <button type="button" wire:click="resetFilters" class="btn-secondary">
-                <x-icon name="filter" class="h-4 w-4" />
-                Reset
-            </button>
         </div>
 
         <div class="mt-4 flex flex-wrap gap-2">

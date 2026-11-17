@@ -48,6 +48,12 @@ class Index extends Component
         }
     }
 
+    public function updatedSearch(mixed $value): void
+    {
+        $this->status = '';
+        $this->date = now()->toDateString();
+    }
+
     public function openCorrect(int $attendanceId): void
     {
         $attendance = Attendance::query()->findOrFail($attendanceId);
@@ -86,13 +92,6 @@ class Index extends Component
 
         $this->closeCorrect();
         session()->flash('success', 'Data absensi berhasil dikoreksi.');
-    }
-
-    public function resetFilters(): void
-    {
-        $this->reset(['date', 'status', 'search']);
-        $this->date = now()->toDateString();
-        $this->resetPage();
     }
 
     public function render()

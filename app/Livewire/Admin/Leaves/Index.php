@@ -31,6 +31,11 @@ class Index extends Component
         }
     }
 
+    public function updatedSearch(mixed $value): void
+    {
+        $this->type = '';
+    }
+
     public function openReview(int $leaveId): void
     {
         $leave = LeaveRequest::query()
@@ -44,12 +49,6 @@ class Index extends Component
     {
         $this->reset('reviewingId');
         $this->resetValidation();
-    }
-
-    public function resetFilters(): void
-    {
-        $this->reset(['type', 'search']);
-        $this->resetPage();
     }
 
     public function render()

@@ -170,6 +170,24 @@ class AdminAttendanceTest extends TestCase
             ->assertHasErrors(['editCheckIn']);
     }
 
+    public function test_search_changes_reset_the_date_and_status_filters(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(AdminAttendanceIndex::class)
+            ->set('date', '2026-11-08')
+            ->set('status', AttendanceStatus::Hadir->value)
+            ->set('search', 'Budi')
+            ->assertSet('date', '2026-11-09')
+            ->assertSet('status', '')
+            ->set('date', '2026-11-08')
+            ->set('status', AttendanceStatus::Hadir->value)
+            ->set('search', '')
+            ->assertSet('date', '2026-11-09')
+            ->assertSet('status', '');
+    }
+
     public function test_admin_can_filter_attendance_by_date(): void
     {
         $admin = User::factory()->admin()->create();
