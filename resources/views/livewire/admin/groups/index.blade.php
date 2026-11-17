@@ -1,13 +1,13 @@
 <div class="space-y-5">
     <div class="card card-body">
-        <div class="grid gap-3 sm:grid-cols-2">
+        <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_160px]">
             <div class="relative">
                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                     <x-icon name="search" class="h-4 w-4" />
                 </span>
                 <input wire:model.live.debounce.300ms="search" type="search" placeholder="Cari kode, nama, atau kampus..." class="input w-full pl-10">
             </div>
-            <select wire:model.live="status" class="input w-full">
+            <select wire:model.live="status" class="input">
                 <option value="">Semua status</option>
                 <option value="active">Aktif</option>
                 <option value="inactive">Nonaktif</option>
