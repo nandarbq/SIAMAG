@@ -32,7 +32,7 @@
                             <th class="table-th">Periode</th>
                             <th class="table-th">Anggota</th>
                             <th class="table-th">Status</th>
-                            <th class="table-th text-right">Aksi</th>
+                            <th class="table-th text-center">Aksi</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100">
@@ -70,7 +70,7 @@
                                     @endif
                                 </td>
                                 <td class="table-td">
-                                    <div class="flex items-center justify-end gap-1">
+                                    <div class="flex items-center justify-center gap-1">
                                         <button type="button" wire:click="$dispatch('show-group', { groupId: {{ $group->id }} })" class="btn-ghost btn-sm" title="Lihat detail">
                                             <x-icon name="eye" class="h-4 w-4" />
                                         </button>

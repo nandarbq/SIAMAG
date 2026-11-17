@@ -85,7 +85,7 @@
                                 <th class="table-th">Institusi</th>
                                 <th class="table-th">Periode Magang</th>
                                 <th class="table-th">Status</th>
-                                <th class="table-th text-right">Aksi</th>
+                                <th class="table-th text-center">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -134,7 +134,7 @@
                                         @endif
                                     </td>
                                     <td class="table-td">
-                                        <div class="flex items-center justify-end gap-1">
+                                        <div class="flex items-center justify-center gap-1">
                                             <a href="{{ route('admin.students.show', $student) }}" class="btn-ghost btn-sm" title="Lihat detail">
                                                 <x-icon name="eye" class="h-4 w-4" />
                                             </a>
