@@ -50,7 +50,7 @@
                         <th class="table-th">Lokasi</th>
                         <th class="table-th">Foto</th>
                         <th class="table-th">Status</th>
-                        <th class="table-th text-right">Aksi</th>
+                        <th class="table-th text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -102,7 +102,7 @@
                             </td>
                             <td class="table-td"><x-attendance-status :status="$attendance->status" /></td>
                             <td class="table-td">
-                                <div class="flex justify-end">
+                                <div class="flex justify-center">
                                     <button type="button" wire:click="openCorrect({{ $attendance->id }})" class="btn-ghost btn-sm">
                                         <x-icon name="pencil" class="h-4 w-4" />
                                         Koreksi

@@ -29,7 +29,7 @@
                         <th class="table-th">Tanggal</th>
                         <th class="table-th">Kegiatan</th>
                         <th class="table-th">Durasi</th>
-                        <th class="table-th text-right">Aksi</th>
+                        <th class="table-th text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -52,7 +52,7 @@
                             </td>
                             <td class="table-td whitespace-nowrap">{{ $logbook->duration ?? '-' }}</td>
                             <td class="table-td">
-                                <div class="flex justify-end">
+                                <div class="flex justify-center">
                                     <button type="button" wire:click="openDetail({{ $logbook->id }})" class="btn-ghost btn-sm">
                                         <x-icon name="eye" class="h-4 w-4" />
                                         Lihat
