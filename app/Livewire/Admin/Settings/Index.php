@@ -31,6 +31,8 @@ class Index extends Component
 
     public string $logbook_export_lead_days = '';
 
+    public array $workdays = [];
+
     public bool $require_selfie = true;
 
     public bool $require_geofence = true;
@@ -47,6 +49,12 @@ class Index extends Component
         $this->work_end = (string) Setting::get('work_end', '16:00');
         $this->late_tolerance_min = (string) Setting::get('late_tolerance_min', '15');
         $this->logbook_export_lead_days = (string) Setting::get('logbook_export_lead_days', '7');
+        $this->workdays = collect(explode(',', (string) Setting::get('workdays', '1,2,3,4,5')))
+            ->map(fn (string $day) => (string) (int) trim($day))
+            ->filter(fn (string $day) => (int) $day >= 1 && (int) $day <= 7)
+            ->unique()
+            ->values()
+            ->all();
         $this->require_selfie = Setting::getBool('require_selfie', true);
         $this->require_geofence = Setting::getBool('require_geofence', true);
     }
@@ -64,6 +72,8 @@ class Index extends Component
             'work_end' => ['required', 'date_format:H:i', 'after:work_start'],
             'late_tolerance_min' => ['required', 'integer', 'min:0', 'max:120'],
             'logbook_export_lead_days' => ['required', 'integer', 'min:1', 'max:30'],
+            'workdays' => ['required', 'array', 'min:1'],
+            'workdays.*' => ['required', 'integer', 'between:1,7'],
         ], [
             'office_name.required' => 'Nama kantor wajib diisi.',
             'office_lat.required' => 'Latitude kantor wajib diisi.',
@@ -75,11 +85,25 @@ class Index extends Component
             'work_end.after' => 'Jam pulang harus setelah jam masuk.',
             'logbook_export_lead_days.min' => 'Batas ekspor logbook minimal H-1.',
             'logbook_export_lead_days.max' => 'Batas ekspor logbook maksimal H-30.',
+            'workdays.required' => 'Pilih minimal satu hari kerja.',
+            'workdays.min' => 'Pilih minimal satu hari kerja.',
+            'workdays.*.between' => 'Hari kerja tidak valid.',
         ]);
+
+        $workdays = collect($validated['workdays'])
+            ->map(fn ($day) => (int) $day)
+            ->unique()
+            ->sort()
+            ->values()
+            ->implode(',');
+
+        unset($validated['workdays']);
 
         foreach ($validated as $key => $value) {
             Setting::put($key, $value);
         }
+
+        Setting::put('workdays', $workdays);
 
         Setting::put('require_selfie', $this->require_selfie ? '1' : '0');
         Setting::put('require_geofence', $this->require_geofence ? '1' : '0');

@@ -6,7 +6,6 @@ use App\Enums\AttendanceStatus;
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
 use App\Models\Attendance;
-use App\Models\Holiday;
 use App\Models\LeaveRequest;
 use App\Models\Setting;
 use App\Models\User;
@@ -21,7 +20,10 @@ use Intervention\Image\ImageManager;
 
 class AttendanceService
 {
-    public function __construct(private readonly GeofenceService $geofence) {}
+    public function __construct(
+        private readonly GeofenceService $geofence,
+        private readonly WorkdayService $workdays,
+    ) {}
 
     public function checkIn(User $user, array $data): Attendance
     {
@@ -184,14 +186,10 @@ class AttendanceService
             return;
         }
 
-        $holidayDates = Holiday::query()
-            ->whereBetween('date', [$leave->start_date, $endDate])
-            ->pluck('date')
-            ->map(fn ($date) => $date->toDateString())
-            ->all();
+        $holidayDates = $this->workdays->holidayDatesBetween($leave->start_date, $endDate);
 
         for ($date = $leave->start_date->copy(); $date->lessThanOrEqualTo($endDate); $date->addDay()) {
-            if ($date->isWeekend() || in_array($date->toDateString(), $holidayDates, true)) {
+            if (! $this->workdays->isWorkday($date, $holidayDates)) {
                 continue;
             }
 
@@ -344,11 +342,7 @@ class AttendanceService
 
     public function isWorkday(Carbon $date): bool
     {
-        if ($date->isWeekend()) {
-            return false;
-        }
-
-        return ! Holiday::query()->whereDate('date', $date->toDateString())->exists();
+        return $this->workdays->isWorkday($date);
     }
 
     private function ensureCanAttend(User $user, Carbon $date): void

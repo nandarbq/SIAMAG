@@ -10,6 +10,7 @@ use App\Models\Attendance;
 use App\Models\Logbook;
 use App\Models\Setting;
 use App\Services\LogbookProgressService;
+use App\Services\WorkdayService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -39,10 +40,15 @@ class Dashboard extends Component
             ->first();
 
         $chart = $this->buildChart($user->id);
+        $workdays = app(WorkdayService::class);
+        $todayDate = now()->startOfDay();
 
         return view('livewire.mahasiswa.dashboard', [
             'profile' => $profile,
             'today' => $today,
+            'isWorkday' => $workdays->isWorkday($todayDate),
+            'todayHoliday' => $workdays->holidayFor($todayDate),
+            'nonWorkingLabel' => $workdays->nonWorkingLabel($todayDate),
             'hadir' => (int) ($monthCounts[AttendanceStatus::Hadir->value] ?? 0),
             'terlambat' => (int) ($monthCounts[AttendanceStatus::Terlambat->value] ?? 0),
             'izinSakit' => (int) ($monthCounts[AttendanceStatus::Izin->value] ?? 0) + (int) ($monthCounts[AttendanceStatus::Sakit->value] ?? 0),

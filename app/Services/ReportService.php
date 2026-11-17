@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\AttendanceStatus;
 use App\Enums\UserRole;
 use App\Models\Attendance;
-use App\Models\Holiday;
 use App\Models\Logbook;
 use App\Models\Setting;
 use App\Models\User;
@@ -13,16 +12,14 @@ use Carbon\Carbon;
 
 class ReportService
 {
+    public function __construct(private readonly WorkdayService $workdays) {}
+
     public function recap(int $month, int $year, ?int $studentId = null): array
     {
         $periodStart = Carbon::create($year, $month, 1)->startOfMonth();
         $periodEnd = $periodStart->copy()->endOfMonth();
 
-        $holidayDates = Holiday::query()
-            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
-            ->pluck('date')
-            ->map(fn ($date) => $date->toDateString())
-            ->all();
+        $holidayDates = $this->workdays->holidayDatesBetween($periodStart, $periodEnd);
 
         $students = User::query()
             ->with('internProfile')
@@ -118,7 +115,7 @@ class ReportService
         $count = 0;
 
         for ($date = $start->copy(); $date->lessThanOrEqualTo($end); $date->addDay()) {
-            if ($date->isWeekend() || in_array($date->toDateString(), $holidayDates, true)) {
+            if (! $this->workdays->isWorkday($date, $holidayDates)) {
                 continue;
             }
 

@@ -53,6 +53,41 @@ class SettingsTest extends TestCase
         $this->assertTrue(Setting::getBool('require_geofence'));
     }
 
+    public function test_admin_can_update_workdays(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(SettingsIndex::class)
+            ->set('workdays', ['1', '2', '3', '4', '5', '6'])
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertSame('1,2,3,4,5,6', Setting::get('workdays'));
+    }
+
+    public function test_workdays_must_not_be_empty(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(SettingsIndex::class)
+            ->set('workdays', [])
+            ->call('save')
+            ->assertHasErrors(['workdays']);
+    }
+
+    public function test_workdays_must_be_valid_days(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(SettingsIndex::class)
+            ->set('workdays', ['8'])
+            ->call('save')
+            ->assertHasErrors(['workdays.0']);
+    }
+
     public function test_admin_can_disable_geofence_validation(): void
     {
         $admin = User::factory()->admin()->create();
@@ -100,10 +135,12 @@ class SettingsTest extends TestCase
         $admin = User::factory()->admin()->create();
         Setting::put('office_name', 'BMKG Banyuwangi');
         Setting::put('radius_m', '250');
+        Setting::put('workdays', '2,4,6');
 
         Livewire::actingAs($admin)
             ->test(SettingsIndex::class)
             ->assertSet('office_name', 'BMKG Banyuwangi')
-            ->assertSet('radius_m', '250');
+            ->assertSet('radius_m', '250')
+            ->assertSet('workdays', ['2', '4', '6']);
     }
 }

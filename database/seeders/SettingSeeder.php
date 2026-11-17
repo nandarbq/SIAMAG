@@ -18,6 +18,7 @@ class SettingSeeder extends Seeder
             'max_accuracy_m' => '100',
             'work_start' => '07:30',
             'work_end' => '16:00',
+            'workdays' => '1,2,3,4,5',
             'late_tolerance_min' => '15',
             'require_selfie' => '1',
             'require_geofence' => '1',

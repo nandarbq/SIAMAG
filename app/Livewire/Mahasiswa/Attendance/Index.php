@@ -4,6 +4,7 @@ namespace App\Livewire\Mahasiswa\Attendance;
 
 use App\Models\Setting;
 use App\Services\AttendanceService;
+use App\Services\WorkdayService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -83,9 +84,14 @@ class Index extends Component
         $ongoingSickLeave = $attendanceService->ongoingSickLeaveFor($user);
         $recoveryRequestedToday = $ongoingSickLeave?->hasRecoveryRequestToday() ?? false;
         $requireSelfie = Setting::getBool('require_selfie', true);
+        $workdays = app(WorkdayService::class);
+        $todayDate = now()->startOfDay();
 
         return view('livewire.mahasiswa.attendance.index', [
             'today' => $today,
+            'isWorkday' => $workdays->isWorkday($todayDate),
+            'todayHoliday' => $workdays->holidayFor($todayDate),
+            'nonWorkingLabel' => $workdays->nonWorkingLabel($todayDate),
             'ongoingSickLeave' => $ongoingSickLeave,
             'recoveryRequestedToday' => $recoveryRequestedToday,
             'needsSickRecoveryPrompt' => $ongoingSickLeave !== null && ! $recoveryRequestedToday,

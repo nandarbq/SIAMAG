@@ -32,6 +32,18 @@
         </div>
     @endif
 
+    @if (! $isWorkday)
+        <div class="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+            <x-icon name="calendar" class="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+                <p class="font-semibold">{{ $todayHoliday ? 'Libur: '.$todayHoliday->name : 'Hari ini libur' }}</p>
+                <p class="mt-0.5 text-xs leading-relaxed text-sky-700">
+                    {{ $todayHoliday ? 'Hari ini merupakan hari libur. Tidak perlu melakukan absensi.' : $nonWorkingLabel.'. Tidak perlu melakukan absensi.' }}
+                </p>
+            </div>
+        </div>
+    @endif
+
     @error('attendance')
         <div class="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
             <x-icon name="alert" class="mt-0.5 h-5 w-5 shrink-0" />
@@ -75,8 +87,9 @@
                 radius: {{ $radius }},
                 maxAccuracy: {{ $maxAccuracy }},
                 requireGeofence: @js($requireGeofence),
+                workday: @js($isWorkday),
                 init() {
-                    if (this.requireGeofence) {
+                    if (this.requireGeofence && this.workday) {
                         this.locate();
                     }
                 },
@@ -144,7 +157,9 @@
                         @endif
                     </p>
                 </div>
-                @if ($today)
+                @if (! $isWorkday)
+                    <x-attendance-status :status="\App\Enums\AttendanceStatus::Libur" />
+                @elseif ($today)
                     <x-attendance-status :status="$today->status" />
                 @else
                     <span class="badge-slate">Belum absen</span>
@@ -156,7 +171,15 @@
                 <input type="hidden" wire:model="lng" x-ref="lng">
                 <input type="hidden" wire:model="accuracy" x-ref="accuracy">
 
-                @if ($onLeave)
+                @if (! $isWorkday)
+                    <div class="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-center">
+                        <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sky-100 text-sky-600">
+                            <x-icon name="calendar" class="h-6 w-6" />
+                        </span>
+                        <p class="mt-3 text-sm font-bold text-sky-900">Hari ini libur</p>
+                        <p class="mt-1 text-xs leading-relaxed text-sky-700">{{ $nonWorkingLabel }}. Tidak perlu melakukan absensi.</p>
+                    </div>
+                @elseif ($onLeave)
                     <div class="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-center">
                         <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sky-100 text-sky-600">
                             <x-icon name="calendar" class="h-6 w-6" />
@@ -340,12 +363,20 @@
                     <div class="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-slate-50/60">
                         <div class="flex items-center justify-between px-4 py-3 text-sm">
                             <span class="text-slate-500">Status</span>
-                            @if ($today)
+                            @if (! $isWorkday)
+                                <x-attendance-status :status="\App\Enums\AttendanceStatus::Libur" />
+                            @elseif ($today)
                                 <x-attendance-status :status="$today->status" />
                             @else
                                 <span class="badge-slate">Belum absen</span>
                             @endif
                         </div>
+                        @if (! $isWorkday)
+                            <div class="flex items-center justify-between px-4 py-3 text-sm">
+                                <span class="text-slate-500">Keterangan</span>
+                                <span class="font-semibold text-slate-800">{{ $nonWorkingLabel }}</span>
+                            </div>
+                        @endif
                         <div class="flex items-center justify-between px-4 py-3 text-sm">
                             <span class="text-slate-500">Keterlambatan</span>
                             <span class="font-semibold text-slate-800">{{ $today?->late_duration ?? '—' }}</span>

@@ -39,32 +39,58 @@
             <div class="rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur">
                 <div class="flex items-center justify-between">
                     <p class="text-xs font-bold uppercase tracking-wide text-slate-300">Absensi Hari Ini</p>
-                    @if ($today)
+                    @if (! $isWorkday)
+                        <span class="badge bg-white/10 text-slate-200 ring-1 ring-inset ring-white/10">Libur</span>
+                    @elseif ($today)
                         <x-attendance-status :status="$today->status" />
                     @else
                         <span class="badge bg-white/10 text-slate-200 ring-1 ring-inset ring-white/10">Belum absen</span>
                     @endif
                 </div>
 
-                <div class="mt-4 grid grid-cols-2 gap-3">
-                    <div class="rounded-xl bg-slate-950/30 p-3">
-                        <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Masuk</p>
-                        <p class="mt-1 text-xl font-bold">{{ $today?->check_in_at?->format('H:i') ?? '--:--' }}</p>
+                @if (! $isWorkday)
+                    <div class="mt-4 rounded-xl bg-slate-950/30 p-4">
+                        <div class="flex items-start gap-3">
+                            <x-icon name="calendar" class="mt-0.5 h-5 w-5 shrink-0 text-slate-300" />
+                            <div>
+                                <p class="text-sm font-semibold text-white">Hari ini libur</p>
+                                <p class="mt-1 text-xs leading-relaxed text-slate-300">{{ $nonWorkingLabel }}. Tidak perlu melakukan absensi.</p>
+                            </div>
+                        </div>
                     </div>
-                    <div class="rounded-xl bg-slate-950/30 p-3">
-                        <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Pulang</p>
-                        <p class="mt-1 text-xl font-bold">{{ $today?->check_out_at?->format('H:i') ?? '--:--' }}</p>
+                @else
+                    <div class="mt-4 grid grid-cols-2 gap-3">
+                        <div class="rounded-xl bg-slate-950/30 p-3">
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Masuk</p>
+                            <p class="mt-1 text-xl font-bold">{{ $today?->check_in_at?->format('H:i') ?? '--:--' }}</p>
+                        </div>
+                        <div class="rounded-xl bg-slate-950/30 p-3">
+                            <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">Pulang</p>
+                            <p class="mt-1 text-xl font-bold">{{ $today?->check_out_at?->format('H:i') ?? '--:--' }}</p>
+                        </div>
                     </div>
-                </div>
 
-                <a href="{{ route('mahasiswa.attendance') }}" class="btn mt-4 w-full bg-white text-slate-900 hover:bg-slate-100">
-                    <x-icon name="camera" class="h-4 w-4" />
-                    {{ $today?->check_in_at ? 'Buka Absensi' : 'Absen Sekarang' }}
-                </a>
-                <p class="mt-3 text-center text-[11px] text-slate-400">Jam kerja {{ $workStart }} — {{ $workEnd }} WIB</p>
+                    <a href="{{ route('mahasiswa.attendance') }}" class="btn mt-4 w-full bg-white text-slate-900 hover:bg-slate-100">
+                        <x-icon name="camera" class="h-4 w-4" />
+                        {{ $today?->check_in_at ? 'Buka Absensi' : 'Absen Sekarang' }}
+                    </a>
+                    <p class="mt-3 text-center text-[11px] text-slate-400">Jam kerja {{ $workStart }} — {{ $workEnd }} WIB</p>
+                @endif
             </div>
         </div>
     </section>
+
+    @if (! $isWorkday)
+        <div class="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+            <x-icon name="calendar" class="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+                <p class="font-semibold">{{ $todayHoliday ? 'Libur: '.$todayHoliday->name : 'Hari ini libur' }}</p>
+                <p class="mt-0.5 text-xs leading-relaxed text-sky-700">
+                    {{ $todayHoliday ? 'Hari ini merupakan hari libur. Tidak perlu melakukan absensi.' : $nonWorkingLabel.'. Tidak perlu melakukan absensi.' }}
+                </p>
+            </div>
+        </div>
+    @endif
 
     @if ($logbookProgress['today_status'] === 'missing')
         <div class="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 sm:flex-row sm:items-center">

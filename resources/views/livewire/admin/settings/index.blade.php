@@ -141,6 +141,34 @@
             <div class="card">
                 <div class="card-header">
                     <div class="flex items-center gap-3">
+                        <span class="stat-icon bg-brand-50 text-brand-600">
+                            <x-icon name="calendar" class="h-5 w-5" />
+                        </span>
+                        <div>
+                            <h2 class="text-base font-bold text-slate-900">Hari Kerja</h2>
+                            <p class="text-xs text-slate-500">Hari yang dihitung sebagai hari kerja untuk seluruh mahasiswa.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body space-y-3">
+                    <div class="grid grid-cols-2 gap-2 sm:grid-cols-3">
+                        @foreach ([1 => 'Senin', 2 => 'Selasa', 3 => 'Rabu', 4 => 'Kamis', 5 => 'Jumat', 6 => 'Sabtu', 7 => 'Minggu'] as $value => $label)
+                            <label class="flex cursor-pointer items-center gap-2 rounded-xl border border-slate-200 px-3 py-2.5 text-sm font-medium text-slate-700 transition hover:bg-slate-50">
+                                <input wire:model="workdays" type="checkbox" value="{{ $value }}" class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30">
+                                <span>{{ $label }}</span>
+                            </label>
+                        @endforeach
+                    </div>
+                    @error('workdays') <p class="text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
+                    <p class="rounded-xl bg-slate-50 px-3 py-2.5 text-xs text-slate-500">
+                        Hari libur nasional dan cuti bersama tetap dikecualikan dari perhitungan absensi.
+                    </p>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <div class="flex items-center gap-3">
                         <span class="stat-icon bg-violet-50 text-violet-600">
                             <x-icon name="shield" class="h-5 w-5" />
                         </span>

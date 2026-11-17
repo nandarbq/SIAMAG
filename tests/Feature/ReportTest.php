@@ -6,6 +6,7 @@ use App\Enums\AttendanceStatus;
 use App\Models\Attendance;
 use App\Models\Holiday;
 use App\Models\Logbook;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\ReportService;
 use Carbon\Carbon;
@@ -71,6 +72,18 @@ class ReportTest extends TestCase
         $this->assertSame(15, $row['percentage']);
         $this->assertSame(1, $report['summary']['students']);
         $this->assertSame(2, $report['summary']['logbook_total']);
+    }
+
+    public function test_recap_uses_configured_workdays(): void
+    {
+        Setting::put('workdays', '1,2,3,4,5,6');
+
+        $student = $this->makeStudent();
+
+        $report = app(ReportService::class)->recap(11, 2026);
+        $row = $report['rows']->firstWhere('id', $student->id);
+
+        $this->assertSame(25, $row['workdays']);
     }
 
     public function test_recap_can_be_filtered_by_student(): void
