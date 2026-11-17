@@ -60,13 +60,13 @@
                                     @endif
                                 </td>
                                 <td class="table-td">
-                                    <span class="badge-slate">{{ $group->students_count }} mahasiswa</span>
+                                    <span class="badge-slate badge-compact">{{ $group->students_count }} mahasiswa</span>
                                 </td>
                                 <td class="table-td">
                                     @if ($group->is_active)
-                                        <span class="badge-green">Aktif</span>
+                                        <span class="badge-green badge-compact">Aktif</span>
                                     @else
-                                        <span class="badge-slate">Nonaktif</span>
+                                        <span class="badge-slate badge-compact">Nonaktif</span>
                                     @endif
                                 </td>
                                 <td class="table-td">

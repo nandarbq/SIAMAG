@@ -41,9 +41,9 @@
                 <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Status</p>
                 <p class="mt-1">
                     @if ($group->is_active)
-                        <span class="badge-green">Aktif</span>
+                        <span class="badge-green badge-compact">Aktif</span>
                     @else
-                        <span class="badge-slate">Nonaktif</span>
+                        <span class="badge-slate badge-compact">Nonaktif</span>
                     @endif
                 </p>
             </div>
