@@ -631,9 +631,12 @@ class LeaveTest extends TestCase
         $this->assertFalse(app(AttendanceService::class)->requestSickRecovery($student));
     }
 
-    public function test_attendance_page_prompts_for_sick_recovery_and_closes_leave(): void
+    public function test_attendance_page_requests_sick_recovery_and_opens_attendance(): void
     {
         $this->travelTo(Carbon::parse('2026-11-11 10:00:00', 'Asia/Jakarta'));
+
+        Setting::put('require_geofence', '0');
+        Setting::put('require_selfie', '0');
 
         $student = $this->makeStudent();
 
@@ -653,15 +656,24 @@ class LeaveTest extends TestCase
             ->assertSee('Sudah siap kembali masuk?')
             ->assertSee('Saya sudah sembuh, buka absensi')
             ->assertDontSee('Absen Masuk')
-            ->call('confirmRecovery')
+            ->call('requestRecovery')
             ->assertHasNoErrors()
             ->assertDontSee('Sudah siap kembali masuk?')
-            ->assertSee('Absen Masuk');
+            ->assertSee('Kesembuhan sudah dicatat')
+            ->assertSee('Absen Masuk')
+            ->call('checkIn')
+            ->assertHasNoErrors()
+            ->assertSee('Absen Pulang');
 
         $this->assertSame('2026-11-10', $leave->refresh()->end_date->toDateString());
+        $this->assertNotNull(Attendance::query()
+            ->where('user_id', $student->id)
+            ->whereDate('date', '2026-11-11')
+            ->first()
+            ?->check_in_at);
     }
 
-    public function test_attendance_page_prompts_for_sick_recovery_on_weekend(): void
+    public function test_attendance_page_records_recovery_request_on_weekend(): void
     {
         $this->travelTo(Carbon::parse('2026-11-14 10:00:00', 'Asia/Jakarta'));
 
@@ -681,15 +693,20 @@ class LeaveTest extends TestCase
         Livewire::actingAs($student)
             ->test(StudentAttendanceIndex::class)
             ->assertSee('Sudah siap kembali masuk?')
-            ->call('confirmRecovery')
-            ->assertHasNoErrors();
+            ->call('requestRecovery')
+            ->assertHasNoErrors()
+            ->assertSee('Kesembuhan sudah dicatat');
 
-        $this->assertSame('2026-11-13', $leave->refresh()->end_date->toDateString());
+        $this->assertNull($leave->refresh()->end_date);
+        $this->assertTrue($leave->hasRecoveryRequestToday());
     }
 
-    public function test_attendance_page_recovery_removes_attachment_when_sick_leave_starts_today(): void
+    public function test_attendance_page_check_in_after_same_day_recovery_removes_attachment(): void
     {
         Storage::fake('local');
+
+        Setting::put('require_geofence', '0');
+        Setting::put('require_selfie', '0');
 
         $this->travelTo(Carbon::parse('2026-11-09 10:00:00', 'Asia/Jakarta'));
 
@@ -713,14 +730,22 @@ class LeaveTest extends TestCase
         Livewire::actingAs($student)
             ->test(StudentAttendanceIndex::class)
             ->assertSee('Sudah siap kembali masuk?')
-            ->call('confirmRecovery')
+            ->call('requestRecovery')
+            ->assertHasNoErrors()
+            ->assertSee('Absen Masuk')
+            ->call('checkIn')
             ->assertHasNoErrors();
 
         $this->assertDatabaseMissing('leave_requests', ['id' => $leave->id]);
-        $this->assertDatabaseMissing('attendances', [
+        $this->assertDatabaseHas('attendances', [
             'user_id' => $student->id,
             'date' => '2026-11-09 00:00:00',
         ]);
+        $this->assertNotNull(Attendance::query()
+            ->where('user_id', $student->id)
+            ->whereDate('date', '2026-11-09')
+            ->first()
+            ?->check_in_at);
         Storage::disk('local')->assertMissing($attachmentPath);
     }
 
@@ -774,13 +799,15 @@ class LeaveTest extends TestCase
 
         Livewire::actingAs($student)
             ->test(StudentAttendanceIndex::class)
-            ->call('confirmRecovery')
+            ->call('requestRecovery')
             ->assertHasNoErrors();
 
-        $this->assertSame('2026-11-10', $leave->refresh()->end_date->toDateString());
-        $this->assertDatabaseMissing('attendances', [
+        $this->assertNull($leave->refresh()->end_date);
+        $this->assertTrue($leave->hasRecoveryRequestToday());
+        $this->assertDatabaseHas('attendances', [
             'user_id' => $student->id,
             'date' => '2026-11-11 00:00:00',
+            'status' => AttendanceStatus::Sakit->value,
         ]);
 
         $attendance = app(AttendanceService::class)->checkIn($student, [
@@ -789,6 +816,7 @@ class LeaveTest extends TestCase
             'accuracy' => 10,
         ]);
 
+        $this->assertSame('2026-11-10', $leave->refresh()->end_date->toDateString());
         $this->assertNotNull($attendance->check_in_at);
         $this->assertSame(AttendanceStatus::Terlambat, $attendance->status);
     }
@@ -813,13 +841,14 @@ class LeaveTest extends TestCase
 
         Livewire::actingAs($student)
             ->test(StudentAttendanceIndex::class)
-            ->call('confirmRecovery')
+            ->call('requestRecovery')
             ->assertHasNoErrors();
 
-        $this->assertDatabaseMissing('leave_requests', ['id' => $leave->id]);
-        $this->assertDatabaseMissing('attendances', [
+        $this->assertDatabaseHas('leave_requests', ['id' => $leave->id]);
+        $this->assertDatabaseHas('attendances', [
             'user_id' => $student->id,
             'date' => '2026-11-09 00:00:00',
+            'status' => AttendanceStatus::Sakit->value,
         ]);
 
         $attendance = app(AttendanceService::class)->checkIn($student, [
@@ -828,6 +857,7 @@ class LeaveTest extends TestCase
             'accuracy' => 10,
         ]);
 
+        $this->assertDatabaseMissing('leave_requests', ['id' => $leave->id]);
         $this->assertNotNull($attendance->check_in_at);
         $this->assertSame(AttendanceStatus::Terlambat, $attendance->status);
     }

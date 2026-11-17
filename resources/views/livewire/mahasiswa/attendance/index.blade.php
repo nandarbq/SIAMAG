@@ -2,10 +2,10 @@
     <div
         @class([
             'space-y-6 transition duration-300',
-            'pointer-events-none select-none blur-[6px] opacity-60' => $ongoingSickLeave,
+            'pointer-events-none select-none blur-[6px] opacity-60' => $needsSickRecoveryPrompt,
         ])
-        @if ($ongoingSickLeave) inert @endif
-        aria-hidden="{{ $ongoingSickLeave ? 'true' : 'false' }}"
+        @if ($needsSickRecoveryPrompt) inert @endif
+        aria-hidden="{{ $needsSickRecoveryPrompt ? 'true' : 'false' }}"
     >
     <section class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -46,8 +46,18 @@
         </div>
     @enderror
 
+    @if ($recoveryRequestedToday)
+        <div class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <x-icon name="check-circle" class="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+                <p class="font-semibold">Kesembuhan sudah dicatat</p>
+                <p class="mt-0.5 text-xs leading-relaxed text-emerald-700">Silakan absen masuk hari ini untuk menutup masa sakit. Jika belum absen, status sakit tetap berlaku.</p>
+            </div>
+        </div>
+    @endif
+
     @php
-        $onLeave = $today && in_array($today->status->value, ['izin', 'sakit', 'libur'], true);
+        $onLeave = ! $recoveryRequestedToday && $today && in_array($today->status->value, ['izin', 'sakit', 'libur'], true);
         $finished = $today?->check_in_at && $today?->check_out_at;
     @endphp
 
@@ -456,7 +466,7 @@
     </div>
     </div>
 
-    @if ($ongoingSickLeave)
+    @if ($needsSickRecoveryPrompt)
         <div
             class="fixed inset-0 z-50 overflow-y-auto"
             role="alertdialog"
@@ -477,13 +487,13 @@
                             Sudah siap kembali masuk?
                         </h2>
                         <p id="sick-recovery-description" class="mt-2 text-sm leading-6 text-slate-500">
-                            Kami mencatat kamu sedang menjalani masa sakit. Jika kondisi sudah membaik dan siap beraktivitas hari ini, konfirmasi kesembuhan untuk menutup masa sakit dan membuka absensi masuk.
+                            Kami mencatat kamu sedang menjalani masa sakit. Jika kondisi sudah membaik dan siap beraktivitas hari ini, catat kesembuhan lalu lakukan absen masuk untuk menutup masa sakit.
                         </p>
                     </div>
 
                     <div class="space-y-5 p-6">
                         <div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-xs leading-5 text-emerald-800">
-                            Masa sakit dicatat selesai hingga H-1. Setelah konfirmasi, kamu bisa langsung melakukan absen masuk hari ini.
+                            Masa sakit baru selesai setelah absen masuk berhasil. Jika absen belum dilakukan, status sakit tetap berlaku.
                         </div>
 
                         @if (session('error'))
@@ -495,15 +505,15 @@
                         <div class="space-y-2">
                             <button
                                 type="button"
-                                wire:click="confirmRecovery"
+                                wire:click="requestRecovery"
                                 wire:loading.attr="disabled"
-                                wire:target="confirmRecovery"
+                                wire:target="requestRecovery"
                                 class="btn-primary w-full"
                                 autofocus
                             >
                                 <x-icon name="check-circle" class="h-4 w-4" />
-                                <span wire:loading.remove wire:target="confirmRecovery">Saya sudah sembuh, buka absensi</span>
-                                <span wire:loading wire:target="confirmRecovery">Menyimpan konfirmasi...</span>
+                                <span wire:loading.remove wire:target="requestRecovery">Saya sudah sembuh, buka absensi</span>
+                                <span wire:loading wire:target="requestRecovery">Menyimpan konfirmasi...</span>
                             </button>
 
                             <a href="{{ route('mahasiswa.dashboard') }}" class="btn-ghost w-full">
