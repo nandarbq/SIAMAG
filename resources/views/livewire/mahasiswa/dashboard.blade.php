@@ -1,18 +1,23 @@
 <div class="space-y-6">
     <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div>
-            <p class="page-eyebrow">Dashboard</p>
-            <h1 class="page-title">{{ $greeting }}, {{ auth()->user()->name }}</h1>
-            <p class="page-subtitle">
-                Magang di <span class="font-semibold text-slate-700">{{ $officeName }}</span>
+        <div class="max-w-3xl">
+            <div class="flex items-center gap-2">
+                <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
+                <p class="page-eyebrow">Dashboard Magang</p>
+            </div>
+            <h1 class="page-title mt-2">{{ $greeting }}, {{ auth()->user()->name }}</h1>
+            <p class="page-subtitle flex flex-wrap items-center gap-x-1.5 gap-y-1">
+                <x-icon name="building" class="h-4 w-4 text-slate-400" />
+                <span>Magang di <span class="font-semibold text-slate-700">{{ $officeName }}</span></span>
                 @if ($profile?->institution)
-                    <span class="mx-1 text-slate-300">·</span>{{ $profile->institution }}
+                    <span class="text-slate-300">·</span>
+                    <span>{{ $profile->institution }}</span>
                 @endif
             </p>
         </div>
 
         <div class="flex flex-wrap items-center gap-2">
-            <span class="badge-slate">
+            <span class="badge-slate sm:hidden">
                 <x-icon name="calendar" class="h-3.5 w-3.5" />
                 {{ now()->translatedFormat('l, d F Y') }}
             </span>
