@@ -154,16 +154,29 @@
                         <button
                             type="button"
                             x-on:click="locateDevice()"
-                            class="absolute left-3 top-3 z-10 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-700 shadow-lg backdrop-blur transition hover:bg-white"
+                            class="absolute left-3 top-3 z-20 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-700 shadow-lg backdrop-blur transition hover:bg-white"
                         >
                             <x-icon name="map-pin" class="h-4 w-4 text-brand-600" />
                             Lokasi saya
                         </button>
 
+                        <button
+                            type="button"
+                            x-show="ready && ! scrollEnabled"
+                            x-cloak
+                            x-on:click="activateScrollZoom()"
+                            class="absolute inset-0 z-10 flex cursor-pointer items-end justify-center bg-slate-900/5 pb-4"
+                            aria-label="Aktifkan peta untuk zoom scroll"
+                        >
+                            <span class="rounded-full border border-slate-200 bg-white/95 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-lg backdrop-blur">
+                                Klik peta untuk zoom scroll
+                            </span>
+                        </button>
+
                         <div
                             x-show="! ready"
                             x-cloak
-                            class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-100/90 text-sm text-slate-500"
+                            class="pointer-events-none absolute inset-0 z-20 flex flex-col items-center justify-center gap-2 bg-slate-100/90 text-sm text-slate-500"
                         >
                             <span class="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-brand-600"></span>
                             <span>Memuat peta...</span>
@@ -173,7 +186,7 @@
                             x-show="mapError"
                             x-cloak
                             x-text="mapError"
-                            class="absolute inset-x-3 bottom-3 rounded-xl border border-rose-200 bg-white/95 px-3 py-2 text-xs font-medium text-rose-600 shadow-lg"
+                            class="absolute inset-x-3 bottom-3 z-30 rounded-xl border border-rose-200 bg-white/95 px-3 py-2 text-xs font-medium text-rose-600 shadow-lg"
                         ></div>
                     </div>
                     <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
