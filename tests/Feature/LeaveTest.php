@@ -231,6 +231,57 @@ class LeaveTest extends TestCase
         $this->assertDatabaseMissing('leave_requests', ['id' => $leave->id]);
     }
 
+    public function test_student_leave_history_is_paginated_ten_per_page(): void
+    {
+        $student = $this->makeStudent();
+
+        foreach (range(0, 10) as $offset) {
+            $date = Carbon::parse('2026-11-10')->addDays($offset);
+
+            LeaveRequest::query()->create([
+                'user_id' => $student->id,
+                'type' => LeaveType::Izin,
+                'start_date' => $date,
+                'end_date' => $date,
+                'reason' => 'Kegiatan keluarga di luar kota.',
+                'status' => LeaveStatus::Approved,
+            ]);
+        }
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->assertViewHas('leaves', fn ($leaves) => $leaves->perPage() === 10 && $leaves->count() === 10);
+    }
+
+    public function test_deleting_last_leave_on_the_last_page_moves_to_the_previous_page(): void
+    {
+        $student = $this->makeStudent();
+
+        foreach (range(0, 10) as $offset) {
+            $date = Carbon::parse('2026-11-10')->addDays($offset);
+
+            LeaveRequest::query()->create([
+                'user_id' => $student->id,
+                'type' => LeaveType::Izin,
+                'start_date' => $date,
+                'end_date' => $date,
+                'reason' => 'Kegiatan keluarga di luar kota.',
+                'status' => LeaveStatus::Approved,
+            ]);
+        }
+
+        $oldestLeave = LeaveRequest::query()
+            ->where('user_id', $student->id)
+            ->orderBy('start_date')
+            ->firstOrFail();
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('setPage', 2)
+            ->call('delete', $oldestLeave->id)
+            ->assertViewHas('leaves', fn ($leaves) => $leaves->currentPage() === 1);
+    }
+
     public function test_admin_can_see_leave_attachment_link_in_review_modal(): void
     {
         $admin = User::factory()->admin()->create();

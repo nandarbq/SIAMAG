@@ -275,6 +275,45 @@ class LogbookTest extends TestCase
         Storage::disk('local')->assertMissing($path);
     }
 
+    public function test_student_logbook_history_is_paginated_ten_per_page(): void
+    {
+        $student = $this->makeStudent();
+
+        foreach (range(1, 11) as $day) {
+            Logbook::factory()->for($student)->create([
+                'date' => sprintf('2026-11-%02d', $day),
+            ]);
+        }
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->assertViewHas('logbooks', fn ($logbooks) => $logbooks->perPage() === 10 && $logbooks->count() === 10);
+    }
+
+    public function test_deleting_last_logbook_on_the_last_page_moves_to_the_previous_page(): void
+    {
+        $this->travelTo(Carbon::parse('2026-12-30 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        foreach (range(1, 11) as $day) {
+            Logbook::factory()->for($student)->create([
+                'date' => sprintf('2026-11-%02d', $day),
+            ]);
+        }
+
+        $oldestLogbook = Logbook::query()
+            ->where('user_id', $student->id)
+            ->orderBy('date')
+            ->firstOrFail();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('setPage', 2)
+            ->call('delete', $oldestLogbook->id)
+            ->assertViewHas('logbooks', fn ($logbooks) => $logbooks->currentPage() === 1);
+    }
+
     public function test_admin_can_view_logbook_details_read_only(): void
     {
         $admin = User::factory()->admin()->create();
