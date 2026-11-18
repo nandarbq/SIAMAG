@@ -174,6 +174,45 @@ class LogbookTest extends TestCase
         $this->assertSame('Aktivitas asli', $logbook->fresh()->activity);
     }
 
+    public function test_student_cannot_open_today_logbook_form_after_internship_ends(): void
+    {
+        $this->travelTo(Carbon::parse('2027-01-05 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreate')
+            ->assertSet('showModal', false);
+    }
+
+    public function test_student_cannot_open_a_missing_logbook_date_after_internship_ends(): void
+    {
+        $this->travelTo(Carbon::parse('2027-01-05 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreateForDate', '2026-12-30')
+            ->assertSet('showModal', false);
+    }
+
+    public function test_student_cannot_save_a_new_logbook_after_internship_ends(): void
+    {
+        $this->travelTo(Carbon::parse('2027-01-05 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->set('date', '2026-12-30')
+            ->set('activity', 'Aktivitas baru')
+            ->call('save');
+
+        $this->assertDatabaseCount('logbooks', 0);
+    }
+
     public function test_student_can_upload_a_logbook_photo(): void
     {
         $student = $this->makeStudent();
