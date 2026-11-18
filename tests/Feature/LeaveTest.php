@@ -247,6 +247,21 @@ class LeaveTest extends TestCase
             ->assertSet('showModal', true);
     }
 
+    public function test_leave_form_updates_date_fields_when_type_changes(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('openCreate')
+            ->assertSee('Tanggal Izin')
+            ->assertDontSee('Tanggal Mulai Sakit')
+            ->set('type', LeaveType::Sakit->value)
+            ->assertSee('Tanggal Mulai Sakit')
+            ->assertSee('Tanggal selesai tidak diperlukan.')
+            ->assertDontSee('Tanggal Izin');
+    }
+
     public function test_overlapping_leave_requests_are_rejected(): void
     {
         $student = $this->makeStudent();

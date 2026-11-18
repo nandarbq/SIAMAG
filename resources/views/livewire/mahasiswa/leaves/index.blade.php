@@ -131,7 +131,7 @@
                             <div class="grid grid-cols-2 gap-2">
                                 @foreach ($types as $typeOption)
                                     <label class="cursor-pointer">
-                                        <input type="radio" wire:model="type" value="{{ $typeOption->value }}" class="peer sr-only">
+                                        <input type="radio" wire:model.live="type" value="{{ $typeOption->value }}" class="peer sr-only">
                                         <span class="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700">
                                             <x-icon :name="$typeOption === App\Enums\LeaveType::Sakit ? 'alert' : 'calendar'" class="h-4 w-4" />
                                             {{ $typeOption->label() }}
