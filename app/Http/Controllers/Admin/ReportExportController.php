@@ -87,7 +87,7 @@ class ReportExportController extends Controller
             Border::BORDER_THIN
         );
 
-        $temp = tempnam(sys_get_temp_dir(), 'siamag').'.xlsx';
+        $temp = tempnam(sys_get_temp_dir(), 'siamag');
         (new Xlsx($spreadsheet))->save($temp);
         $spreadsheet->disconnectWorksheets();
 
@@ -158,7 +158,7 @@ class ReportExportController extends Controller
         $section->addText('Administrator SIAMAG', ['bold' => true, 'size' => 10], ['alignment' => Jc::RIGHT]);
         $section->addText('BMKG Banyuwangi', ['size' => 10], ['alignment' => Jc::RIGHT]);
 
-        $temp = tempnam(sys_get_temp_dir(), 'siamag').'.docx';
+        $temp = tempnam(sys_get_temp_dir(), 'siamag');
         IOFactory::createWriter($phpWord, 'Word2007')->save($temp);
 
         return response()->download($temp, $this->filename($data, 'docx'))->deleteFileAfterSend(true);

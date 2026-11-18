@@ -80,7 +80,7 @@ class LogbookExportController extends Controller
         $section->addText($user->name, ['bold' => true, 'underline' => 'single', 'size' => 10], ['alignment' => Jc::RIGHT]);
         $section->addText('NIM '.($user->nim ?: '-'), ['size' => 10], ['alignment' => Jc::RIGHT]);
 
-        $temp = tempnam(sys_get_temp_dir(), 'siamag').'.docx';
+        $temp = tempnam(sys_get_temp_dir(), 'siamag');
         IOFactory::createWriter($phpWord, 'Word2007')->save($temp);
 
         return response()
