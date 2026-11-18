@@ -3,6 +3,7 @@
 namespace App\Livewire\Admin\Students;
 
 use App\Enums\UserRole;
+use App\Models\InternGroup;
 use App\Models\User;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
@@ -26,6 +27,8 @@ class Form extends Component
     public string $phone = '';
 
     public bool $is_active = true;
+
+    public ?int $intern_group_id = null;
 
     public string $institution = '';
 
@@ -56,6 +59,7 @@ class Form extends Component
             $profile = $user->internProfile;
 
             if ($profile) {
+                $this->intern_group_id = $profile->intern_group_id;
                 $this->institution = $profile->institution;
                 $this->major = $profile->major;
                 $this->semester = (string) $profile->semester;
@@ -64,10 +68,25 @@ class Form extends Component
                 $this->field_supervisor = $profile->field_supervisor ?? '';
                 $this->supervisor_phone = $profile->supervisor_phone ?? '';
             }
-        } else {
-            $this->start_date = now()->toDateString();
-            $this->end_date = now()->addMonths(4)->toDateString();
+
+            return;
         }
+
+        $this->start_date = now()->toDateString();
+        $this->end_date = now()->addMonths(4)->toDateString();
+
+        $groupId = request()->integer('group');
+
+        if ($groupId > 0) {
+            $this->applyGroup(InternGroup::query()->findOrFail($groupId));
+        }
+    }
+
+    public function updatedInternGroupId(mixed $value): void
+    {
+        $group = $value ? InternGroup::query()->find((int) $value) : null;
+
+        $this->applyGroup($group);
     }
 
     public function save()
@@ -78,6 +97,7 @@ class Form extends Component
             'password' => [$this->user ? 'nullable' : 'required', 'string', 'min:8'],
             'nim' => ['required', 'string', 'max:30', Rule::unique('users', 'nim')->ignore($this->user?->id)],
             'phone' => ['nullable', 'string', 'max:20'],
+            'intern_group_id' => ['required', Rule::exists('intern_groups', 'id')],
             'institution' => ['required', 'string', 'max:255'],
             'major' => ['required', 'string', 'max:255'],
             'semester' => ['required', 'integer', 'min:1', 'max:14'],
@@ -93,6 +113,7 @@ class Form extends Component
             'nim.unique' => 'NIM sudah terdaftar.',
             'password.required' => 'Password wajib diisi untuk akun baru.',
             'password.min' => 'Password minimal 8 karakter.',
+            'intern_group_id.required' => 'Kelompok magang wajib dipilih.',
             'institution.required' => 'Institusi wajib diisi.',
             'major.required' => 'Jurusan wajib diisi.',
             'semester.required' => 'Semester wajib diisi.',
@@ -100,6 +121,8 @@ class Form extends Component
             'end_date.required' => 'Tanggal selesai wajib diisi.',
             'end_date.after_or_equal' => 'Tanggal selesai harus setelah tanggal mulai.',
         ]);
+
+        $group = InternGroup::query()->findOrFail($this->intern_group_id);
 
         $userData = [
             'name' => $validated['name'],
@@ -124,15 +147,11 @@ class Form extends Component
 
         $user->internProfile()->updateOrCreate(
             ['user_id' => $user->id],
-            [
-                'institution' => $validated['institution'],
+            array_merge($group->profileAttributes(), [
+                'intern_group_id' => $group->id,
                 'major' => $validated['major'],
                 'semester' => $validated['semester'],
-                'start_date' => $validated['start_date'],
-                'end_date' => $validated['end_date'],
-                'field_supervisor' => $validated['field_supervisor'] ?: null,
-                'supervisor_phone' => $validated['supervisor_phone'] ?: null,
-            ]
+            ]),
         );
 
         session()->flash('success', $this->user
@@ -144,6 +163,26 @@ class Form extends Component
 
     public function render()
     {
-        return view('livewire.admin.students.form');
+        $groups = InternGroup::query()
+            ->where(fn ($query) => $query
+                ->where('is_active', true)
+                ->orWhere('id', $this->intern_group_id))
+            ->orderBy('name')
+            ->get(['id', 'code', 'name']);
+
+        return view('livewire.admin.students.form', compact('groups'));
+    }
+
+    private function applyGroup(?InternGroup $group): void
+    {
+        if (! $group) {
+            return;
+        }
+
+        $this->institution = $group->institution;
+        $this->field_supervisor = $group->field_supervisor ?? '';
+        $this->supervisor_phone = $group->supervisor_phone ?? '';
+        $this->start_date = $group->start_date?->format('Y-m-d') ?? '';
+        $this->end_date = $group->end_date?->format('Y-m-d') ?? '';
     }
 }

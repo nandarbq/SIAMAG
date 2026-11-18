@@ -35,4 +35,11 @@ return [
         ],
     ],
 
+    'holidays' => [
+        'primary_url' => env('HOLIDAY_API_PRIMARY_URL', 'https://tanggalmerah.upset.dev/api/holidays'),
+        'fallback_url' => env('HOLIDAY_API_FALLBACK_URL', 'https://rust.am/data/libur-%d.json'),
+        'connect_timeout' => env('HOLIDAY_API_CONNECT_TIMEOUT', 3),
+        'timeout' => env('HOLIDAY_API_TIMEOUT', 10),
+    ],
+
 ];

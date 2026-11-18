@@ -55,8 +55,13 @@
                         </button>
                         <button
                             type="button"
-                            wire:click="delete({{ $announcement->id }})"
-                            wire:confirm="Hapus pengumuman ini?"
+                            @click="$dispatch('app-confirm', {
+                                title: 'Hapus pengumuman?',
+                                message: 'Pengumuman ini akan dihapus permanen dan tidak dapat dikembalikan.',
+                                confirmLabel: 'Hapus pengumuman',
+                                workingLabel: 'Menghapus...',
+                                onConfirm: () => $wire.delete({{ $announcement->id }}),
+                            })"
                             class="btn-ghost btn-sm text-rose-500 hover:bg-rose-50 hover:text-rose-600"
                         >
                             <x-icon name="trash" class="h-4 w-4" />

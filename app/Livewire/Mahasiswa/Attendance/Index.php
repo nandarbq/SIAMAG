@@ -4,6 +4,7 @@ namespace App\Livewire\Mahasiswa\Attendance;
 
 use App\Models\Setting;
 use App\Services\AttendanceService;
+use App\Services\WorkdayService;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -53,16 +54,16 @@ class Index extends Component
         session()->flash('success', 'Absen pulang berhasil dicatat.');
     }
 
-    public function confirmRecovery(AttendanceService $attendanceService): void
+    public function requestRecovery(AttendanceService $attendanceService): void
     {
-        if (! $attendanceService->confirmSickRecovery(auth()->user())) {
+        if (! $attendanceService->requestSickRecovery(auth()->user())) {
             session()->flash('error', 'Masa sakit tidak dapat dikonfirmasi. Pastikan pengajuan sakit masih berlangsung, lalu coba lagi.');
 
             return;
         }
 
         $this->reset('photoToken');
-        session()->flash('success', 'Konfirmasi kesembuhan berhasil. Absensi masuk hari ini sudah dibuka.');
+        session()->flash('success', 'Kesembuhan dicatat. Silakan absen masuk untuk menutup masa sakit.');
     }
 
     private function validatePhoto(): void
@@ -80,11 +81,20 @@ class Index extends Component
         $user = auth()->user();
         $attendanceService = app(AttendanceService::class);
         $today = $attendanceService->todayFor($user);
+        $ongoingSickLeave = $attendanceService->ongoingSickLeaveFor($user);
+        $recoveryRequestedToday = $ongoingSickLeave?->hasRecoveryRequestToday() ?? false;
         $requireSelfie = Setting::getBool('require_selfie', true);
+        $workdays = app(WorkdayService::class);
+        $todayDate = now()->startOfDay();
 
         return view('livewire.mahasiswa.attendance.index', [
             'today' => $today,
-            'ongoingSickLeave' => $attendanceService->ongoingSickLeaveFor($user),
+            'isWorkday' => $workdays->isWorkday($todayDate),
+            'todayHoliday' => $workdays->holidayFor($todayDate),
+            'nonWorkingLabel' => $workdays->nonWorkingLabel($todayDate),
+            'ongoingSickLeave' => $ongoingSickLeave,
+            'recoveryRequestedToday' => $recoveryRequestedToday,
+            'needsSickRecoveryPrompt' => $ongoingSickLeave !== null && ! $recoveryRequestedToday,
             'profile' => $user->internProfile,
             'history' => $user->attendances()->latest('date')->paginate(10),
             'officeLat' => (float) Setting::get('office_lat', '-8.2192000'),

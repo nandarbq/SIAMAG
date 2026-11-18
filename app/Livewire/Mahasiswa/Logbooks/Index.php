@@ -2,11 +2,13 @@
 
 namespace App\Livewire\Mahasiswa\Logbooks;
 
+use App\Models\InternProfile;
 use App\Models\Logbook;
 use App\Models\Setting;
 use App\Services\LogbookExportService;
 use App\Services\LogbookProgressService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -20,6 +22,8 @@ class Index extends Component
 {
     use WithFileUploads;
     use WithPagination;
+
+    private const PER_PAGE = 10;
 
     public string $search = '';
 
@@ -61,7 +65,7 @@ class Index extends Component
 
         $profile = auth()->user()->internProfile;
 
-        if ($profile && ! today()->betweenIncluded($profile->start_date, $profile->end_date)) {
+        if ($this->isOutsideInternshipPeriod($profile)) {
             session()->flash('error', 'Anda hanya dapat mengisi logbook selama periode magang.');
 
             return;
@@ -88,6 +92,12 @@ class Index extends Component
 
         $profile = auth()->user()->internProfile;
         $date = Carbon::parse($date)->startOfDay();
+
+        if ($this->isOutsideInternshipPeriod($profile)) {
+            session()->flash('error', 'Anda hanya dapat mengisi logbook selama periode magang.');
+
+            return;
+        }
 
         if ($date->greaterThan(today())) {
             session()->flash('error', 'Logbook tidak dapat diisi untuk tanggal yang akan datang.');
@@ -183,13 +193,8 @@ class Index extends Component
         }
 
         $logbook->delete();
+        $this->resetPageAfterDelete();
         session()->flash('success', 'Logbook berhasil dihapus.');
-    }
-
-    public function resetFilters(): void
-    {
-        $this->reset('search');
-        $this->resetPage();
     }
 
     public function render()
@@ -197,17 +202,10 @@ class Index extends Component
         $userId = auth()->id();
         $profile = auth()->user()->internProfile;
 
-        $logbooks = Logbook::query()
-            ->where('user_id', $userId)
-            ->when($this->search !== '', function ($query) {
-                $search = '%'.$this->search.'%';
-                $query->where(fn ($q) => $q
-                    ->where('activity', 'like', $search)
-                    ->orWhere('description', 'like', $search));
-            })
+        $logbooks = $this->logbooksQuery()
             ->latest('date')
             ->latest()
-            ->paginate(8);
+            ->paginate(self::PER_PAGE);
 
         $exportService = app(LogbookExportService::class);
 
@@ -221,6 +219,32 @@ class Index extends Component
         ]);
     }
 
+    private function logbooksQuery(): Builder
+    {
+        return Logbook::query()
+            ->where('user_id', auth()->id())
+            ->when($this->search !== '', function (Builder $query) {
+                $search = '%'.$this->search.'%';
+                $query->where(fn ($q) => $q
+                    ->where('activity', 'like', $search)
+                    ->orWhere('description', 'like', $search));
+            });
+    }
+
+    private function resetPageAfterDelete(): void
+    {
+        $lastPage = max(1, (int) ceil($this->logbooksQuery()->count() / self::PER_PAGE));
+
+        if ($this->getPage() > $lastPage) {
+            $this->setPage($lastPage);
+        }
+    }
+
+    private function isOutsideInternshipPeriod(?InternProfile $profile): bool
+    {
+        return $profile !== null && ! today()->betweenIncluded($profile->start_date, $profile->end_date);
+    }
+
     private function persist(): void
     {
         $userId = auth()->id();
@@ -232,6 +256,12 @@ class Index extends Component
 
         if ($logbook && ! $logbook->isEditable()) {
             session()->flash('error', 'Logbook ini tidak dapat diubah karena sudah terkunci.');
+
+            return;
+        }
+
+        if (! $logbook && $this->isOutsideInternshipPeriod($profile)) {
+            session()->flash('error', 'Anda hanya dapat mengisi logbook selama periode magang.');
 
             return;
         }

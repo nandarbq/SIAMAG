@@ -21,6 +21,7 @@
         "@tailwindcss/typography": "^0.5.20",
         "alpinejs": "^3.17.5",
         "chart.js": "^4.6.1",
-        "leaflet": "^1.9.4"
+        "cropperjs": "^1.7.0",
+        "maplibre-gl": "^6.19.0"
     }
 }

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\ValidationException;
@@ -46,7 +47,43 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        return redirect()->intended(route(Auth::user()->dashboardRoute()));
+        return redirect()->to($this->resolveIntendedUrl($request, Auth::user()));
+    }
+
+    private function resolveIntendedUrl(Request $request, User $user): string
+    {
+        $fallback = route($user->dashboardRoute());
+        $intended = $request->session()->pull('url.intended');
+
+        if (! is_string($intended) || $intended === '') {
+            return $fallback;
+        }
+
+        $parts = parse_url($intended);
+
+        if ($parts === false) {
+            return $fallback;
+        }
+
+        $host = $parts['host'] ?? null;
+
+        if ($host !== null && strcasecmp($host, $request->getHost()) !== 0) {
+            return $fallback;
+        }
+
+        $path = '/'.ltrim((string) ($parts['path'] ?? '/'), '/');
+
+        if (str_contains($path, '..')) {
+            return $fallback;
+        }
+
+        $prefix = $user->isAdmin() ? '/admin' : '/mahasiswa';
+
+        if ($path === '/' || $path === $prefix || str_starts_with($path, $prefix.'/')) {
+            return $intended;
+        }
+
+        return $fallback;
     }
 
     public function logout(Request $request)

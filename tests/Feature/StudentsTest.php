@@ -47,7 +47,9 @@ class StudentsTest extends TestCase
         Storage::fake('local');
 
         $admin = User::factory()->admin()->create();
-        $student = User::factory()->mahasiswa()->create();
+        $student = User::factory()->mahasiswa()->create([
+            'photo_path' => 'avatars/student-delete/profile.jpg',
+        ]);
 
         $attendance = Attendance::factory()->for($student)->create([
             'check_in_photo' => 'attendance/'.$student->id.'/in.jpg',
@@ -62,7 +64,7 @@ class StudentsTest extends TestCase
             'attachment_path' => 'logbooks/'.$student->id.'/lampiran.pdf',
         ]);
 
-        foreach ([$attendance->check_in_photo, $attendance->check_out_photo, $leave->attachment_path, $logbook->attachment_path] as $path) {
+        foreach ([$attendance->check_in_photo, $attendance->check_out_photo, $leave->attachment_path, $logbook->attachment_path, $student->photo_path] as $path) {
             Storage::disk('local')->put($path, 'file-bytes');
         }
 
@@ -74,6 +76,27 @@ class StudentsTest extends TestCase
         Storage::disk('local')->assertMissing($attendance->check_out_photo);
         Storage::disk('local')->assertMissing($leave->attachment_path);
         Storage::disk('local')->assertMissing($logbook->attachment_path);
+        Storage::disk('local')->assertMissing($student->photo_path);
+    }
+
+    public function test_admin_student_views_render_profile_photo(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create([
+            'photo_path' => 'avatars/student.jpg',
+        ]);
+
+        $photoUrl = $student->avatarUrl();
+
+        $this->actingAs($admin)
+            ->get(route('admin.students'))
+            ->assertOk()
+            ->assertSee($photoUrl, false);
+
+        $this->actingAs($admin)
+            ->get(route('admin.students.show', $student))
+            ->assertOk()
+            ->assertSee($photoUrl, false);
     }
 
     public function test_intern_profile_user_id_must_be_unique(): void
@@ -85,6 +108,20 @@ class StudentsTest extends TestCase
         $this->expectException(QueryException::class);
 
         InternProfile::factory()->for($student)->create();
+    }
+
+    public function test_search_changes_reset_the_status_filter(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(StudentIndex::class)
+            ->set('status', 'active')
+            ->set('search', 'Budi')
+            ->assertSet('status', '')
+            ->set('status', 'active')
+            ->set('search', '')
+            ->assertSet('status', '');
     }
 
     public function test_student_list_can_be_searched(): void

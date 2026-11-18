@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaveAttachmentController;
 use App\Http\Controllers\LogbookPhotoController;
 use App\Http\Controllers\Mahasiswa\LogbookExportController;
+use App\Http\Controllers\ProfilePhotoController;
 use App\Livewire\Admin\Announcements\Index as AnnouncementIndex;
 use App\Livewire\Admin\Attendances\Index as AttendanceIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
@@ -23,6 +24,7 @@ use App\Livewire\Mahasiswa\Dashboard as MahasiswaDashboard;
 use App\Livewire\Mahasiswa\Leaves\Index as StudentLeave;
 use App\Livewire\Mahasiswa\Logbooks\Index as StudentLogbook;
 use App\Livewire\Mahasiswa\Profile as StudentProfile;
+use App\Models\InternGroup;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -34,7 +36,7 @@ Route::get('/', function () {
 Route::middleware('guest')->group(function () {
     Route::get('/login', [AuthController::class, 'showLogin'])->name('login');
     Route::post('/login', [AuthController::class, 'login'])
-        ->middleware('throttle:5,1')
+        ->middleware('throttle:login')
         ->name('login.store');
 });
 
@@ -42,9 +44,9 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/attendance/selfie', AttendanceSelfieController::class)
-        ->middleware('role:mahasiswa')
+        ->middleware(['role:mahasiswa', 'throttle:10,1'])
         ->name('attendance.selfie');
 
     Route::get('/attendance/{attendance}/photo/{type}', AttendancePhotoController::class)
@@ -54,6 +56,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/leaves/{leave}/attachment', LeaveAttachmentController::class)->name('leave.attachment');
 
     Route::get('/logbooks/{logbook}/photo', LogbookPhotoController::class)->name('logbook.photo');
+
+    Route::get('/users/{user}/photo', ProfilePhotoController::class)->name('user.photo');
 });
 
 Route::middleware(['auth', 'role:admin'])
@@ -61,6 +65,11 @@ Route::middleware(['auth', 'role:admin'])
     ->name('admin.')
     ->group(function () {
         Route::get('/', AdminDashboard::class)->name('dashboard');
+
+        Route::get('/groups', fn () => redirect()->route('admin.students', ['tab' => 'groups']))->name('groups');
+        Route::get('/groups/create', fn () => redirect()->route('admin.students', ['tab' => 'groups', 'new' => 1]));
+        Route::get('/groups/{group}', fn (InternGroup $group) => redirect()->route('admin.students', ['tab' => 'groups', 'group' => $group->id]));
+        Route::get('/groups/{group}/edit', fn (InternGroup $group) => redirect()->route('admin.students', ['tab' => 'groups', 'group' => $group->id, 'edit' => 1]));
 
         Route::get('/students', StudentIndex::class)->name('students');
         Route::get('/students/create', StudentForm::class)->name('students.create');

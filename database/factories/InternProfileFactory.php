@@ -2,6 +2,7 @@
 
 namespace Database\Factories;
 
+use App\Models\InternGroup;
 use App\Models\InternProfile;
 use App\Models\User;
 use Illuminate\Database\Eloquent\Factories\Factory;
@@ -15,6 +16,7 @@ class InternProfileFactory extends Factory
     {
         return [
             'user_id' => User::factory()->mahasiswa(),
+            'intern_group_id' => InternGroup::factory(),
             'institution' => fake()->randomElement([
                 'Universitas Jember',
                 'Politeknik Negeri Banyuwangi',

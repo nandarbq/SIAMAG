@@ -174,6 +174,45 @@ class LogbookTest extends TestCase
         $this->assertSame('Aktivitas asli', $logbook->fresh()->activity);
     }
 
+    public function test_student_cannot_open_today_logbook_form_after_internship_ends(): void
+    {
+        $this->travelTo(Carbon::parse('2027-01-05 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreate')
+            ->assertSet('showModal', false);
+    }
+
+    public function test_student_cannot_open_a_missing_logbook_date_after_internship_ends(): void
+    {
+        $this->travelTo(Carbon::parse('2027-01-05 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreateForDate', '2026-12-30')
+            ->assertSet('showModal', false);
+    }
+
+    public function test_student_cannot_save_a_new_logbook_after_internship_ends(): void
+    {
+        $this->travelTo(Carbon::parse('2027-01-05 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->set('date', '2026-12-30')
+            ->set('activity', 'Aktivitas baru')
+            ->call('save');
+
+        $this->assertDatabaseCount('logbooks', 0);
+    }
+
     public function test_student_can_upload_a_logbook_photo(): void
     {
         $student = $this->makeStudent();
@@ -275,6 +314,45 @@ class LogbookTest extends TestCase
         Storage::disk('local')->assertMissing($path);
     }
 
+    public function test_student_logbook_history_is_paginated_ten_per_page(): void
+    {
+        $student = $this->makeStudent();
+
+        foreach (range(1, 11) as $day) {
+            Logbook::factory()->for($student)->create([
+                'date' => sprintf('2026-11-%02d', $day),
+            ]);
+        }
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->assertViewHas('logbooks', fn ($logbooks) => $logbooks->perPage() === 10 && $logbooks->count() === 10);
+    }
+
+    public function test_deleting_last_logbook_on_the_last_page_moves_to_the_previous_page(): void
+    {
+        $this->travelTo(Carbon::parse('2026-12-30 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        foreach (range(1, 11) as $day) {
+            Logbook::factory()->for($student)->create([
+                'date' => sprintf('2026-11-%02d', $day),
+            ]);
+        }
+
+        $oldestLogbook = Logbook::query()
+            ->where('user_id', $student->id)
+            ->orderBy('date')
+            ->firstOrFail();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('setPage', 2)
+            ->call('delete', $oldestLogbook->id)
+            ->assertViewHas('logbooks', fn ($logbooks) => $logbooks->currentPage() === 1);
+    }
+
     public function test_admin_can_view_logbook_details_read_only(): void
     {
         $admin = User::factory()->admin()->create();
@@ -291,6 +369,24 @@ class LogbookTest extends TestCase
             ->assertSee('Logbook hanya dapat dilihat.')
             ->assertDontSee('Setujui Logbook')
             ->assertDontSee('Tolak & Minta Revisi');
+    }
+
+    public function test_admin_logbook_search_changes_reset_the_date_filters(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(AdminLogbookIndex::class)
+            ->set('dateFrom', '2026-11-01')
+            ->set('dateTo', '2026-11-30')
+            ->set('search', 'Budi')
+            ->assertSet('dateFrom', '')
+            ->assertSet('dateTo', '')
+            ->set('dateFrom', '2026-11-01')
+            ->set('dateTo', '2026-11-30')
+            ->set('search', '')
+            ->assertSet('dateFrom', '')
+            ->assertSet('dateTo', '');
     }
 
     private function makeStudent(): User

@@ -130,6 +130,51 @@ class AuthTest extends TestCase
         $this->assertAuthenticatedAs($student);
     }
 
+    public function test_student_intended_for_admin_page_is_redirected_to_student_dashboard(): void
+    {
+        $student = User::factory()->mahasiswa()->create([
+            'email' => 'student@example.com',
+            'password' => 'password',
+        ]);
+
+        $this->withSession(['url.intended' => route('admin.students')])
+            ->post(route('login.store'), [
+                'email' => $student->email,
+                'password' => 'password',
+            ])
+            ->assertRedirect(route('mahasiswa.dashboard'));
+    }
+
+    public function test_user_is_redirected_to_safe_intended_page(): void
+    {
+        $student = User::factory()->mahasiswa()->create([
+            'email' => 'student@example.com',
+            'password' => 'password',
+        ]);
+
+        $this->withSession(['url.intended' => route('mahasiswa.logbooks')])
+            ->post(route('login.store'), [
+                'email' => $student->email,
+                'password' => 'password',
+            ])
+            ->assertRedirect(route('mahasiswa.logbooks'));
+    }
+
+    public function test_external_intended_url_is_ignored(): void
+    {
+        $student = User::factory()->mahasiswa()->create([
+            'email' => 'student@example.com',
+            'password' => 'password',
+        ]);
+
+        $this->withSession(['url.intended' => 'https://evil.example/phish'])
+            ->post(route('login.store'), [
+                'email' => $student->email,
+                'password' => 'password',
+            ])
+            ->assertRedirect(route('mahasiswa.dashboard'));
+    }
+
     public function test_invalid_credentials_are_rejected(): void
     {
         User::factory()->create(['email' => 'user@example.com']);
@@ -143,6 +188,29 @@ class AuthTest extends TestCase
             ->assertSessionHasErrors('email');
 
         $this->assertGuest();
+    }
+
+    public function test_login_throttle_is_scoped_to_email_and_ip(): void
+    {
+        User::factory()->create(['email' => 'first@example.com']);
+        User::factory()->create(['email' => 'second@example.com']);
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->from(route('login'))->post(route('login.store'), [
+                'email' => 'first@example.com',
+                'password' => 'wrong-password',
+            ])->assertRedirect(route('login'));
+        }
+
+        $this->from(route('login'))->post(route('login.store'), [
+            'email' => 'first@example.com',
+            'password' => 'wrong-password',
+        ])->assertStatus(429);
+
+        $this->from(route('login'))->post(route('login.store'), [
+            'email' => 'second@example.com',
+            'password' => 'wrong-password',
+        ])->assertRedirect(route('login'));
     }
 
     public function test_inactive_accounts_cannot_login(): void

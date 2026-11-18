@@ -9,7 +9,11 @@ class Holiday extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['date', 'name'];
+    public const SOURCE_AUTO = 'auto';
+
+    public const SOURCE_MANUAL = 'manual';
+
+    protected $fillable = ['date', 'name', 'source'];
 
     protected function casts(): array
     {

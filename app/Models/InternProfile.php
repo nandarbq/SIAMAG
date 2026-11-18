@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
 class InternProfile extends Model
 {
@@ -11,6 +12,7 @@ class InternProfile extends Model
 
     protected $fillable = [
         'user_id',
+        'intern_group_id',
         'institution',
         'major',
         'semester',
@@ -31,6 +33,11 @@ class InternProfile extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
+    }
+
+    public function group(): BelongsTo
+    {
+        return $this->belongsTo(InternGroup::class, 'intern_group_id');
     }
 
     public function progressPercent(): int

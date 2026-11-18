@@ -31,6 +31,12 @@ class Index extends Component
         }
     }
 
+    public function updatedSearch(mixed $value): void
+    {
+        $this->dateFrom = '';
+        $this->dateTo = '';
+    }
+
     public function openDetail(int $logbookId): void
     {
         $this->viewingId = Logbook::query()->findOrFail($logbookId)->id;
@@ -39,12 +45,6 @@ class Index extends Component
     public function closeDetail(): void
     {
         $this->reset('viewingId');
-    }
-
-    public function resetFilters(): void
-    {
-        $this->reset(['search', 'dateFrom', 'dateTo']);
-        $this->resetPage();
     }
 
     public function render()

@@ -1,0 +1,108 @@
+<?php
+
+namespace App\Livewire\Admin\Groups;
+
+use App\Models\InternGroup;
+use Illuminate\Validation\Rule;
+use Livewire\Component;
+
+class Form extends Component
+{
+    public ?InternGroup $group = null;
+
+    public bool $embedded = false;
+
+    public string $code = '';
+
+    public string $name = '';
+
+    public string $institution = '';
+
+    public string $division = '';
+
+    public string $field_supervisor = '';
+
+    public string $supervisor_phone = '';
+
+    public string $start_date = '';
+
+    public string $end_date = '';
+
+    public bool $is_active = true;
+
+    public function mount(?InternGroup $group = null, bool $embedded = false): void
+    {
+        $this->embedded = $embedded;
+
+        if ($group && $group->exists) {
+            $this->group = $group;
+            $this->code = $group->code;
+            $this->name = $group->name;
+            $this->institution = $group->institution;
+            $this->division = $group->division ?? '';
+            $this->field_supervisor = $group->field_supervisor ?? '';
+            $this->supervisor_phone = $group->supervisor_phone ?? '';
+            $this->start_date = $group->start_date?->format('Y-m-d') ?? '';
+            $this->end_date = $group->end_date?->format('Y-m-d') ?? '';
+            $this->is_active = (bool) $group->is_active;
+
+            return;
+        }
+
+        $this->start_date = now()->toDateString();
+        $this->end_date = now()->addMonths(4)->toDateString();
+        $this->code = sprintf('MAG-%d-%03d', now()->year, InternGroup::query()->count() + 1);
+    }
+
+    public function save()
+    {
+        $validated = $this->validate([
+            'code' => ['required', 'string', 'max:30', Rule::unique('intern_groups', 'code')->ignore($this->group?->id)],
+            'name' => ['required', 'string', 'max:255'],
+            'institution' => ['required', 'string', 'max:255'],
+            'division' => ['nullable', 'string', 'max:255'],
+            'field_supervisor' => ['nullable', 'string', 'max:255'],
+            'supervisor_phone' => ['nullable', 'string', 'max:30'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+        ], [
+            'code.required' => 'Kode kelompok wajib diisi.',
+            'code.unique' => 'Kode kelompok sudah digunakan.',
+            'name.required' => 'Nama kelompok wajib diisi.',
+            'institution.required' => 'Institusi / kampus wajib diisi.',
+            'start_date.required' => 'Tanggal mulai wajib diisi.',
+            'end_date.required' => 'Tanggal selesai wajib diisi.',
+            'end_date.after_or_equal' => 'Tanggal selesai harus setelah tanggal mulai.',
+        ]);
+
+        $validated['division'] = $validated['division'] ?: null;
+        $validated['field_supervisor'] = $validated['field_supervisor'] ?: null;
+        $validated['supervisor_phone'] = $validated['supervisor_phone'] ?: null;
+        $validated['is_active'] = $this->is_active;
+
+        $message = $this->group
+            ? 'Kelompok magang berhasil diperbarui.'
+            : 'Kelompok magang berhasil ditambahkan.';
+
+        if ($this->group) {
+            $this->group->update($validated);
+        } else {
+            InternGroup::query()->create($validated);
+        }
+
+        if ($this->embedded) {
+            $this->dispatch('group-saved', message: $message);
+
+            return;
+        }
+
+        session()->flash('success', $message);
+
+        return redirect()->route('admin.groups');
+    }
+
+    public function render()
+    {
+        return view('livewire.admin.groups.form');
+    }
+}

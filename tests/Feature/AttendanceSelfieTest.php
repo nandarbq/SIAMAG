@@ -98,6 +98,25 @@ class AttendanceSelfieTest extends TestCase
             ->assertJsonValidationErrors('photo');
     }
 
+    public function test_selfie_upload_is_rate_limited(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        for ($attempt = 0; $attempt < 10; $attempt++) {
+            $this->actingAs($student)
+                ->postJson(route('attendance.selfie'), [
+                    'photo' => 'invalid-selfie',
+                ])
+                ->assertUnprocessable();
+        }
+
+        $this->actingAs($student)
+            ->postJson(route('attendance.selfie'), [
+                'photo' => 'invalid-selfie',
+            ])
+            ->assertStatus(429);
+    }
+
     public function test_admin_cannot_upload_attendance_selfie(): void
     {
         $admin = User::factory()->admin()->create();

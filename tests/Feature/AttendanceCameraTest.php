@@ -26,6 +26,10 @@ class AttendanceCameraTest extends TestCase
         $response->assertSee('@click="startCamera()"', false);
         $response->assertSee('Ambil foto selfie terlebih dahulu.');
         $response->assertSee('uploadUrl', false);
+        $response->assertSee('aspect-[3/4]', false);
+        $response->assertSee('rounded-[50%]', false);
+        $response->assertSee('animate-scan-face', false);
+        $response->assertSee('Posisikan wajah di dalam oval');
         $response->assertDontSee('type="file"', false);
     }
 

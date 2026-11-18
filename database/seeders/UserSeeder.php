@@ -11,11 +11,21 @@ class UserSeeder extends Seeder
 {
     public function run(): void
     {
+        $configuredPassword = env('SEED_DEFAULT_PASSWORD');
+
+        if (app()->isProduction() && blank($configuredPassword)) {
+            $this->command?->warn('UserSeeder dilewati: set SEED_DEFAULT_PASSWORD untuk membuat akun awal di production.');
+
+            return;
+        }
+
+        $password = $configuredPassword ?: 'password';
+
         $admin = User::updateOrCreate(
             ['email' => 'admin@bmkg.go.id'],
             [
                 'name' => 'Administrator BMKG',
-                'password' => 'password',
+                'password' => $password,
                 'role' => UserRole::Admin,
                 'phone' => '081234567890',
                 'is_active' => true,
@@ -27,7 +37,7 @@ class UserSeeder extends Seeder
             ['email' => 'mahasiswa@bmkg.go.id'],
             [
                 'name' => 'Nandar Assabiqi',
-                'password' => 'password',
+                'password' => $password,
                 'role' => UserRole::Mahasiswa,
                 'nim' => '20241001',
                 'phone' => '081298765432',
@@ -49,7 +59,8 @@ class UserSeeder extends Seeder
             ]
         );
 
-        $this->command?->info('Admin: admin@bmkg.go.id / password');
-        $this->command?->info('Mahasiswa: mahasiswa@bmkg.go.id / password');
+        $this->command?->info('Admin: admin@bmkg.go.id');
+        $this->command?->info('Mahasiswa: mahasiswa@bmkg.go.id');
+        $this->command?->info('Password akun awal mengikuti SEED_DEFAULT_PASSWORD (default lokal: password).');
     }
 }

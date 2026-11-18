@@ -16,8 +16,6 @@ class Index extends Component
 {
     use WithPagination;
 
-    public string $status = LeaveStatus::Approved->value;
-
     public string $type = '';
 
     public string $search = '';
@@ -28,14 +26,21 @@ class Index extends Component
 
     public function updating(string $property): void
     {
-        if (in_array($property, ['status', 'type', 'search', 'perPage'], true)) {
+        if (in_array($property, ['type', 'search', 'perPage'], true)) {
             $this->resetPage();
         }
     }
 
+    public function updatedSearch(mixed $value): void
+    {
+        $this->type = '';
+    }
+
     public function openReview(int $leaveId): void
     {
-        $leave = LeaveRequest::query()->findOrFail($leaveId);
+        $leave = LeaveRequest::query()
+            ->where('status', LeaveStatus::Approved->value)
+            ->findOrFail($leaveId);
 
         $this->reviewingId = $leave->id;
     }
@@ -46,18 +51,11 @@ class Index extends Component
         $this->resetValidation();
     }
 
-    public function resetFilters(): void
-    {
-        $this->reset(['type', 'search']);
-        $this->status = LeaveStatus::Approved->value;
-        $this->resetPage();
-    }
-
     public function render()
     {
         $leaves = LeaveRequest::query()
-            ->with(['user', 'reviewer'])
-            ->when($this->status !== '', fn ($q) => $q->where('status', $this->status))
+            ->with('user')
+            ->where('status', LeaveStatus::Approved->value)
             ->when($this->type !== '', fn ($q) => $q->where('type', $this->type))
             ->when($this->search !== '', function ($query) {
                 $search = '%'.$this->search.'%';
@@ -68,15 +66,8 @@ class Index extends Component
             ->latest()
             ->paginate($this->perPage);
 
-        $counts = LeaveRequest::query()
-            ->selectRaw('status, count(*) as total')
-            ->groupBy('status')
-            ->pluck('total', 'status');
-
         return view('livewire.admin.leaves.index', [
             'leaves' => $leaves,
-            'counts' => $counts,
-            'statuses' => LeaveStatus::visibleCases(),
             'types' => LeaveType::cases(),
             'reviewing' => $this->reviewingId ? LeaveRequest::query()->with('user')->find($this->reviewingId) : null,
         ]);

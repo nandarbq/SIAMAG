@@ -2,10 +2,10 @@
     <div
         @class([
             'space-y-6 transition duration-300',
-            'pointer-events-none select-none blur-[6px] opacity-60' => $ongoingSickLeave,
+            'pointer-events-none select-none blur-[6px] opacity-60' => $needsSickRecoveryPrompt,
         ])
-        @if ($ongoingSickLeave) inert @endif
-        aria-hidden="{{ $ongoingSickLeave ? 'true' : 'false' }}"
+        @if ($needsSickRecoveryPrompt) inert @endif
+        aria-hidden="{{ $needsSickRecoveryPrompt ? 'true' : 'false' }}"
     >
     <section class="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
         <div>
@@ -32,6 +32,18 @@
         </div>
     @endif
 
+    @if (! $isWorkday)
+        <div class="flex items-start gap-3 rounded-2xl border border-sky-200 bg-sky-50 px-4 py-3 text-sm text-sky-800">
+            <x-icon name="calendar" class="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+                <p class="font-semibold">{{ $todayHoliday ? 'Libur: '.$todayHoliday->name : 'Hari ini libur' }}</p>
+                <p class="mt-0.5 text-xs leading-relaxed text-sky-700">
+                    {{ $todayHoliday ? 'Hari ini merupakan hari libur. Tidak perlu melakukan absensi.' : $nonWorkingLabel.'. Tidak perlu melakukan absensi.' }}
+                </p>
+            </div>
+        </div>
+    @endif
+
     @error('attendance')
         <div class="flex items-start gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">
             <x-icon name="alert" class="mt-0.5 h-5 w-5 shrink-0" />
@@ -46,8 +58,18 @@
         </div>
     @enderror
 
+    @if ($recoveryRequestedToday)
+        <div class="flex items-start gap-3 rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+            <x-icon name="check-circle" class="mt-0.5 h-5 w-5 shrink-0" />
+            <div>
+                <p class="font-semibold">Kesembuhan sudah dicatat</p>
+                <p class="mt-0.5 text-xs leading-relaxed text-emerald-700">Silakan absen masuk hari ini untuk menutup masa sakit. Jika belum absen, status sakit tetap berlaku.</p>
+            </div>
+        </div>
+    @endif
+
     @php
-        $onLeave = $today && in_array($today->status->value, ['izin', 'sakit', 'libur'], true);
+        $onLeave = ! $recoveryRequestedToday && $today && in_array($today->status->value, ['izin', 'sakit', 'libur'], true);
         $finished = $today?->check_in_at && $today?->check_out_at;
     @endphp
 
@@ -65,8 +87,9 @@
                 radius: {{ $radius }},
                 maxAccuracy: {{ $maxAccuracy }},
                 requireGeofence: @js($requireGeofence),
+                workday: @js($isWorkday),
                 init() {
-                    if (this.requireGeofence) {
+                    if (this.requireGeofence && this.workday) {
                         this.locate();
                     }
                 },
@@ -134,7 +157,9 @@
                         @endif
                     </p>
                 </div>
-                @if ($today)
+                @if (! $isWorkday)
+                    <x-attendance-status :status="\App\Enums\AttendanceStatus::Libur" />
+                @elseif ($today)
                     <x-attendance-status :status="$today->status" />
                 @else
                     <span class="badge-slate">Belum absen</span>
@@ -146,7 +171,15 @@
                 <input type="hidden" wire:model="lng" x-ref="lng">
                 <input type="hidden" wire:model="accuracy" x-ref="accuracy">
 
-                @if ($onLeave)
+                @if (! $isWorkday)
+                    <div class="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-center">
+                        <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sky-100 text-sky-600">
+                            <x-icon name="calendar" class="h-6 w-6" />
+                        </span>
+                        <p class="mt-3 text-sm font-bold text-sky-900">Hari ini libur</p>
+                        <p class="mt-1 text-xs leading-relaxed text-sky-700">{{ $nonWorkingLabel }}. Tidak perlu melakukan absensi.</p>
+                    </div>
+                @elseif ($onLeave)
                     <div class="rounded-2xl border border-sky-200 bg-sky-50 p-5 text-center">
                         <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-sky-100 text-sky-600">
                             <x-icon name="calendar" class="h-6 w-6" />
@@ -161,73 +194,83 @@
                         </span>
                         <p class="mt-3 text-sm font-bold text-emerald-900">Absensi hari ini selesai</p>
                         <p class="mt-1 text-xs text-emerald-700">Masuk {{ $today->check_in_at?->format('H:i') }} · Pulang {{ $today->check_out_at?->format('H:i') }} WIB</p>
+                        @if ($today->early_leave_minutes > 0)
+                            <p class="mt-1 text-xs font-semibold text-amber-700">Pulang lebih awal {{ $today->early_leave_duration }}</p>
+                        @endif
                     </div>
                 @else
                     <div x-data="attendanceCamera({ uploadUrl: @js(route('attendance.selfie')) })" wire:key="attendance-camera" class="space-y-5">
                         <div class="space-y-3">
-                            <div x-cloak class="relative flex min-h-56 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-950/90 p-2">
-                            <template x-if="capturedUrl">
-                                <img :src="capturedUrl" alt="Pratinjau selfie" class="absolute inset-0 h-full w-full object-cover">
-                            </template>
+                            <div x-cloak class="relative mx-auto w-full max-w-xs">
+                                <div class="relative aspect-[3/4] overflow-hidden rounded-[50%] border border-white/15 bg-slate-950 shadow-[0_24px_60px_-30px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/10">
+                                    <template x-if="capturedUrl">
+                                        <img :src="capturedUrl" alt="Pratinjau selfie" class="absolute inset-0 h-full w-full object-cover">
+                                    </template>
 
-                            <video x-show="started && ! capturedUrl" x-ref="video" autoplay muted playsinline class="absolute inset-0 h-full w-full object-cover"></video>
-                            <canvas x-ref="canvas" class="hidden"></canvas>
+                                    <video x-show="started && ! capturedUrl" x-ref="video" autoplay muted playsinline class="absolute inset-0 h-full w-full object-cover"></video>
+                                    <canvas x-ref="canvas" class="hidden"></canvas>
 
-                            <div x-show="! started" class="relative flex flex-col items-center gap-3 px-4 text-center text-white">
-                                <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
-                                    <x-icon name="camera" class="h-6 w-6" />
-                                </span>
-                                <div>
-                                    <p class="text-sm font-bold">Kamera belum aktif</p>
-                                    <p class="mt-1 text-xs leading-relaxed text-slate-300">Tekan tombol mulai untuk menyalakan kamera dan mengambil selfie.</p>
+                                    <div x-show="started && cameraReady && ! capturedUrl" class="pointer-events-none absolute inset-0">
+                                        <div class="absolute inset-4 rounded-[50%] border border-white/30"></div>
+                                        <div class="animate-scan-face absolute inset-x-8 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-accent-300 to-transparent shadow-[0_0_16px_rgba(251,191,36,0.85)] motion-reduce:animate-none"></div>
+                                    </div>
+
+                                    <div x-show="! started" class="relative flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-white">
+                                        <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
+                                            <x-icon name="camera" class="h-6 w-6" />
+                                        </span>
+                                        <div>
+                                            <p class="text-sm font-bold">Kamera belum aktif</p>
+                                            <p class="mt-1 text-xs leading-relaxed text-slate-300">Tekan tombol mulai untuk menyalakan kamera dan mengambil selfie.</p>
+                                        </div>
+                                        <button type="button" @click="startCamera()" class="btn-primary btn-sm">
+                                            <x-icon name="camera" class="h-4 w-4" />
+                                            {{ $today?->check_in_at ? 'Mulai Absen Pulang' : 'Mulai Absen' }}
+                                        </button>
+                                    </div>
+
+                                    <div x-show="started && ! cameraReady && ! capturedUrl && ! cameraError" class="relative flex h-full flex-col items-center justify-center gap-2 text-center text-xs font-semibold text-white">
+                                        <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                                        Menyiapkan kamera...
+                                    </div>
+
+                                    <div x-show="saving" class="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/75 px-3 py-1.5 text-center text-[11px] font-semibold text-white backdrop-blur-sm">
+                                        Menyimpan foto...
+                                    </div>
+
+                                    <span x-show="capturedUrl && ! saving" class="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                                        Selfie siap digunakan
+                                    </span>
                                 </div>
-                                <button type="button" @click="startCamera()" class="btn-primary btn-sm">
-                                    <x-icon name="camera" class="h-4 w-4" />
-                                    {{ $today?->check_in_at ? 'Mulai Absen Pulang' : 'Mulai Absen' }}
-                                </button>
+
+                                <div x-show="started && cameraError" class="mx-auto mt-3 max-w-[19rem] rounded-2xl bg-rose-50 px-4 py-3 text-center text-xs font-medium leading-relaxed text-rose-700 shadow-sm">
+                                    <p x-text="cameraError"></p>
+                                </div>
                             </div>
 
-                            <div x-show="started && ! cameraReady && ! capturedUrl && ! cameraError" class="relative flex flex-col items-center gap-2 text-center text-xs font-semibold text-white">
-                                <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
-                                Menyiapkan kamera...
-                            </div>
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-xs leading-relaxed text-slate-500">Posisikan wajah di dalam oval, gunakan kamera depan, dan pastikan pencahayaan cukup.</p>
 
-                            <div x-show="started && cameraError" class="relative mx-4 rounded-2xl bg-rose-50/95 px-4 py-3 text-center text-xs font-medium leading-relaxed text-rose-700 shadow-sm">
-                                <p x-text="cameraError"></p>
-                            </div>
-
-                            <div x-show="saving" class="absolute inset-x-0 bottom-0 bg-slate-950/70 px-4 py-3 text-center text-xs font-semibold text-white backdrop-blur-sm">
-                                Menyimpan foto...
-                            </div>
-
-                            <span x-show="capturedUrl && ! saving" class="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
-                                Selfie siap digunakan
-                            </span>
-                        </div>
-
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                            <p class="text-xs leading-relaxed text-slate-500">Gunakan kamera depan, pastikan wajah terlihat jelas dan pencahayaan cukup.</p>
-
-                            <div class="flex gap-2">
-                                <button type="button" x-show="started && cameraReady && ! capturedUrl" @click="capture()" class="btn-primary btn-sm">
-                                    <x-icon name="camera" class="h-4 w-4" />
-                                    Ambil Foto
-                                </button>
-                                <button type="button" x-show="started && cameraError && ! cameraReady && ! capturedUrl" @click="startCamera()" class="btn-secondary btn-sm">
-                                    <x-icon name="refresh" class="h-4 w-4" />
-                                    Coba Lagi
-                                </button>
-                                <button type="button" x-show="cameraError && capturedUrl && ! saving" @click="retryUpload()" class="btn-primary btn-sm">
-                                    <x-icon name="refresh" class="h-4 w-4" />
-                                    Simpan Ulang
-                                </button>
-                                <button type="button" x-show="capturedUrl && ! saving" @click="retake()" class="btn-secondary btn-sm">
-                                    <x-icon name="refresh" class="h-4 w-4" />
-                                    Ambil Ulang
-                                </button>
+                                <div class="flex w-full flex-wrap gap-2 sm:w-auto">
+                                    <button type="button" x-show="started && cameraReady && ! capturedUrl" @click="capture()" class="btn-primary btn-sm">
+                                        <x-icon name="camera" class="h-4 w-4" />
+                                        Ambil Foto
+                                    </button>
+                                    <button type="button" x-show="started && cameraError && ! cameraReady && ! capturedUrl" @click="startCamera()" class="btn-secondary btn-sm">
+                                        <x-icon name="refresh" class="h-4 w-4" />
+                                        Coba Lagi
+                                    </button>
+                                    <button type="button" x-show="cameraError && capturedUrl && ! saving" @click="retryUpload()" class="btn-primary btn-sm">
+                                        <x-icon name="refresh" class="h-4 w-4" />
+                                        Simpan Ulang
+                                    </button>
+                                    <button type="button" x-show="capturedUrl && ! saving" @click="retake()" class="btn-secondary btn-sm">
+                                        <x-icon name="refresh" class="h-4 w-4" />
+                                        Ambil Ulang
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
                     @if ($requireGeofence)
                         <div class="rounded-2xl border border-slate-200 bg-white p-4">
@@ -327,16 +370,30 @@
                     <div class="divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-slate-50/60">
                         <div class="flex items-center justify-between px-4 py-3 text-sm">
                             <span class="text-slate-500">Status</span>
-                            @if ($today)
+                            @if (! $isWorkday)
+                                <x-attendance-status :status="\App\Enums\AttendanceStatus::Libur" />
+                            @elseif ($today)
                                 <x-attendance-status :status="$today->status" />
                             @else
                                 <span class="badge-slate">Belum absen</span>
                             @endif
                         </div>
+                        @if (! $isWorkday)
+                            <div class="flex items-center justify-between px-4 py-3 text-sm">
+                                <span class="text-slate-500">Keterangan</span>
+                                <span class="font-semibold text-slate-800">{{ $nonWorkingLabel }}</span>
+                            </div>
+                        @endif
                         <div class="flex items-center justify-between px-4 py-3 text-sm">
                             <span class="text-slate-500">Keterlambatan</span>
-                            <span class="font-semibold text-slate-800">{{ $today?->late_minutes ? $today->late_minutes.' menit' : '—' }}</span>
+                            <span class="font-semibold text-slate-800">{{ $today?->late_duration ?? '—' }}</span>
                         </div>
+                        @if ($today?->early_leave_minutes > 0)
+                            <div class="flex items-center justify-between px-4 py-3 text-sm">
+                                <span class="text-slate-500">Pulang lebih awal</span>
+                                <span class="font-semibold text-amber-600">{{ $today->early_leave_duration }}</span>
+                            </div>
+                        @endif
                         @if ($requireGeofence)
                             <div class="flex items-center justify-between px-4 py-3 text-sm">
                                 <span class="text-slate-500">Jarak absen masuk</span>
@@ -401,7 +458,42 @@
                 <p class="mt-0.5 text-xs text-slate-500">10 absensi terakhir Anda</p>
             </div>
         </div>
-        <div class="overflow-x-auto">
+        <div class="divide-y divide-slate-100 sm:hidden">
+            @forelse ($history as $attendance)
+                <div class="space-y-3 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800">{{ $attendance->date?->translatedFormat('d M Y') }}</p>
+                            <p class="text-xs text-slate-400">{{ $attendance->date?->translatedFormat('l') }}</p>
+                        </div>
+                        <x-attendance-status :status="$attendance->status" />
+                    </div>
+
+                    <dl class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="rounded-xl bg-slate-50 p-2.5">
+                            <dt class="font-semibold uppercase tracking-wide text-slate-400">Masuk</dt>
+                            <dd class="mt-0.5 font-semibold text-slate-800">{{ $attendance->check_in_at?->format('H:i') ?? '—' }}</dd>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 p-2.5">
+                            <dt class="font-semibold uppercase tracking-wide text-slate-400">Pulang</dt>
+                            <dd class="mt-0.5 font-semibold text-slate-800">{{ $attendance->check_out_at?->format('H:i') ?? '—' }}</dd>
+                            @if ($attendance->early_leave_minutes > 0)
+                                <p class="mt-1 text-[11px] font-medium text-amber-600">Pulang lebih awal {{ $attendance->early_leave_duration }}</p>
+                            @endif
+                        </div>
+                    </dl>
+
+                    <p class="text-xs text-slate-500">
+                        Lokasi:
+                        <span class="font-semibold text-slate-700">{{ $attendance->check_in_distance !== null ? $attendance->check_in_distance.' m' : '—' }}</span>
+                    </p>
+                </div>
+            @empty
+                <p class="px-4 py-12 text-center text-sm text-slate-500">Belum ada riwayat absensi.</p>
+            @endforelse
+        </div>
+
+        <div class="hidden overflow-x-auto sm:block">
             <table class="min-w-full text-left text-sm">
                 <thead>
                     <tr class="border-b border-slate-100 bg-slate-50/80">
@@ -420,7 +512,12 @@
                                 <p class="text-xs text-slate-400">{{ $attendance->date?->translatedFormat('l') }}</p>
                             </td>
                             <td class="table-td font-medium text-slate-700">{{ $attendance->check_in_at?->format('H:i') ?? '—' }}</td>
-                            <td class="table-td font-medium text-slate-700">{{ $attendance->check_out_at?->format('H:i') ?? '—' }}</td>
+                            <td class="table-td font-medium text-slate-700">
+                                {{ $attendance->check_out_at?->format('H:i') ?? '—' }}
+                                @if ($attendance->early_leave_minutes > 0)
+                                    <p class="text-[11px] font-medium text-amber-600">Pulang lebih awal {{ $attendance->early_leave_duration }}</p>
+                                @endif
+                            </td>
                             <td class="table-td"><x-attendance-status :status="$attendance->status" /></td>
                             <td class="table-td">
                                 <span class="text-xs text-slate-500">
@@ -437,14 +534,14 @@
             </table>
         </div>
         @if ($history->hasPages())
-            <div class="border-t border-slate-100 px-5 py-4">{{ $history->links() }}</div>
+            <div class="overflow-x-auto border-t border-slate-100 px-5 py-4">{{ $history->links() }}</div>
         @endif
     </div>
     </div>
 
-    @if ($ongoingSickLeave)
+    @if ($needsSickRecoveryPrompt)
         <div
-            class="fixed inset-0 z-50 overflow-y-auto"
+            class="fixed inset-0 z-50 overflow-y-auto overscroll-contain"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="sick-recovery-title"
@@ -452,7 +549,7 @@
         >
             <div class="fixed inset-0 bg-slate-950/45"></div>
 
-            <div class="relative flex min-h-full items-center justify-center p-4">
+            <div class="relative flex min-h-full items-start justify-center p-4 py-6 sm:items-center sm:p-4">
                 <div class="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/5">
                     <div class="border-b border-slate-100 px-6 py-5">
                         <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
@@ -463,13 +560,13 @@
                             Sudah siap kembali masuk?
                         </h2>
                         <p id="sick-recovery-description" class="mt-2 text-sm leading-6 text-slate-500">
-                            Kami mencatat kamu sedang menjalani masa sakit. Jika kondisi sudah membaik dan siap beraktivitas hari ini, konfirmasi kesembuhan untuk menutup masa sakit dan membuka absensi masuk.
+                            Kami mencatat kamu sedang menjalani masa sakit. Jika kondisi sudah membaik dan siap beraktivitas hari ini, catat kesembuhan lalu lakukan absen masuk untuk menutup masa sakit.
                         </p>
                     </div>
 
                     <div class="space-y-5 p-6">
                         <div class="rounded-2xl border border-emerald-100 bg-emerald-50/70 px-4 py-3 text-xs leading-5 text-emerald-800">
-                            Masa sakit dicatat selesai hingga H-1. Setelah konfirmasi, kamu bisa langsung melakukan absen masuk hari ini.
+                            Masa sakit baru selesai setelah absen masuk berhasil. Jika absen belum dilakukan, status sakit tetap berlaku.
                         </div>
 
                         @if (session('error'))
@@ -481,15 +578,15 @@
                         <div class="space-y-2">
                             <button
                                 type="button"
-                                wire:click="confirmRecovery"
+                                wire:click="requestRecovery"
                                 wire:loading.attr="disabled"
-                                wire:target="confirmRecovery"
+                                wire:target="requestRecovery"
                                 class="btn-primary w-full"
                                 autofocus
                             >
                                 <x-icon name="check-circle" class="h-4 w-4" />
-                                <span wire:loading.remove wire:target="confirmRecovery">Saya sudah sembuh, buka absensi</span>
-                                <span wire:loading wire:target="confirmRecovery">Menyimpan konfirmasi...</span>
+                                <span wire:loading.remove wire:target="requestRecovery">Saya sudah sembuh, buka absensi</span>
+                                <span wire:loading wire:target="requestRecovery">Menyimpan konfirmasi...</span>
                             </button>
 
                             <a href="{{ route('mahasiswa.dashboard') }}" class="btn-ghost w-full">

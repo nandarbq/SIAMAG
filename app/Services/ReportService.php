@@ -5,7 +5,6 @@ namespace App\Services;
 use App\Enums\AttendanceStatus;
 use App\Enums\UserRole;
 use App\Models\Attendance;
-use App\Models\Holiday;
 use App\Models\Logbook;
 use App\Models\Setting;
 use App\Models\User;
@@ -13,16 +12,14 @@ use Carbon\Carbon;
 
 class ReportService
 {
+    public function __construct(private readonly WorkdayService $workdays) {}
+
     public function recap(int $month, int $year, ?int $studentId = null): array
     {
         $periodStart = Carbon::create($year, $month, 1)->startOfMonth();
         $periodEnd = $periodStart->copy()->endOfMonth();
 
-        $holidayDates = Holiday::query()
-            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
-            ->pluck('date')
-            ->map(fn ($date) => $date->toDateString())
-            ->all();
+        $holidayDates = $this->workdays->holidayDatesBetween($periodStart, $periodEnd);
 
         $students = User::query()
             ->with('internProfile')
@@ -31,13 +28,32 @@ class ReportService
             ->orderBy('name')
             ->get();
 
-        $rows = $students->map(function (User $student) use ($periodStart, $periodEnd, $holidayDates) {
-            $counts = Attendance::query()
-                ->where('user_id', $student->id)
-                ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
-                ->selectRaw('status, count(*) as total')
-                ->groupBy('status')
-                ->pluck('total', 'status');
+        $studentIds = $students->pluck('id');
+
+        $attendanceCounts = Attendance::query()
+            ->whereIn('user_id', $studentIds)
+            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
+            ->selectRaw('user_id, status, count(*) as total')
+            ->groupBy('user_id', 'status')
+            ->get()
+            ->groupBy('user_id');
+
+        $logbookCounts = Logbook::query()
+            ->whereIn('user_id', $studentIds)
+            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
+            ->selectRaw('user_id, count(*) as total')
+            ->groupBy('user_id')
+            ->pluck('total', 'user_id');
+
+        $rows = $students->map(function (User $student) use ($periodStart, $periodEnd, $holidayDates, $attendanceCounts, $logbookCounts) {
+            $counts = $attendanceCounts->get($student->id, collect())
+                ->mapWithKeys(function (Attendance $attendance) {
+                    $status = $attendance->status instanceof AttendanceStatus
+                        ? $attendance->status->value
+                        : $attendance->status;
+
+                    return [$status => (int) $attendance->total];
+                });
 
             $hadir = (int) ($counts[AttendanceStatus::Hadir->value] ?? 0);
             $terlambat = (int) ($counts[AttendanceStatus::Terlambat->value] ?? 0);
@@ -48,10 +64,7 @@ class ReportService
             $recorded = $hadir + $terlambat + $izin + $sakit;
             $alpha = max(0, $workdays - $recorded);
 
-            $logbookTotal = Logbook::query()
-                ->where('user_id', $student->id)
-                ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
-                ->count();
+            $logbookTotal = (int) ($logbookCounts[$student->id] ?? 0);
 
             return [
                 'id' => $student->id,
@@ -118,7 +131,7 @@ class ReportService
         $count = 0;
 
         for ($date = $start->copy(); $date->lessThanOrEqualTo($end); $date->addDay()) {
-            if ($date->isWeekend() || in_array($date->toDateString(), $holidayDates, true)) {
+            if (! $this->workdays->isWorkday($date, $holidayDates)) {
                 continue;
             }
 

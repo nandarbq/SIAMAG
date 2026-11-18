@@ -19,6 +19,7 @@ class HolidayFactory extends Factory
                 'Cuti Bersama',
                 'Hari Raya',
             ]),
+            'source' => Holiday::SOURCE_MANUAL,
         ];
     }
 }

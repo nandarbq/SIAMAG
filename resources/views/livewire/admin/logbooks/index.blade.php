@@ -8,7 +8,7 @@
     </div>
 
     <div class="card card-body">
-        <div class="grid gap-3 lg:grid-cols-[1fr_160px_160px_auto]">
+        <div class="grid gap-3 lg:grid-cols-[1fr_160px_160px]">
             <div class="relative">
                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                     <x-icon name="search" class="h-4 w-4" />
@@ -17,10 +17,6 @@
             </div>
             <input wire:model.live="dateFrom" type="date" class="input" title="Dari tanggal">
             <input wire:model.live="dateTo" type="date" class="input" title="Sampai tanggal">
-            <button type="button" wire:click="resetFilters" class="btn-secondary">
-                <x-icon name="filter" class="h-4 w-4" />
-                Reset
-            </button>
         </div>
     </div>
 
@@ -33,7 +29,7 @@
                         <th class="table-th">Tanggal</th>
                         <th class="table-th">Kegiatan</th>
                         <th class="table-th">Durasi</th>
-                        <th class="table-th text-right">Aksi</th>
+                        <th class="table-th text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -56,7 +52,7 @@
                             </td>
                             <td class="table-td whitespace-nowrap">{{ $logbook->duration ?? '-' }}</td>
                             <td class="table-td">
-                                <div class="flex justify-end">
+                                <div class="flex justify-center">
                                     <button type="button" wire:click="openDetail({{ $logbook->id }})" class="btn-ghost btn-sm">
                                         <x-icon name="eye" class="h-4 w-4" />
                                         Lihat
@@ -66,10 +62,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="empty-state">
-                                <x-icon name="book" class="h-10 w-10 text-slate-300" />
-                                <p class="font-semibold text-slate-600">Tidak ada logbook</p>
-                                <p class="text-xs">Belum ada data pada filter yang dipilih.</p>
+                            <td colspan="5" class="px-5 py-12">
+                                <div class="mx-auto flex max-w-sm flex-col items-center gap-2 text-center">
+                                    <x-icon name="book" class="h-10 w-10 text-slate-300" />
+                                    <p class="font-semibold text-slate-600">Tidak ada logbook</p>
+                                    <p class="text-xs text-slate-500">Belum ada data pada filter yang dipilih.</p>
+                                </div>
                             </td>
                         </tr>
                     @endforelse

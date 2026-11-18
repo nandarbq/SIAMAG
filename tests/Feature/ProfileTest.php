@@ -5,14 +5,23 @@ namespace Tests\Feature;
 use App\Livewire\Mahasiswa\Profile;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
 class ProfileTest extends TestCase
 {
     use RefreshDatabase;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+
+        Storage::fake('local');
+    }
 
     public function test_student_can_update_profile_information(): void
     {
@@ -34,6 +43,84 @@ class ProfileTest extends TestCase
         $this->assertSame('Nama Baru', $student->name);
         $this->assertSame('baru@example.com', $student->email);
         $this->assertSame('081234567890', $student->phone);
+    }
+
+    public function test_student_can_upload_profile_photo(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        Livewire::actingAs($student)
+            ->test(Profile::class)
+            ->set('photo', UploadedFile::fake()->image('avatar.jpg', 300, 300))
+            ->call('updatePhoto')
+            ->assertHasNoErrors();
+
+        $student->refresh();
+
+        $this->assertNotNull($student->photo_path);
+        Storage::disk('local')->assertExists($student->photo_path);
+    }
+
+    public function test_profile_page_renders_avatar_cropper(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        $this->actingAs($student)
+            ->get(route('mahasiswa.profile'))
+            ->assertOk()
+            ->assertSee('avatarCropper', false)
+            ->assertSee('Sesuaikan foto', false);
+    }
+
+    public function test_replacing_profile_photo_deletes_the_old_file(): void
+    {
+        Storage::disk('local')->put('avatars/old.jpg', 'old-image-bytes');
+
+        $student = User::factory()->mahasiswa()->create([
+            'photo_path' => 'avatars/old.jpg',
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(Profile::class)
+            ->set('photo', UploadedFile::fake()->image('new.png', 300, 300))
+            ->call('updatePhoto')
+            ->assertHasNoErrors();
+
+        $student->refresh();
+
+        $this->assertNotSame('avatars/old.jpg', $student->photo_path);
+        Storage::disk('local')->assertMissing('avatars/old.jpg');
+        Storage::disk('local')->assertExists($student->photo_path);
+    }
+
+    public function test_student_can_remove_profile_photo(): void
+    {
+        Storage::disk('local')->put('avatars/me.jpg', 'image-bytes');
+
+        $student = User::factory()->mahasiswa()->create([
+            'photo_path' => 'avatars/me.jpg',
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(Profile::class)
+            ->call('removePhoto')
+            ->assertHasNoErrors();
+
+        $this->assertNull($student->fresh()->photo_path);
+        Storage::disk('local')->assertMissing('avatars/me.jpg');
+    }
+
+    public function test_profile_photo_must_be_an_image(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        Livewire::actingAs($student)
+            ->test(Profile::class)
+            ->set('photo', UploadedFile::fake()->create('dokumen.pdf', 100, 'application/pdf'))
+            ->call('updatePhoto')
+            ->assertHasErrors(['photo']);
+
+        $this->assertNull($student->fresh()->photo_path);
     }
 
     public function test_profile_email_must_be_unique(): void

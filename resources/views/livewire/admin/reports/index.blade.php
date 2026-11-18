@@ -166,7 +166,7 @@
                 </table>
             </div>
             <div class="border-t border-slate-100 px-5 py-3 text-xs text-slate-400">
-                Hari kerja dihitung berdasarkan periode magang, akhir pekan, dan hari libur nasional.
+                Hari kerja dihitung berdasarkan periode magang, pengaturan hari kerja, dan hari libur.
             </div>
         </div>
     </div>

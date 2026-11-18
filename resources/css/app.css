@@ -59,7 +59,7 @@
     .btn-secondary,
     .btn-ghost,
     .btn-danger {
-        @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 disabled:cursor-not-allowed disabled:opacity-60;
+        @apply inline-flex min-h-11 items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition duration-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/50 disabled:cursor-not-allowed disabled:opacity-60 sm:min-h-0;
     }
 
     .btn-primary {
@@ -79,7 +79,7 @@
     }
 
     .btn-sm {
-        @apply px-3 py-1.5 text-xs;
+        @apply min-h-11 min-w-11 px-3 py-1.5 text-xs sm:min-h-0 sm:min-w-0;
     }
 
     .card {
@@ -95,7 +95,7 @@
     }
 
     .input {
-        @apply block w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10;
+        @apply block w-full rounded-xl border-slate-200 bg-white px-3.5 py-2.5 text-base text-slate-900 shadow-sm transition placeholder:text-slate-400 focus:border-brand-500 focus:ring-4 focus:ring-brand-500/10 sm:text-sm;
     }
 
     .label {
@@ -137,6 +137,10 @@
 
     .badge-slate {
         @apply bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-500/10;
+    }
+
+    .badge-compact {
+        @apply gap-1 px-2 py-0.5 text-[10px];
     }
 
     .nav-link {
@@ -182,6 +186,32 @@
     .animate-fade-up {
         animation: fade-up 0.45s ease-out both;
     }
+
+    .avatar-cropper .cropper-modal {
+        opacity: 0;
+    }
+
+    .avatar-cropper .cropper-bg {
+        background-color: #0f172a;
+        background-image: none;
+    }
+
+    .avatar-cropper .cropper-view-box {
+        border-radius: 9999px;
+        outline: 2px solid rgb(255 255 255 / 0.9);
+        box-shadow: 0 0 0 9999px rgb(15 23 42 / 0.72);
+    }
+
+    .avatar-cropper .cropper-face {
+        border-radius: 9999px;
+    }
+
+    .avatar-cropper .cropper-dashed,
+    .avatar-cropper .cropper-center,
+    .avatar-cropper .cropper-line,
+    .avatar-cropper .cropper-point {
+        display: none;
+    }
 }
 
 @keyframes fade-up {
@@ -209,6 +239,23 @@
 
 .pulse-ring {
     animation: pulse-ring 2s infinite;
+}
+
+@keyframes scan-face {
+    0%,
+    100% {
+        opacity: 0.25;
+        transform: translateY(-7rem);
+    }
+
+    50% {
+        opacity: 0.9;
+        transform: translateY(7rem);
+    }
+}
+
+.animate-scan-face {
+    animation: scan-face 2.8s ease-in-out infinite;
 }
 
 .scrollbar-thin {
@@ -298,6 +345,7 @@
 
 .auth-cta {
     display: inline-flex;
+    min-height: 2.75rem;
     align-items: center;
     justify-content: center;
     gap: 0.5rem;
@@ -523,6 +571,12 @@
     border-color: #2563eb;
     background: #fff;
     box-shadow: 0 0 0 4px rgb(37 99 235 / 0.12);
+}
+
+@media (max-width: 639px) {
+    .auth-input {
+        font-size: 1rem;
+    }
 }
 
 .auth-input--with-icon {

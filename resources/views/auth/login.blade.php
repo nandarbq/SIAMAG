@@ -8,10 +8,10 @@
         x-effect="document.body.classList.toggle('overflow-hidden', loginOpen)"
         data-login-modal-open="{{ $loginModalOpen ? 'true' : 'false' }}"
     >
-        <div class="auth-page relative min-h-screen overflow-hidden" :inert="loginOpen" :aria-hidden="loginOpen ? 'true' : 'false'">
+        <div class="auth-page relative min-h-dvh overflow-hidden" :inert="loginOpen" :aria-hidden="loginOpen ? 'true' : 'false'">
             @include('auth.partials.atmosphere')
 
-            <div class="relative z-10 flex min-h-screen flex-col px-5 pb-6 pt-5 sm:px-8 lg:px-10 xl:px-14">
+            <div class="relative z-10 flex min-h-dvh flex-col px-5 pb-6 pt-5 sm:px-8 lg:px-10 xl:px-14">
                 <header class="mx-auto flex w-full max-w-[88rem] items-center justify-between gap-4 border-b border-white/10 pb-5">
                     <a href="{{ route('login') }}" class="group flex items-center gap-3" aria-label="SIAMAG BMKG Banyuwangi">
                         <span class="auth-logo-tile transition duration-300 group-hover:-translate-y-0.5 group-hover:shadow-xl">

@@ -22,6 +22,7 @@ class LeaveRequest extends Model
         'review_note',
         'reviewed_by',
         'reviewed_at',
+        'recovery_requested_at',
     ];
 
     protected function casts(): array
@@ -32,6 +33,7 @@ class LeaveRequest extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'reviewed_at' => 'datetime',
+            'recovery_requested_at' => 'datetime',
         ];
     }
 
@@ -48,6 +50,11 @@ class LeaveRequest extends Model
     public function isOngoing(): bool
     {
         return $this->end_date === null;
+    }
+
+    public function hasRecoveryRequestToday(): bool
+    {
+        return $this->recovery_requested_at?->isToday() ?? false;
     }
 
     public function periodLabel(): string

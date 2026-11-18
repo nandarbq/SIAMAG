@@ -17,6 +17,7 @@ class Attendance extends Model
         'check_out_at',
         'status',
         'late_minutes',
+        'early_leave_minutes',
         'check_in_photo',
         'check_out_photo',
         'check_in_lat',
@@ -40,6 +41,7 @@ class Attendance extends Model
             'check_out_at' => 'datetime',
             'status' => AttendanceStatus::class,
             'late_minutes' => 'integer',
+            'early_leave_minutes' => 'integer',
             'check_in_lat' => 'float',
             'check_in_lng' => 'float',
             'check_out_lat' => 'float',
@@ -80,6 +82,36 @@ class Attendance extends Model
         $minutes = (int) $this->check_in_at->diffInMinutes($this->check_out_at);
 
         return sprintf('%d jam %02d menit', intdiv($minutes, 60), $minutes % 60);
+    }
+
+    public function getLateDurationAttribute(): ?string
+    {
+        return $this->formatDuration($this->late_minutes);
+    }
+
+    public function getEarlyLeaveDurationAttribute(): ?string
+    {
+        return $this->formatDuration($this->early_leave_minutes);
+    }
+
+    private function formatDuration(?int $minutes): ?string
+    {
+        if (! $minutes) {
+            return null;
+        }
+
+        $hours = intdiv($minutes, 60);
+        $remaining = $minutes % 60;
+
+        if ($hours > 0 && $remaining > 0) {
+            return "{$hours} jam {$remaining} menit";
+        }
+
+        if ($hours > 0) {
+            return "{$hours} jam";
+        }
+
+        return "{$minutes} menit";
     }
 
     public function isLate(): bool

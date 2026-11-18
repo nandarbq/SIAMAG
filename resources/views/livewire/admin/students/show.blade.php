@@ -30,8 +30,8 @@
             </div>
             <div class="relative px-5 pb-5">
                 <div class="-mt-10 flex items-end justify-between gap-4">
-                    <span class="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-gradient-to-br from-brand-500 to-brand-700 text-2xl font-bold text-white shadow-lg">
-                        {{ $student->initials() }}
+                    <span class="inline-flex rounded-full bg-white p-1 shadow-lg ring-1 ring-slate-200/70">
+                        <x-user-avatar :user="$student" size="xl" />
                     </span>
                     @if ($student->is_active)
                         <span class="badge-green mb-1">Akun Aktif</span>
@@ -42,6 +42,12 @@
 
                 <h2 class="mt-4 text-xl font-bold text-slate-900">{{ $student->name }}</h2>
                 <p class="text-sm text-slate-500">{{ $profile?->institution ?? 'Institusi belum diisi' }}</p>
+                @if ($profile?->group)
+                    <a href="{{ route('admin.students', ['tab' => 'groups', 'group' => $profile->group->id]) }}" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700">
+                        <x-icon name="building" class="h-3.5 w-3.5" />
+                        {{ $profile->group->code }} · {{ $profile->group->name }}
+                    </a>
+                @endif
 
                 <div class="mt-5 grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2">
                     <div>
@@ -174,15 +180,12 @@
                 </div>
                 <div class="divide-y divide-slate-100">
                     @forelse ($leaves as $leave)
-                        <div class="flex items-center justify-between gap-3 px-5 py-3.5">
-                            <div>
-                                <p class="text-sm font-semibold text-slate-800">{{ $leave->type->label() }}</p>
-                                <p class="text-xs text-slate-400">
-                                    {{ $leave->periodLabel() }}
-                                    · {{ $leave->isOngoing() ? 'Berlangsung' : $leave->totalDays().' hari' }}
-                                </p>
-                            </div>
-                            <x-leave-status :status="$leave->status" />
+                        <div class="px-5 py-3.5">
+                            <p class="text-sm font-semibold text-slate-800">{{ $leave->type->label() }}</p>
+                            <p class="text-xs text-slate-400">
+                                {{ $leave->periodLabel() }}
+                                · {{ $leave->isOngoing() ? 'Berlangsung' : $leave->totalDays().' hari' }}
+                            </p>
                         </div>
                     @empty
                         <p class="empty-state">Belum ada pengajuan.</p>
@@ -200,8 +203,13 @@
             </div>
             <button
                 type="button"
-                wire:click="delete"
-                wire:confirm="Yakin ingin menghapus {{ $student->name }} beserta seluruh datanya?"
+                @click="$dispatch('app-confirm', {
+                    title: 'Hapus data mahasiswa?',
+                    message: @js('Yakin ingin menghapus '.$student->name.'? Semua absensi, logbook, dan pengajuan terkait akan ikut terhapus permanen.'),
+                    confirmLabel: 'Hapus mahasiswa',
+                    workingLabel: 'Menghapus...',
+                    onConfirm: () => $wire.delete(),
+                })"
                 class="btn-danger"
             >
                 <x-icon name="trash" class="h-4 w-4" />

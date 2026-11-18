@@ -12,7 +12,13 @@
     </div>
 
     <div class="card card-body">
-        <div class="grid gap-3 lg:grid-cols-[170px_180px_1fr_auto]">
+        <div class="grid gap-3 lg:grid-cols-[1fr_170px_180px]">
+            <div class="relative">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                    <x-icon name="search" class="h-4 w-4" />
+                </span>
+                <input wire:model.live.debounce.300ms="search" type="search" placeholder="Cari nama atau NIM..." class="input pl-10">
+            </div>
             <input wire:model.live="date" type="date" class="input">
             <select wire:model.live="status" class="input">
                 <option value="">Semua status</option>
@@ -20,16 +26,6 @@
                     <option value="{{ $statusOption->value }}">{{ $statusOption->label() }}</option>
                 @endforeach
             </select>
-            <div class="relative">
-                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
-                    <x-icon name="search" class="h-4 w-4" />
-                </span>
-                <input wire:model.live.debounce.300ms="search" type="search" placeholder="Cari nama atau NIM..." class="input pl-10">
-            </div>
-            <button type="button" wire:click="resetFilters" class="btn-secondary">
-                <x-icon name="filter" class="h-4 w-4" />
-                Reset
-            </button>
         </div>
 
         <div class="mt-4 flex flex-wrap gap-2">
@@ -54,7 +50,7 @@
                         <th class="table-th">Lokasi</th>
                         <th class="table-th">Foto</th>
                         <th class="table-th">Status</th>
-                        <th class="table-th text-right">Aksi</th>
+                        <th class="table-th text-center">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100">
@@ -75,6 +71,9 @@
                             <td class="table-td">
                                 <p><span class="text-[11px] font-semibold uppercase text-slate-400">In</span> {{ $attendance->check_in_at?->format('H:i') ?? '-' }}</p>
                                 <p><span class="text-[11px] font-semibold uppercase text-slate-400">Out</span> {{ $attendance->check_out_at?->format('H:i') ?? '-' }}</p>
+                                @if ($attendance->early_leave_minutes > 0)
+                                    <p class="text-[11px] font-medium text-amber-600">Pulang lebih awal {{ $attendance->early_leave_duration }}</p>
+                                @endif
                             </td>
                             <td class="table-td">
                                 @if ($attendance->check_in_distance !== null)
@@ -103,7 +102,7 @@
                             </td>
                             <td class="table-td"><x-attendance-status :status="$attendance->status" /></td>
                             <td class="table-td">
-                                <div class="flex justify-end">
+                                <div class="flex justify-center">
                                     <button type="button" wire:click="openCorrect({{ $attendance->id }})" class="btn-ghost btn-sm">
                                         <x-icon name="pencil" class="h-4 w-4" />
                                         Koreksi
@@ -113,10 +112,12 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="empty-state">
-                                <x-icon name="clipboard-check" class="h-10 w-10 text-slate-300" />
-                                <p class="font-semibold text-slate-600">Tidak ada data absensi</p>
-                                <p class="text-xs">Ubah filter tanggal atau status untuk melihat data lain.</p>
+                            <td colspan="7" class="px-5 py-12">
+                                <div class="mx-auto flex max-w-sm flex-col items-center gap-2 text-center">
+                                    <x-icon name="clipboard-check" class="h-10 w-10 text-slate-300" />
+                                    <p class="font-semibold text-slate-600">Tidak ada data absensi</p>
+                                    <p class="text-xs text-slate-500">Ubah filter tanggal atau status untuk melihat data lain.</p>
+                                </div>
                             </td>
                         </tr>
                     @endforelse

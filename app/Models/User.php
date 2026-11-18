@@ -76,6 +76,18 @@ class User extends Authenticatable
         return strtoupper(collect($parts)->take(2)->map(fn ($part) => mb_substr($part, 0, 1))->implode(''));
     }
 
+    public function avatarUrl(): ?string
+    {
+        if (! $this->photo_path) {
+            return null;
+        }
+
+        return route('user.photo', [
+            'user' => $this,
+            'v' => md5($this->photo_path),
+        ]);
+    }
+
     public function dashboardRoute(): string
     {
         return $this->isAdmin() ? 'admin.dashboard' : 'mahasiswa.dashboard';

@@ -3,6 +3,8 @@
 namespace Tests\Feature;
 
 use App\Enums\AttendanceStatus;
+use App\Livewire\Mahasiswa\Attendance\Index as StudentAttendanceIndex;
+use App\Models\Attendance;
 use App\Models\Setting;
 use App\Models\User;
 use App\Services\AttendanceService;
@@ -11,6 +13,7 @@ use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class AttendanceTest extends TestCase
@@ -146,6 +149,31 @@ class AttendanceTest extends TestCase
         ]));
     }
 
+    public function test_selfie_token_is_single_use(): void
+    {
+        $student = $this->makeStudent();
+        $service = app(AttendanceService::class);
+        $token = $service->storeSelfie($student, $this->selfieDataUri());
+
+        $this->assertNotNull($service->resolveSelfiePath($student, $token));
+
+        $this->expectException(ValidationException::class);
+
+        $service->resolveSelfiePath($student, $token);
+    }
+
+    public function test_expired_selfie_token_is_rejected(): void
+    {
+        $student = $this->makeStudent();
+        $service = app(AttendanceService::class);
+        $token = $service->storeSelfie($student, $this->selfieDataUri());
+
+        $this->travelTo(Carbon::parse('2026-11-09 07:11:00', 'Asia/Jakarta'));
+        $this->expectException(ValidationException::class);
+
+        $service->resolveSelfiePath($student, $token);
+    }
+
     public function test_check_out_requires_a_previous_check_in(): void
     {
         $this->expectException(ValidationException::class);
@@ -168,6 +196,70 @@ class AttendanceTest extends TestCase
         $this->assertNotNull($attendance->check_out_at);
         $this->assertNotNull($attendance->check_out_photo);
         Storage::disk('local')->assertExists($attendance->check_out_photo);
+    }
+
+    public function test_checking_out_before_work_end_records_early_leave_minutes(): void
+    {
+        $student = $this->makeStudent();
+        $service = app(AttendanceService::class);
+
+        $service->checkIn($student, $this->payload($student));
+        $this->travelTo(Carbon::parse('2026-11-09 15:00:00', 'Asia/Jakarta'));
+
+        $attendance = $service->checkOut($student, $this->payload($student));
+
+        $this->assertSame(60, $attendance->early_leave_minutes);
+    }
+
+    public function test_checking_out_after_work_end_records_zero_early_leave_minutes(): void
+    {
+        $student = $this->makeStudent();
+        $service = app(AttendanceService::class);
+
+        $service->checkIn($student, $this->payload($student));
+        $this->travelTo(Carbon::parse('2026-11-09 16:05:00', 'Asia/Jakarta'));
+
+        $attendance = $service->checkOut($student, $this->payload($student));
+
+        $this->assertSame(0, $attendance->early_leave_minutes);
+    }
+
+    public function test_attendance_page_shows_early_leave_note(): void
+    {
+        $student = $this->makeStudent();
+
+        Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'status' => AttendanceStatus::Hadir,
+            'check_in_at' => Carbon::parse('2026-11-09 07:30:00'),
+            'check_out_at' => Carbon::parse('2026-11-09 15:00:00'),
+            'early_leave_minutes' => 60,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentAttendanceIndex::class)
+            ->assertSee('Pulang lebih awal 1 jam');
+    }
+
+    public function test_attendance_page_formats_late_and_early_leave_durations(): void
+    {
+        $student = $this->makeStudent();
+
+        Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'status' => AttendanceStatus::Terlambat,
+            'check_in_at' => Carbon::parse('2026-11-09 08:00:00'),
+            'check_out_at' => Carbon::parse('2026-11-09 14:30:00'),
+            'late_minutes' => 90,
+            'early_leave_minutes' => 90,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentAttendanceIndex::class)
+            ->assertSee('1 jam 30 menit')
+            ->assertSee('Pulang lebih awal 1 jam 30 menit');
     }
 
     public function test_check_in_without_gps_data_is_allowed_when_disabled(): void

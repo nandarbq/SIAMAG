@@ -18,62 +18,86 @@
         </div>
     @endif
 
-    <section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        @php
-            $stats = [
-                ['label' => 'Total Pengajuan', 'value' => $total, 'icon' => 'calendar', 'tone' => 'brand'],
-                ['label' => 'Tercatat', 'value' => $counts[App\Enums\LeaveStatus::Approved->value] ?? 0, 'icon' => 'check-circle', 'tone' => 'emerald'],
-                ['label' => 'Sakit Berlangsung', 'value' => $ongoingSick, 'icon' => 'clock', 'tone' => 'amber'],
-                ['label' => 'Ditolak', 'value' => $counts[App\Enums\LeaveStatus::Rejected->value] ?? 0, 'icon' => 'x', 'tone' => 'rose'],
-            ];
-            $tones = [
-                'brand' => 'bg-brand-50 text-brand-600',
-                'amber' => 'bg-amber-50 text-amber-600',
-                'emerald' => 'bg-emerald-50 text-emerald-600',
-                'rose' => 'bg-rose-50 text-rose-600',
-            ];
-        @endphp
-
-        @foreach ($stats as $stat)
-            <div class="card card-body animate-fade-up">
-                <div class="flex items-center justify-between">
-                    <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">{{ $stat['label'] }}</p>
-                    <span class="flex h-9 w-9 items-center justify-center rounded-lg {{ $tones[$stat['tone']] }}">
-                        <x-icon :name="$stat['icon']" class="h-4 w-4" />
-                    </span>
-                </div>
-                <p class="mt-2 text-2xl font-bold text-slate-900">{{ $stat['value'] }}</p>
-            </div>
-        @endforeach
-    </section>
-
     <div class="card">
-        <div class="card-header flex-col items-start gap-3 sm:flex-row sm:items-center">
+        <div class="card-header">
             <div>
                 <h2 class="text-base font-bold text-slate-900">Riwayat Pengajuan</h2>
-                <p class="mt-0.5 text-xs text-slate-500">{{ $total }} pengajuan tercatat</p>
-            </div>
-            <div class="flex w-full items-center gap-2 sm:w-auto">
-                <select wire:model.live="status" class="input sm:w-44">
-                    <option value="">Semua status</option>
-                    @foreach ($statuses as $statusOption)
-                        <option value="{{ $statusOption->value }}">{{ $statusOption->label() }}</option>
-                    @endforeach
-                </select>
-                @if ($status !== '')
-                    <button type="button" wire:click="resetFilters" class="btn-ghost btn-sm">Reset</button>
-                @endif
+                <p class="mt-0.5 text-xs text-slate-500">{{ $leaves->total() }} pengajuan tercatat</p>
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="divide-y divide-slate-100 sm:hidden">
+            @forelse ($leaves as $leave)
+                <div class="space-y-3 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800">{{ $leave->start_date?->translatedFormat('d M Y') }}</p>
+                            <p class="mt-0.5 text-xs text-slate-400">
+                                @if ($leave->isOngoing())
+                                    Berlangsung · {{ $leave->totalDays() }} hari
+                                @else
+                                    s.d. {{ $leave->end_date?->translatedFormat('d M Y') }} · {{ $leave->totalDays() }} hari
+                                @endif
+                            </p>
+                        </div>
+                        <span class="badge {{ $leave->type === App\Enums\LeaveType::Sakit ? 'badge-blue' : 'badge-amber' }}">
+                            {{ $leave->type->label() }}
+                        </span>
+                    </div>
+
+                    <p class="text-sm leading-relaxed text-slate-600">{{ $leave->reason }}</p>
+
+                    @php
+                        $canCancel = ($leave->type === App\Enums\LeaveType::Izin && $leave->start_date->greaterThanOrEqualTo(today()))
+                            || ($leave->type === App\Enums\LeaveType::Sakit && $leave->isOngoing());
+                    @endphp
+
+                    @if ($leave->attachment_path || $canCancel)
+                        <div class="flex flex-wrap gap-2">
+                            @if ($leave->attachment_path)
+                                <a href="{{ route('leave.attachment', $leave) }}" target="_blank" class="btn-secondary btn-sm">
+                                    <x-icon name="document" class="h-4 w-4" />
+                                    Lampiran
+                                </a>
+                            @endif
+
+                            @if ($canCancel)
+                                <button
+                                    type="button"
+                                    @click="$dispatch('app-confirm', {
+                                        title: 'Batalkan pengajuan?',
+                                        message: 'Pengajuan ini akan dibatalkan. Absensi terkait juga akan dihapus.',
+                                        confirmLabel: 'Batalkan pengajuan',
+                                        workingLabel: 'Membatalkan...',
+                                        onConfirm: () => $wire.delete({{ $leave->id }}),
+                                    })"
+                                    class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50"
+                                >
+                                    <x-icon name="trash" class="h-4 w-4" />
+                                    Batalkan
+                                </button>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            @empty
+                <div class="px-4 py-12 text-center">
+                    <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                        <x-icon name="calendar" class="h-6 w-6" />
+                    </span>
+                    <p class="mt-3 text-sm font-semibold text-slate-700">Belum ada pengajuan</p>
+                    <p class="mt-1 text-xs text-slate-500">Pengajuan izin atau sakit akan tampil di sini.</p>
+                </div>
+            @endforelse
+        </div>
+
+        <div class="hidden overflow-x-auto sm:block">
             <table class="min-w-full text-left text-sm">
                 <thead>
                     <tr class="border-b border-slate-100 bg-slate-50/80">
                         <th class="table-th">Tanggal</th>
                         <th class="table-th">Jenis</th>
                         <th class="table-th">Alasan</th>
-                        <th class="table-th">Status</th>
                         <th class="table-th text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -98,13 +122,7 @@
                             </td>
                             <td class="table-td">
                                 <p class="max-w-md text-sm leading-relaxed text-slate-600">{{ $leave->reason }}</p>
-                                @if ($leave->status === App\Enums\LeaveStatus::Rejected && $leave->review_note)
-                                    <p class="mt-2 rounded-lg bg-rose-50 px-2.5 py-1.5 text-xs text-rose-700">
-                                        <span class="font-semibold">Catatan admin:</span> {{ $leave->review_note }}
-                                    </p>
-                                @endif
                             </td>
-                            <td class="table-td"><x-leave-status :status="$leave->status" /></td>
                             <td class="table-td">
                                 <div class="flex items-center justify-end gap-1.5">
                                     @if ($leave->attachment_path)
@@ -113,14 +131,23 @@
                                         </a>
                                     @endif
                                     @php
-                                        $canCancel = $leave->status === App\Enums\LeaveStatus::Pending
-                                            || ($leave->status === App\Enums\LeaveStatus::Approved
-                                                && (($leave->type === App\Enums\LeaveType::Izin && $leave->start_date->greaterThanOrEqualTo(today()))
-                                                    || ($leave->type === App\Enums\LeaveType::Sakit && $leave->isOngoing())));
+                                        $canCancel = ($leave->type === App\Enums\LeaveType::Izin && $leave->start_date->greaterThanOrEqualTo(today()))
+                                            || ($leave->type === App\Enums\LeaveType::Sakit && $leave->isOngoing());
                                     @endphp
 
                                     @if ($canCancel)
-                                        <button type="button" wire:click="delete({{ $leave->id }})" wire:confirm="Batalkan pengajuan ini? Absensi terkait juga akan dihapus." class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50" title="Batalkan pengajuan">
+                                        <button
+                                            type="button"
+                                            @click="$dispatch('app-confirm', {
+                                                title: 'Batalkan pengajuan?',
+                                                message: 'Pengajuan ini akan dibatalkan. Absensi terkait juga akan dihapus.',
+                                                confirmLabel: 'Batalkan pengajuan',
+                                                workingLabel: 'Membatalkan...',
+                                                onConfirm: () => $wire.delete({{ $leave->id }}),
+                                            })"
+                                            class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50"
+                                            title="Batalkan pengajuan"
+                                        >
                                             <x-icon name="trash" class="h-4 w-4" />
                                         </button>
                                     @endif
@@ -129,7 +156,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-5 py-16 text-center">
+                            <td colspan="4" class="px-5 py-16 text-center">
                                 <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
                                     <x-icon name="calendar" class="h-6 w-6" />
                                 </span>
@@ -143,15 +170,15 @@
         </div>
 
         @if ($leaves->hasPages())
-            <div class="border-t border-slate-100 px-5 py-4">{{ $leaves->links() }}</div>
+            <div class="overflow-x-auto border-t border-slate-100 px-5 py-4">{{ $leaves->links() }}</div>
         @endif
     </div>
 
     @if ($showModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 z-50 overflow-y-auto overscroll-contain" role="dialog" aria-modal="true">
             <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" wire:click="closeModal"></div>
 
-            <div class="relative flex min-h-full items-center justify-center p-4">
+            <div class="relative flex min-h-full items-start justify-center p-4 py-6 sm:items-center sm:p-4">
                 <div class="w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/5">
                     <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
                         <div>
@@ -169,7 +196,7 @@
                             <div class="grid grid-cols-2 gap-2">
                                 @foreach ($types as $typeOption)
                                     <label class="cursor-pointer">
-                                        <input type="radio" wire:model="type" value="{{ $typeOption->value }}" class="peer sr-only">
+                                        <input type="radio" wire:model.live="type" value="{{ $typeOption->value }}" class="peer sr-only">
                                         <span class="flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2.5 text-sm font-semibold text-slate-600 transition peer-checked:border-brand-500 peer-checked:bg-brand-50 peer-checked:text-brand-700">
                                             <x-icon :name="$typeOption === App\Enums\LeaveType::Sakit ? 'alert' : 'calendar'" class="h-4 w-4" />
                                             {{ $typeOption->label() }}
@@ -221,9 +248,9 @@
                             @error('attachment') <p class="form-error">{{ $message }}</p> @enderror
                         </div>
 
-                        <div class="flex justify-end gap-2 border-t border-slate-100 pt-5">
-                            <button type="button" wire:click="closeModal" class="btn-ghost">Batal</button>
-                            <button type="submit" wire:loading.attr="disabled" wire:target="submit" class="btn-primary">
+                        <div class="flex flex-col-reverse gap-2 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                            <button type="button" wire:click="closeModal" class="btn-ghost w-full sm:w-auto">Batal</button>
+                            <button type="submit" wire:loading.attr="disabled" wire:target="submit" class="btn-primary w-full sm:w-auto">
                                 <x-icon name="arrow-up-circle" class="h-4 w-4" />
                                 <span wire:loading.remove wire:target="submit">Catat Pengajuan</span>
                                 <span wire:loading wire:target="submit">Menyimpan...</span>

@@ -6,11 +6,12 @@ use App\Enums\AttendanceStatus;
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
 use App\Models\Attendance;
-use App\Models\Holiday;
 use App\Models\LeaveRequest;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -21,13 +22,21 @@ use Intervention\Image\ImageManager;
 
 class AttendanceService
 {
-    public function __construct(private readonly GeofenceService $geofence) {}
+    private const SELFIE_TOKEN_TTL_MINUTES = 10;
+
+    public function __construct(
+        private readonly GeofenceService $geofence,
+        private readonly WorkdayService $workdays,
+    ) {}
 
     public function checkIn(User $user, array $data): Attendance
     {
         $date = now()->startOfDay();
 
         $this->ensureCanAttend($user, $date);
+
+        $recoveryLeave = $this->ongoingSickLeaveFor($user);
+        $recoveryRequested = $recoveryLeave?->hasRecoveryRequestToday() ?? false;
 
         $attendance = Attendance::query()
             ->where('user_id', $user->id)
@@ -40,7 +49,7 @@ class AttendanceService
             ]);
         }
 
-        if ($attendance && in_array($attendance->status, [AttendanceStatus::Izin, AttendanceStatus::Sakit, AttendanceStatus::Libur], true)) {
+        if (! $recoveryRequested && $attendance && in_array($attendance->status, [AttendanceStatus::Izin, AttendanceStatus::Sakit, AttendanceStatus::Libur], true)) {
             throw ValidationException::withMessages([
                 'attendance' => 'Anda tercatat '.$attendance->status->label().' pada hari ini sehingga tidak perlu absen.',
             ]);
@@ -61,20 +70,36 @@ class AttendanceService
 
         $photoPath = $this->resolveSelfiePath($user, $data['photo_token'] ?? null);
 
-        return Attendance::query()->updateOrCreate(
-            ['user_id' => $user->id, 'date' => $date->toDateString()],
-            [
-                'check_in_at' => $now,
-                'status' => $status,
-                'late_minutes' => $lateMinutes,
-                'check_in_photo' => $photoPath,
-                'check_in_lat' => $this->valueOrNull($data, 'lat'),
-                'check_in_lng' => $this->valueOrNull($data, 'lng'),
-                'check_in_distance' => $distance,
-                'check_in_accuracy' => $accuracy,
-                'check_in_ip' => request()->ip(),
-            ]
-        );
+        if ($recoveryRequested && ! $this->completeSickRecovery($recoveryLeave)) {
+            throw ValidationException::withMessages([
+                'attendance' => 'Masa sakit tidak dapat ditutup. Hubungi admin.',
+            ]);
+        }
+
+        try {
+            return Attendance::query()->updateOrCreate(
+                ['user_id' => $user->id, 'date' => $date->toDateString()],
+                [
+                    'check_in_at' => $now,
+                    'status' => $status,
+                    'late_minutes' => $lateMinutes,
+                    'check_in_photo' => $photoPath,
+                    'check_in_lat' => $this->valueOrNull($data, 'lat'),
+                    'check_in_lng' => $this->valueOrNull($data, 'lng'),
+                    'check_in_distance' => $distance,
+                    'check_in_accuracy' => $accuracy,
+                    'check_in_ip' => request()->ip(),
+                ]
+            );
+        } catch (UniqueConstraintViolationException) {
+            if ($photoPath) {
+                Storage::disk('local')->delete($photoPath);
+            }
+
+            throw ValidationException::withMessages([
+                'attendance' => 'Anda sudah melakukan absen masuk hari ini.',
+            ]);
+        }
     }
 
     public function checkOut(User $user, array $data): Attendance
@@ -101,9 +126,13 @@ class AttendanceService
         [$distance, $accuracy] = $this->validateLocation($data);
 
         $photoPath = $this->resolveSelfiePath($user, $data['photo_token'] ?? null);
+        $now = now();
+        $workEnd = Carbon::parse($date->toDateString().' '.Setting::get('work_end', '16:00'));
+        $earlyLeaveMinutes = $now->lessThan($workEnd) ? (int) $now->diffInMinutes($workEnd) : 0;
 
         $attendance->update([
-            'check_out_at' => now(),
+            'check_out_at' => $now,
+            'early_leave_minutes' => $earlyLeaveMinutes,
             'check_out_photo' => $photoPath,
             'check_out_lat' => $this->valueOrNull($data, 'lat'),
             'check_out_lng' => $this->valueOrNull($data, 'lng'),
@@ -136,12 +165,23 @@ class AttendanceService
                 : 0;
         }
 
+        $earlyLeaveMinutes = 0;
+
+        if ($checkOutAt) {
+            $workEnd = Carbon::parse($checkOutAt->toDateString().' '.Setting::get('work_end', '16:00'));
+
+            $earlyLeaveMinutes = $checkOutAt->lessThan($workEnd)
+                ? (int) $checkOutAt->diffInMinutes($workEnd)
+                : 0;
+        }
+
         $attendance->update([
             'status' => $data['status'],
             'note' => $data['note'] ?? null,
             'check_in_at' => $checkInAt,
             'check_out_at' => $checkOutAt,
             'late_minutes' => $lateMinutes,
+            'early_leave_minutes' => $earlyLeaveMinutes,
         ]);
 
         return $attendance->refresh();
@@ -160,14 +200,10 @@ class AttendanceService
             return;
         }
 
-        $holidayDates = Holiday::query()
-            ->whereBetween('date', [$leave->start_date, $endDate])
-            ->pluck('date')
-            ->map(fn ($date) => $date->toDateString())
-            ->all();
+        $holidayDates = $this->workdays->holidayDatesBetween($leave->start_date, $endDate);
 
         for ($date = $leave->start_date->copy(); $date->lessThanOrEqualTo($endDate); $date->addDay()) {
-            if ($date->isWeekend() || in_array($date->toDateString(), $holidayDates, true)) {
+            if (! $this->workdays->isWorkday($date, $holidayDates)) {
                 continue;
             }
 
@@ -210,11 +246,22 @@ class AttendanceService
             ->first();
     }
 
-    public function confirmSickRecovery(User $user): bool
+    public function requestSickRecovery(User $user): bool
     {
         $leave = $this->ongoingSickLeaveFor($user);
 
         if (! $leave) {
+            return false;
+        }
+
+        $leave->update(['recovery_requested_at' => now()]);
+
+        return true;
+    }
+
+    public function completeSickRecovery(LeaveRequest $leave): bool
+    {
+        if ($leave->type !== LeaveType::Sakit || ! $leave->isOngoing()) {
             return false;
         }
 
@@ -233,6 +280,13 @@ class AttendanceService
         $leave->delete();
 
         return true;
+    }
+
+    public function confirmSickRecovery(User $user): bool
+    {
+        $leave = $this->ongoingSickLeaveFor($user);
+
+        return $leave ? $this->completeSickRecovery($leave) : false;
     }
 
     public function closeSickLeave(LeaveRequest $leave, Carbon $returnDate): bool
@@ -302,11 +356,7 @@ class AttendanceService
 
     public function isWorkday(Carbon $date): bool
     {
-        if ($date->isWeekend()) {
-            return false;
-        }
-
-        return ! Holiday::query()->whereDate('date', $date->toDateString())->exists();
+        return $this->workdays->isWorkday($date);
     }
 
     private function ensureCanAttend(User $user, Carbon $date): void
@@ -342,9 +392,13 @@ class AttendanceService
             ->first();
 
         if ($leave) {
-            throw ValidationException::withMessages([
-                'attendance' => 'Anda tercatat '.$leave->type->label().' pada hari ini sehingga tidak perlu absen.',
-            ]);
+            $canRecover = $leave->type === LeaveType::Sakit && $leave->hasRecoveryRequestToday();
+
+            if (! $canRecover) {
+                throw ValidationException::withMessages([
+                    'attendance' => 'Anda tercatat '.$leave->type->label().' pada hari ini sehingga tidak perlu absen.',
+                ]);
+            }
         }
     }
 
@@ -417,6 +471,8 @@ class AttendanceService
         return Crypt::encryptString(json_encode([
             'user_id' => $user->id,
             'path' => $path,
+            'date' => now()->toDateString(),
+            'expires_at' => now()->addMinutes(self::SELFIE_TOKEN_TTL_MINUTES)->timestamp,
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -489,6 +545,14 @@ class AttendanceService
             return null;
         }
 
+        $tokenKey = 'attendance-selfie-token:'.hash('sha256', $token);
+
+        if (Cache::has($tokenKey)) {
+            throw ValidationException::withMessages([
+                'photo' => 'Sesi foto selfie sudah digunakan. Ambil ulang foto.',
+            ]);
+        }
+
         try {
             $payload = json_decode(Crypt::decryptString($token), true, 512, JSON_THROW_ON_ERROR);
         } catch (\Throwable) {
@@ -499,8 +563,16 @@ class AttendanceService
 
         $userId = (int) ($payload['user_id'] ?? 0);
         $path = $payload['path'] ?? null;
+        $date = $payload['date'] ?? null;
+        $expiresAt = (int) ($payload['expires_at'] ?? 0);
 
-        if ($userId !== $user->id || ! is_string($path) || ! str_starts_with($path, 'attendance/'.$user->id.'/')) {
+        if (
+            $userId !== $user->id
+            || ! is_string($path)
+            || ! str_starts_with($path, 'attendance/'.$user->id.'/')
+            || $date !== now()->toDateString()
+            || $expiresAt < now()->timestamp
+        ) {
             throw ValidationException::withMessages([
                 'photo' => 'Sesi foto selfie tidak valid. Ambil ulang foto.',
             ]);
@@ -511,6 +583,8 @@ class AttendanceService
                 'photo' => 'Foto selfie tidak ditemukan. Ambil ulang foto.',
             ]);
         }
+
+        Cache::put($tokenKey, true, now()->addMinutes(self::SELFIE_TOKEN_TTL_MINUTES));
 
         return $path;
     }

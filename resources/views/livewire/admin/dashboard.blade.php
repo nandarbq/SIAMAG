@@ -212,7 +212,7 @@
                             </tr>
                         @empty
                             <tr>
-                                <td colspan="4" class="empty-state">Belum ada data absensi.</td>
+                                <td colspan="4" class="px-5 py-12 text-center text-sm text-slate-500">Belum ada data absensi.</td>
                             </tr>
                         @endforelse
                     </tbody>
