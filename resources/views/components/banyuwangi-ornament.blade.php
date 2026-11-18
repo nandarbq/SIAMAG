@@ -14,6 +14,6 @@
 @elseif ($variant === 'gajah-oling')
     <div
         {{ $attributes->merge(['class' => $class, 'aria-hidden' => 'true']) }}
-        style="background-image: url('{{ asset('images/culture/gajah-oling-tile.png') }}'); background-repeat: repeat; background-size: 104px 104px; background-position: center;"
+        style="background-image: url('{{ asset('images/culture/gajah-oling-halfdrop-tile.png') }}'); background-repeat: repeat; background-size: 192px 192px; background-position: center;"
     ></div>
 @endif
