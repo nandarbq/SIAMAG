@@ -52,6 +52,8 @@ class StudentDashboardTest extends TestCase
             ->assertSee('Universitas Jember')
             ->assertSee('Pengumuman terbaru')
             ->assertSee('Jadwal Apel Senin')
+            ->assertSee('Fokus hari ini')
+            ->assertSee('Absen masuk belum tercatat.')
             ->assertDontSee('Pengumuman Nonaktif')
             ->assertDontSee('progres magang Anda di Universitas Jember');
     }

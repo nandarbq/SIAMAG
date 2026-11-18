@@ -105,45 +105,49 @@
                                 @endforeach
                             </div>
                         @endif
-                    @else
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-2">
-                                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-accent-300 ring-1 ring-inset ring-white/15">
-                                    <x-icon name="check-circle" class="h-5 w-5" />
-                                </span>
-                                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-200">Fokus hari ini</p>
-                            </div>
-                            <span class="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-300 ring-1 ring-inset ring-white/15">
-                                {{ now()->translatedFormat('d M') }}
+                    @endif
+
+                    @if ($announcements->isNotEmpty())
+                        <div class="my-5 border-t border-white/10"></div>
+                    @endif
+
+                    <div class="flex items-center justify-between gap-3">
+                        <div class="flex items-center gap-2">
+                            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-accent-300 ring-1 ring-inset ring-white/15">
+                                <x-icon name="check-circle" class="h-5 w-5" />
                             </span>
+                            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-200">Fokus hari ini</p>
                         </div>
+                        <span class="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-300 ring-1 ring-inset ring-white/15">
+                            {{ now()->translatedFormat('d M') }}
+                        </span>
+                    </div>
 
-                        <div class="mt-4">
-                            <h2 class="text-lg font-bold tracking-tight text-white sm:text-xl">{{ $todayFocus['title'] }}</h2>
-                            <p class="mt-1.5 text-sm leading-relaxed text-slate-300">{{ $todayFocus['body'] }}</p>
-                        </div>
+                    <div class="mt-4">
+                        <h2 class="text-lg font-bold tracking-tight text-white sm:text-xl">{{ $todayFocus['title'] }}</h2>
+                        <p class="mt-1.5 text-sm leading-relaxed text-slate-300">{{ $todayFocus['body'] }}</p>
+                    </div>
 
-                        <div class="mt-5 space-y-2.5">
-                            @foreach ($todayFocus['items'] as $item)
-                                <div class="flex items-center gap-3 rounded-xl bg-white/5 p-3 ring-1 ring-inset ring-white/10">
-                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset {{ $item['tone'] }}">
-                                        <x-icon :name="$item['icon']" class="h-4 w-4" />
-                                    </span>
-                                    <div class="min-w-0 flex-1">
-                                        <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">{{ $item['label'] }}</p>
-                                        <p class="mt-0.5 truncate text-sm font-semibold text-white">{{ $item['value'] }}</p>
-                                    </div>
-                                    <p class="max-w-[7rem] text-right text-[11px] text-slate-400">{{ $item['hint'] }}</p>
+                    <div class="mt-5 space-y-2.5">
+                        @foreach ($todayFocus['items'] as $item)
+                            <div class="flex items-center gap-3 rounded-xl bg-white/5 p-3 ring-1 ring-inset ring-white/10">
+                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset {{ $item['tone'] }}">
+                                    <x-icon :name="$item['icon']" class="h-4 w-4" />
+                                </span>
+                                <div class="min-w-0 flex-1">
+                                    <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">{{ $item['label'] }}</p>
+                                    <p class="mt-0.5 truncate text-sm font-semibold text-white">{{ $item['value'] }}</p>
                                 </div>
-                            @endforeach
-                        </div>
+                                <p class="max-w-[7rem] text-right text-[11px] text-slate-400">{{ $item['hint'] }}</p>
+                            </div>
+                        @endforeach
+                    </div>
 
-                        @if ($todayFocus['cta_label'] && $todayFocus['cta_url'])
-                            <a href="{{ $todayFocus['cta_url'] }}" class="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
-                                {{ $todayFocus['cta_label'] }}
-                                <x-icon name="arrow-right" class="h-4 w-4" />
-                            </a>
-                        @endif
+                    @if ($todayFocus['cta_label'] && $todayFocus['cta_url'])
+                        <a href="{{ $todayFocus['cta_url'] }}" class="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
+                            {{ $todayFocus['cta_label'] }}
+                            <x-icon name="arrow-right" class="h-4 w-4" />
+                        </a>
                     @endif
                 </div>
             </div>
