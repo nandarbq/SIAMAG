@@ -53,6 +53,16 @@ class StudentDashboardTest extends TestCase
             ->assertDontSee('progres magang Anda di Universitas Jember');
     }
 
+    public function test_dashboard_hides_announcement_masthead_without_announcements(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentDashboard::class)
+            ->assertDontSee('Pusat Informasi')
+            ->assertDontSee('Pengumuman terbaru');
+    }
+
     public function test_dashboard_builds_weekly_activity_statuses(): void
     {
         $student = $this->makeStudent();
