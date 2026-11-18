@@ -190,6 +190,29 @@ class AuthTest extends TestCase
         $this->assertGuest();
     }
 
+    public function test_login_throttle_is_scoped_to_email_and_ip(): void
+    {
+        User::factory()->create(['email' => 'first@example.com']);
+        User::factory()->create(['email' => 'second@example.com']);
+
+        for ($attempt = 0; $attempt < 5; $attempt++) {
+            $this->from(route('login'))->post(route('login.store'), [
+                'email' => 'first@example.com',
+                'password' => 'wrong-password',
+            ])->assertRedirect(route('login'));
+        }
+
+        $this->from(route('login'))->post(route('login.store'), [
+            'email' => 'first@example.com',
+            'password' => 'wrong-password',
+        ])->assertStatus(429);
+
+        $this->from(route('login'))->post(route('login.store'), [
+            'email' => 'second@example.com',
+            'password' => 'wrong-password',
+        ])->assertRedirect(route('login'));
+    }
+
     public function test_inactive_accounts_cannot_login(): void
     {
         $user = User::factory()->inactive()->create([
