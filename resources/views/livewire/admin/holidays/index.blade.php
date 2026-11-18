@@ -5,11 +5,30 @@
             <h1 class="page-title mt-1">Hari Libur</h1>
             <p class="page-subtitle">Atur hari libur nasional dan cuti bersama untuk perhitungan absensi.</p>
         </div>
-        <button type="button" wire:click="openCreate" class="btn-primary">
-            <x-icon name="plus" class="h-4 w-4" />
-            Tambah Hari Libur
-        </button>
+        <div class="flex flex-wrap items-center gap-2">
+            <button
+                type="button"
+                wire:click="sync"
+                wire:loading.attr="disabled"
+                wire:target="sync"
+                class="btn-secondary"
+            >
+                <span wire:loading.class="animate-spin" wire:target="sync">
+                    <x-icon name="refresh" class="h-4 w-4" />
+                </span>
+                <span wire:loading.remove wire:target="sync">Sinkronkan</span>
+                <span wire:loading wire:target="sync">Menyinkronkan...</span>
+            </button>
+            <button type="button" wire:click="openCreate" class="btn-primary">
+                <x-icon name="plus" class="h-4 w-4" />
+                Tambah Hari Libur
+            </button>
+        </div>
     </div>
+
+    @error('year')
+        <p class="text-xs font-medium text-rose-600">{{ $message }}</p>
+    @enderror
 
     <div class="card card-body">
         <div class="grid gap-3 sm:grid-cols-[140px_1fr]">
@@ -34,7 +53,14 @@
                         </div>
                         <div>
                             <p class="font-semibold text-slate-900">{{ $holiday->name }}</p>
-                            <p class="text-xs text-slate-500">{{ $holiday->date->translatedFormat('l, d F Y') }}</p>
+                            <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                                <p class="text-xs text-slate-500">{{ $holiday->date->translatedFormat('l, d F Y') }}</p>
+                                @if ($holiday->source === \App\Models\Holiday::SOURCE_AUTO)
+                                    <span class="badge-green badge-compact">Otomatis</span>
+                                @else
+                                    <span class="badge-slate badge-compact">Manual</span>
+                                @endif
+                            </div>
                         </div>
                     </div>
                     <div class="flex gap-1">

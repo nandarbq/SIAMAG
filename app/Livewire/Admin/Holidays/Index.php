@@ -3,9 +3,12 @@
 namespace App\Livewire\Admin\Holidays;
 
 use App\Models\Holiday;
+use App\Services\HolidaySyncService;
+use Illuminate\Support\Facades\Log;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Throwable;
 
 #[Layout('layouts.app')]
 #[Title('Hari Libur')]
@@ -72,6 +75,8 @@ class Index extends Component
             'name.required' => 'Nama hari libur wajib diisi.',
         ]);
 
+        $validated['source'] = Holiday::SOURCE_MANUAL;
+
         if ($this->editingId) {
             Holiday::query()->findOrFail($this->editingId)->update($validated);
         } else {
@@ -80,6 +85,40 @@ class Index extends Component
 
         $this->closeForm();
         session()->flash('success', 'Hari libur berhasil disimpan.');
+    }
+
+    public function sync(HolidaySyncService $service): void
+    {
+        $this->resetValidation('year');
+
+        $validated = $this->validate([
+            'year' => ['required', 'integer', 'between:2020,2100'],
+        ], [
+            'year.required' => 'Tahun wajib diisi.',
+            'year.integer' => 'Tahun harus berupa angka.',
+            'year.between' => 'Tahun harus berada di antara 2020 dan 2100.',
+        ]);
+
+        try {
+            $result = $service->syncYear((int) $validated['year']);
+        } catch (Throwable $exception) {
+            Log::error('Holiday sync failed from admin panel.', [
+                'year' => $validated['year'],
+                'message' => $exception->getMessage(),
+            ]);
+
+            session()->flash('error', 'Gagal menyinkronkan hari libur. Silakan coba lagi.');
+
+            return;
+        }
+
+        session()->flash('success', sprintf(
+            'Sinkronisasi %d selesai: %d ditambahkan, %d diperbarui, %d dilewati.',
+            $result['year'],
+            $result['created'],
+            $result['updated'],
+            $result['skipped'],
+        ));
     }
 
     public function delete(int $holidayId): void
