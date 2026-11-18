@@ -1,78 +1,84 @@
 <div class="space-y-6">
-    <section class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-        <div class="max-w-3xl">
-            <div class="flex items-center gap-2">
-                <span class="h-1.5 w-1.5 rounded-full bg-accent-500"></span>
-                <p class="page-eyebrow">Dashboard Magang</p>
+    <section x-data="{ open: false }" class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-card">
+        <div class="grid lg:grid-cols-[minmax(0,1fr)_400px]">
+            <div class="relative overflow-hidden bg-linear-to-br from-white via-white to-brand-50/70 p-6 sm:p-8">
+                <div class="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full border border-brand-100/80"></div>
+                <div class="pointer-events-none absolute -right-6 top-20 h-28 w-28 rounded-full border border-brand-100/60"></div>
+
+                <div class="relative">
+                    <p class="page-eyebrow">Portal Mahasiswa Magang</p>
+                    <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+                        {{ $greeting }}, {{ auth()->user()->name }}.
+                    </h1>
+                    <p class="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
+                        Jangan lupa absen masuk, isi logbook harian, dan pantau progres magang Anda di
+                        <span class="font-semibold text-slate-800">{{ $officeName }}</span>.
+                    </p>
+
+                    <div class="mt-4 flex flex-wrap items-center gap-2">
+                        <span class="badge-slate">
+                            <x-icon name="building" class="h-3.5 w-3.5" />
+                            {{ $officeName }}
+                        </span>
+                        @if ($profile?->institution)
+                            <span class="badge-slate">{{ $profile->institution }}</span>
+                        @endif
+                        <span class="badge-slate sm:hidden">
+                            <x-icon name="calendar" class="h-3.5 w-3.5" />
+                            {{ now()->translatedFormat('l, d F Y') }}
+                        </span>
+                    </div>
+
+                    <div class="mt-5 flex flex-wrap items-center gap-2">
+                        @if (! $isWorkday)
+                            <span class="badge-blue">Libur</span>
+                        @elseif ($today)
+                            <x-attendance-status :status="$today->status" />
+                        @else
+                            <span class="badge-amber">Belum absen</span>
+                        @endif
+                        <a href="{{ route('mahasiswa.attendance') }}" class="btn-primary">
+                            <x-icon name="camera" class="h-4 w-4" />
+                            {{ $today?->check_in_at ? 'Buka Absensi' : 'Absen Sekarang' }}
+                        </a>
+                        <a href="{{ route('mahasiswa.logbooks') }}" class="btn-secondary">Buka Logbook</a>
+                    </div>
+                </div>
             </div>
-            <h1 class="page-title mt-2">{{ $greeting }}, {{ auth()->user()->name }}</h1>
-            <p class="page-subtitle flex flex-wrap items-center gap-x-1.5 gap-y-1">
-                <x-icon name="building" class="h-4 w-4 text-slate-400" />
-                <span>Magang di <span class="font-semibold text-slate-700">{{ $officeName }}</span></span>
-                @if ($profile?->institution)
-                    <span class="text-slate-300">·</span>
-                    <span>{{ $profile->institution }}</span>
-                @endif
-            </p>
-        </div>
 
-        <div class="flex flex-wrap items-center gap-2">
-            <span class="badge-slate sm:hidden">
-                <x-icon name="calendar" class="h-3.5 w-3.5" />
-                {{ now()->translatedFormat('l, d F Y') }}
-            </span>
-            @if (! $isWorkday)
-                <span class="badge-blue">Libur</span>
-            @elseif ($today)
-                <x-attendance-status :status="$today->status" />
-            @else
-                <span class="badge-amber">Belum absen</span>
-            @endif
-            <a href="{{ route('mahasiswa.attendance') }}" class="btn-primary">
-                <x-icon name="camera" class="h-4 w-4" />
-                {{ $today?->check_in_at ? 'Buka Absensi' : 'Absen Sekarang' }}
-            </a>
-        </div>
-    </section>
+            <div class="relative overflow-hidden bg-brand-950 p-6 text-white sm:p-7">
+                <div class="pointer-events-none absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;"></div>
 
-    @if ($announcements->isNotEmpty())
-        @php
-            $latestAnnouncement = $announcements->first();
-            $isLatestNew = $latestAnnouncement->published_at?->gte(now()->subDays(7)) ?? false;
-        @endphp
-        <section x-data="{ open: false }" class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-card">
-            <div class="grid lg:grid-cols-[230px_minmax(0,1fr)]">
-                <div class="relative overflow-hidden bg-linear-to-br from-brand-700 via-brand-800 to-brand-950 p-5 text-white sm:p-6">
-                    <div class="pointer-events-none absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;"></div>
-                    <div class="relative flex h-full flex-col justify-between gap-4 sm:gap-6">
+                <div class="relative">
+                    @if ($announcements->isNotEmpty())
+                        @php
+                            $latestAnnouncement = $announcements->first();
+                            $isLatestNew = $latestAnnouncement->published_at?->gte(now()->subDays(7)) ?? false;
+                        @endphp
+
                         <div class="flex items-center justify-between gap-3">
-                            <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-accent-300 ring-1 ring-inset ring-white/15">
-                                <x-icon name="megaphone" class="h-5 w-5" />
-                            </span>
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-accent-300 ring-1 ring-inset ring-white/15">
+                                    <x-icon name="megaphone" class="h-5 w-5" />
+                                </span>
+                                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-200">Pengumuman terbaru</p>
+                            </div>
                             @if ($announcements->count() > 1)
                                 <span class="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white ring-1 ring-inset ring-white/15">
                                     {{ $announcements->count() }} info
                                 </span>
                             @endif
                         </div>
-                        <div>
-                            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-200">Pusat Informasi</p>
-                            <p class="mt-1 text-2xl font-bold leading-tight">Pengumuman terbaru</p>
-                        </div>
-                    </div>
-                </div>
 
-                <div class="p-5 sm:p-6">
-                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <div class="min-w-0">
+                        <div class="mt-4">
                             <div class="flex flex-wrap items-center gap-2">
                                 @if ($isLatestNew)
                                     <span class="badge-amber badge-compact">Terbaru</span>
                                 @endif
                                 <p class="text-[11px] font-medium text-slate-400">{{ $latestAnnouncement->published_at?->translatedFormat('d F Y') }}</p>
                             </div>
-                            <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">{{ $latestAnnouncement->title }}</h2>
-                            <p class="mt-1.5 line-clamp-3 max-w-3xl text-sm leading-relaxed text-slate-600">{{ $latestAnnouncement->body }}</p>
+                            <h2 class="mt-2 text-lg font-bold tracking-tight text-white sm:text-xl">{{ $latestAnnouncement->title }}</h2>
+                            <p class="mt-1.5 line-clamp-3 text-sm leading-relaxed text-slate-300">{{ $latestAnnouncement->body }}</p>
                         </div>
 
                         @if ($announcements->count() > 1)
@@ -80,32 +86,69 @@
                                 type="button"
                                 @click="open = !open"
                                 :aria-expanded="open"
-                                class="btn-secondary btn-sm shrink-0 self-start"
+                                class="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white ring-1 ring-inset ring-white/15 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                             >
                                 <span x-text="open ? 'Tutup' : 'Lihat semua'"></span>
-                                <span class="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">{{ $announcements->count() }}</span>
+                                <span class="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-slate-300">{{ $announcements->count() }}</span>
                                 <x-icon name="chevron-down" class="h-3.5 w-3.5 transition-transform" x-bind:class="open ? 'rotate-180' : ''" />
                             </button>
-                        @endif
-                    </div>
 
-                    @if ($announcements->count() > 1)
-                        <div x-cloak x-show="open" x-transition class="mt-4 divide-y divide-slate-100 border-t border-slate-100">
-                            @foreach ($announcements->skip(1) as $announcement)
-                                <div wire:key="announcement-{{ $announcement->id }}" class="py-3">
-                                    <div class="flex flex-wrap items-center justify-between gap-2">
-                                        <p class="text-sm font-semibold text-slate-800">{{ $announcement->title }}</p>
-                                        <span class="text-[11px] text-slate-400">{{ $announcement->published_at?->translatedFormat('d M Y') }}</span>
+                            <div x-cloak x-show="open" x-transition class="mt-4 divide-y divide-white/10 border-t border-white/10">
+                                @foreach ($announcements->skip(1) as $announcement)
+                                    <div wire:key="announcement-{{ $announcement->id }}" class="py-3">
+                                        <div class="flex flex-wrap items-center justify-between gap-2">
+                                            <p class="text-sm font-semibold text-white">{{ $announcement->title }}</p>
+                                            <span class="text-[11px] text-slate-400">{{ $announcement->published_at?->translatedFormat('d M Y') }}</span>
+                                        </div>
+                                        <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-400">{{ $announcement->body }}</p>
                                     </div>
-                                    <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">{{ $announcement->body }}</p>
+                                @endforeach
+                            </div>
+                        @endif
+                    @else
+                        <div class="flex items-center justify-between gap-3">
+                            <div class="flex items-center gap-2">
+                                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-accent-300 ring-1 ring-inset ring-white/15">
+                                    <x-icon name="check-circle" class="h-5 w-5" />
+                                </span>
+                                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-200">Fokus hari ini</p>
+                            </div>
+                            <span class="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-300 ring-1 ring-inset ring-white/15">
+                                {{ now()->translatedFormat('d M') }}
+                            </span>
+                        </div>
+
+                        <div class="mt-4">
+                            <h2 class="text-lg font-bold tracking-tight text-white sm:text-xl">{{ $todayFocus['title'] }}</h2>
+                            <p class="mt-1.5 text-sm leading-relaxed text-slate-300">{{ $todayFocus['body'] }}</p>
+                        </div>
+
+                        <div class="mt-5 space-y-2.5">
+                            @foreach ($todayFocus['items'] as $item)
+                                <div class="flex items-center gap-3 rounded-xl bg-white/5 p-3 ring-1 ring-inset ring-white/10">
+                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset {{ $item['tone'] }}">
+                                        <x-icon :name="$item['icon']" class="h-4 w-4" />
+                                    </span>
+                                    <div class="min-w-0 flex-1">
+                                        <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">{{ $item['label'] }}</p>
+                                        <p class="mt-0.5 truncate text-sm font-semibold text-white">{{ $item['value'] }}</p>
+                                    </div>
+                                    <p class="max-w-[7rem] text-right text-[11px] text-slate-400">{{ $item['hint'] }}</p>
                                 </div>
                             @endforeach
                         </div>
+
+                        @if ($todayFocus['cta_label'] && $todayFocus['cta_url'])
+                            <a href="{{ $todayFocus['cta_url'] }}" class="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
+                                {{ $todayFocus['cta_label'] }}
+                                <x-icon name="arrow-right" class="h-4 w-4" />
+                            </a>
+                        @endif
                     @endif
                 </div>
             </div>
-        </section>
-    @endif
+        </div>
+    </section>
 
     @if (! $profile)
         <div class="flex items-start gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
