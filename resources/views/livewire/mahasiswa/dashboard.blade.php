@@ -130,7 +130,7 @@
 
                     <div class="mt-5 space-y-2.5">
                         @foreach ($todayFocus['items'] as $item)
-                            <div class="flex items-center gap-3 rounded-xl bg-white/5 p-3 ring-1 ring-inset ring-white/10">
+                            <div class="flex flex-wrap items-start gap-3 rounded-xl bg-white/5 p-3 ring-1 ring-inset ring-white/10 sm:flex-nowrap sm:items-center">
                                 <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset {{ $item['tone'] }}">
                                     <x-icon :name="$item['icon']" class="h-4 w-4" />
                                 </span>
@@ -138,7 +138,7 @@
                                     <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">{{ $item['label'] }}</p>
                                     <p class="mt-0.5 truncate text-sm font-semibold text-white">{{ $item['value'] }}</p>
                                 </div>
-                                <p class="max-w-[7rem] text-right text-[11px] text-slate-400">{{ $item['hint'] }}</p>
+                                <p class="w-full pl-12 text-left text-[11px] text-slate-400 sm:w-auto sm:max-w-[7rem] sm:pl-0 sm:text-right">{{ $item['hint'] }}</p>
                             </div>
                         @endforeach
                     </div>
@@ -313,7 +313,7 @@
                 <a href="{{ route('mahasiswa.attendance') }}" class="btn-secondary btn-sm">Riwayat</a>
             </div>
             <div class="card-body">
-                <div class="grid grid-cols-7 gap-1.5 sm:gap-2">
+                <div class="grid grid-cols-4 gap-1.5 sm:grid-cols-7 sm:gap-2">
                     @foreach ($week as $day)
                         <div
                             wire:key="week-day-{{ $day['date']->toDateString() }}"
