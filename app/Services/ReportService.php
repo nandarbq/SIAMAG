@@ -46,7 +46,14 @@ class ReportService
             ->pluck('total', 'user_id');
 
         $rows = $students->map(function (User $student) use ($periodStart, $periodEnd, $holidayDates, $attendanceCounts, $logbookCounts) {
-            $counts = $attendanceCounts->get($student->id, collect())->pluck('total', 'status');
+            $counts = $attendanceCounts->get($student->id, collect())
+                ->mapWithKeys(function (Attendance $attendance) {
+                    $status = $attendance->status instanceof AttendanceStatus
+                        ? $attendance->status->value
+                        : $attendance->status;
+
+                    return [$status => (int) $attendance->total];
+                });
 
             $hadir = (int) ($counts[AttendanceStatus::Hadir->value] ?? 0);
             $terlambat = (int) ($counts[AttendanceStatus::Terlambat->value] ?? 0);
