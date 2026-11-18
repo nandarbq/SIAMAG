@@ -26,7 +26,72 @@
             </div>
         </div>
 
-        <div class="overflow-x-auto">
+        <div class="divide-y divide-slate-100 sm:hidden">
+            @forelse ($leaves as $leave)
+                <div class="space-y-3 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800">{{ $leave->start_date?->translatedFormat('d M Y') }}</p>
+                            <p class="mt-0.5 text-xs text-slate-400">
+                                @if ($leave->isOngoing())
+                                    Berlangsung · {{ $leave->totalDays() }} hari
+                                @else
+                                    s.d. {{ $leave->end_date?->translatedFormat('d M Y') }} · {{ $leave->totalDays() }} hari
+                                @endif
+                            </p>
+                        </div>
+                        <span class="badge {{ $leave->type === App\Enums\LeaveType::Sakit ? 'badge-blue' : 'badge-amber' }}">
+                            {{ $leave->type->label() }}
+                        </span>
+                    </div>
+
+                    <p class="text-sm leading-relaxed text-slate-600">{{ $leave->reason }}</p>
+
+                    @php
+                        $canCancel = ($leave->type === App\Enums\LeaveType::Izin && $leave->start_date->greaterThanOrEqualTo(today()))
+                            || ($leave->type === App\Enums\LeaveType::Sakit && $leave->isOngoing());
+                    @endphp
+
+                    @if ($leave->attachment_path || $canCancel)
+                        <div class="flex flex-wrap gap-2">
+                            @if ($leave->attachment_path)
+                                <a href="{{ route('leave.attachment', $leave) }}" target="_blank" class="btn-secondary btn-sm">
+                                    <x-icon name="document" class="h-4 w-4" />
+                                    Lampiran
+                                </a>
+                            @endif
+
+                            @if ($canCancel)
+                                <button
+                                    type="button"
+                                    @click="$dispatch('app-confirm', {
+                                        title: 'Batalkan pengajuan?',
+                                        message: 'Pengajuan ini akan dibatalkan. Absensi terkait juga akan dihapus.',
+                                        confirmLabel: 'Batalkan pengajuan',
+                                        workingLabel: 'Membatalkan...',
+                                        onConfirm: () => $wire.delete({{ $leave->id }}),
+                                    })"
+                                    class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50"
+                                >
+                                    <x-icon name="trash" class="h-4 w-4" />
+                                    Batalkan
+                                </button>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            @empty
+                <div class="px-4 py-12 text-center">
+                    <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
+                        <x-icon name="calendar" class="h-6 w-6" />
+                    </span>
+                    <p class="mt-3 text-sm font-semibold text-slate-700">Belum ada pengajuan</p>
+                    <p class="mt-1 text-xs text-slate-500">Pengajuan izin atau sakit akan tampil di sini.</p>
+                </div>
+            @endforelse
+        </div>
+
+        <div class="hidden overflow-x-auto sm:block">
             <table class="min-w-full text-left text-sm">
                 <thead>
                     <tr class="border-b border-slate-100 bg-slate-50/80">
@@ -110,10 +175,10 @@
     </div>
 
     @if ($showModal)
-        <div class="fixed inset-0 z-50 overflow-y-auto" role="dialog" aria-modal="true">
+        <div class="fixed inset-0 z-50 overflow-y-auto overscroll-contain" role="dialog" aria-modal="true">
             <div class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm" wire:click="closeModal"></div>
 
-            <div class="relative flex min-h-full items-center justify-center p-4">
+            <div class="relative flex min-h-full items-start justify-center p-4 py-6 sm:items-center sm:p-4">
                 <div class="w-full max-w-xl overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/5">
                     <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
                         <div>
@@ -183,9 +248,9 @@
                             @error('attachment') <p class="form-error">{{ $message }}</p> @enderror
                         </div>
 
-                        <div class="flex justify-end gap-2 border-t border-slate-100 pt-5">
-                            <button type="button" wire:click="closeModal" class="btn-ghost">Batal</button>
-                            <button type="submit" wire:loading.attr="disabled" wire:target="submit" class="btn-primary">
+                        <div class="flex flex-col-reverse gap-2 border-t border-slate-100 pt-5 sm:flex-row sm:justify-end">
+                            <button type="button" wire:click="closeModal" class="btn-ghost w-full sm:w-auto">Batal</button>
+                            <button type="submit" wire:loading.attr="disabled" wire:target="submit" class="btn-primary w-full sm:w-auto">
                                 <x-icon name="arrow-up-circle" class="h-4 w-4" />
                                 <span wire:loading.remove wire:target="submit">Catat Pengajuan</span>
                                 <span wire:loading wire:target="submit">Menyimpan...</span>
