@@ -61,6 +61,17 @@ class ProfileTest extends TestCase
         Storage::disk('local')->assertExists($student->photo_path);
     }
 
+    public function test_profile_page_renders_avatar_cropper(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        $this->actingAs($student)
+            ->get(route('mahasiswa.profile'))
+            ->assertOk()
+            ->assertSee('avatarCropper', false)
+            ->assertSee('Sesuaikan foto', false);
+    }
+
     public function test_replacing_profile_photo_deletes_the_old_file(): void
     {
         Storage::disk('local')->put('avatars/old.jpg', 'old-image-bytes');

@@ -76,6 +76,26 @@ class StudentsTest extends TestCase
         Storage::disk('local')->assertMissing($logbook->attachment_path);
     }
 
+    public function test_admin_student_views_render_profile_photo(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create([
+            'photo_path' => 'avatars/student.jpg',
+        ]);
+
+        $photoUrl = $student->avatarUrl();
+
+        $this->actingAs($admin)
+            ->get(route('admin.students'))
+            ->assertOk()
+            ->assertSee($photoUrl, false);
+
+        $this->actingAs($admin)
+            ->get(route('admin.students.show', $student))
+            ->assertOk()
+            ->assertSee($photoUrl, false);
+    }
+
     public function test_intern_profile_user_id_must_be_unique(): void
     {
         $student = User::factory()->mahasiswa()->create();
