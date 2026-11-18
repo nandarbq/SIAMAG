@@ -30,8 +30,8 @@
             </div>
             <div class="relative px-5 pb-5">
                 <div class="-mt-10 flex items-end justify-between gap-4">
-                    <span class="flex h-20 w-20 items-center justify-center rounded-2xl border-4 border-white bg-gradient-to-br from-brand-500 to-brand-700 text-2xl font-bold text-white shadow-lg">
-                        {{ $student->initials() }}
+                    <span class="inline-flex rounded-full bg-white p-1 shadow-lg ring-1 ring-slate-200/70">
+                        <x-user-avatar :user="$student" size="xl" />
                     </span>
                     @if ($student->is_active)
                         <span class="badge-green mb-1">Akun Aktif</span>
