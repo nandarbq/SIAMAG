@@ -42,7 +42,7 @@
                 </div>
                 <button
                     type="button"
-                    class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                    class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 sm:h-9 sm:w-9"
                     x-on:click="close()"
                     x-bind:disabled="uploading"
                     aria-label="Tutup"

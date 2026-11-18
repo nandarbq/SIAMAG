@@ -36,7 +36,7 @@
         </div>
         <button
             type="button"
-            class="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/10 hover:text-white lg:hidden"
+            class="ml-auto flex h-11 w-11 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/10 hover:text-white lg:hidden"
             @click="sidebarOpen = false"
             aria-label="Tutup menu"
         >
@@ -117,7 +117,7 @@
                 @csrf
                 <button
                     type="submit"
-                    class="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/5 hover:text-white"
+                    class="flex h-11 w-11 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/5 hover:text-white"
                     title="Keluar"
                     aria-label="Keluar"
                 >

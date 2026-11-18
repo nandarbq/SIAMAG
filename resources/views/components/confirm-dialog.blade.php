@@ -5,7 +5,7 @@
     x-effect="document.documentElement.classList.toggle('overflow-hidden', open)"
     @app-confirm.window="show($event.detail)"
     @keydown.escape.window="close()"
-    class="fixed inset-0 z-[80] overflow-y-auto"
+    class="fixed inset-0 z-[80] overflow-y-auto overscroll-contain"
     :aria-hidden="open ? 'false' : 'true'"
     :inert="! open"
     role="dialog"
@@ -34,7 +34,7 @@
             x-transition:leave="transition duration-150 ease-in"
             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
             x-transition:leave-end="opacity-0 translate-y-2 scale-[0.98]"
-            class="relative w-full max-w-md overflow-hidden rounded-t-3xl bg-white p-6 shadow-2xl ring-1 ring-slate-900/5 will-change-transform motion-reduce:transition-none sm:rounded-3xl"
+            class="relative w-full max-w-md overflow-hidden rounded-t-3xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl ring-1 ring-slate-900/5 will-change-transform motion-reduce:transition-none sm:rounded-3xl sm:pb-6"
         >
             <div class="flex items-start gap-4">
                 <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-rose-50 text-rose-600">
