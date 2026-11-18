@@ -6,6 +6,7 @@ use App\Enums\AttendanceStatus;
 use App\Livewire\Mahasiswa\Dashboard as StudentDashboard;
 use App\Models\Announcement;
 use App\Models\Attendance;
+use App\Models\Logbook;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
@@ -64,6 +65,22 @@ class StudentDashboardTest extends TestCase
             ->assertSee('Fokus hari ini')
             ->assertSee('Absen masuk belum tercatat.')
             ->assertDontSee('Pengumuman terbaru');
+    }
+
+    public function test_today_focus_reminds_student_to_fill_logbook(): void
+    {
+        $student = $this->makeStudent();
+
+        Attendance::factory()->for($student)->create([
+            'date' => '2026-11-10',
+            'status' => AttendanceStatus::Hadir,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentDashboard::class)
+            ->assertSee('Fokus hari ini')
+            ->assertSee('Logbook hari ini belum diisi.')
+            ->assertSee('Isi logbook');
     }
 
     public function test_dashboard_hides_expand_control_for_single_announcement(): void
