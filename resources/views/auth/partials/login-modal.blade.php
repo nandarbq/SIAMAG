@@ -1,6 +1,6 @@
 <div
     x-cloak
-    class="fixed inset-0 z-50 overflow-y-auto"
+    class="fixed inset-0 z-50 overflow-y-auto overscroll-contain"
     :class="loginOpen ? 'pointer-events-auto' : 'pointer-events-none'"
     :aria-hidden="loginOpen ? 'false' : 'true'"
     :inert="! loginOpen"
@@ -22,7 +22,7 @@
         @click="loginOpen = false; $nextTick(() => $refs.loginTrigger?.focus())"
     ></div>
 
-    <div class="relative flex min-h-full items-center justify-center p-4 sm:p-6">
+    <div class="relative flex min-h-full items-start justify-center p-4 py-6 sm:items-center sm:p-6">
         <div
             x-show="loginOpen"
             x-transition:enter="transition duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
@@ -35,7 +35,7 @@
         >
             <button
                 type="button"
-                class="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900"
+                class="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-500 transition hover:bg-slate-200 hover:text-slate-900 sm:right-4 sm:top-4 sm:h-9 sm:w-9"
                 @click="loginOpen = false; $nextTick(() => $refs.loginTrigger?.focus())"
                 aria-label="Tutup"
             >

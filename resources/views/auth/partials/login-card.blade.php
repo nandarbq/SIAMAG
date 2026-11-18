@@ -1,6 +1,6 @@
 <div class="auth-card auth-reveal auth-reveal--delay-2">
     <div class="p-6 sm:p-8">
-        <div class="flex items-start gap-3 pr-10">
+        <div class="flex items-start gap-3 pr-12 sm:pr-10">
             <span class="auth-card-mark">
                 <img src="{{ asset('images/logo-bmkg.png') }}" alt="" class="h-6 w-auto">
             </span>
@@ -63,11 +63,11 @@
                         required
                         autocomplete="current-password"
                         placeholder="Masukkan password"
-                        class="auth-input auth-input--with-icon pr-11 @error('password') border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 @enderror"
+                        class="auth-input auth-input--with-icon pr-12 @error('password') border-rose-400 focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 @enderror"
                     >
                     <button
                         type="button"
-                        class="absolute inset-y-0 right-0 flex items-center pr-3 text-slate-400 transition hover:text-slate-700"
+                        class="absolute inset-y-0 right-0 flex w-11 items-center justify-center text-slate-400 transition hover:text-slate-700"
                         @click="showPassword = !showPassword"
                         :aria-label="showPassword ? 'Sembunyikan password' : 'Tampilkan password'"
                         aria-controls="password"
