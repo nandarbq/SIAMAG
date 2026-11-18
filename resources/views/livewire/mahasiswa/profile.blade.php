@@ -79,15 +79,15 @@
                     </div>
 
                     <div class="mt-6 grid grid-cols-3 gap-2 text-center">
-                        <div class="rounded-xl bg-slate-50 px-3 py-3">
+                        <div class="rounded-xl bg-slate-50 px-2 py-3 sm:px-3">
                             <p class="text-lg font-bold text-slate-900">{{ $attendanceCount }}</p>
                             <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Absensi</p>
                         </div>
-                        <div class="rounded-xl bg-slate-50 px-3 py-3">
+                        <div class="rounded-xl bg-slate-50 px-2 py-3 sm:px-3">
                             <p class="text-lg font-bold text-slate-900">{{ $logbookProgress['total'] }}</p>
                             <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Logbook</p>
                         </div>
-                        <div class="rounded-xl bg-slate-50 px-3 py-3">
+                        <div class="rounded-xl bg-slate-50 px-2 py-3 sm:px-3">
                             <p class="text-lg font-bold text-emerald-600">{{ $logbookProgress['percentage'] === null ? '—' : $logbookProgress['percentage'].'%' }}</p>
                             <p class="text-[10px] font-semibold uppercase tracking-wide text-slate-500">Progres</p>
                         </div>
@@ -124,7 +124,7 @@
                     </div>
 
                     <div class="flex justify-end border-t border-slate-100 pt-5">
-                        <button type="submit" wire:loading.attr="disabled" wire:target="updateProfile" class="btn-primary">
+                        <button type="submit" wire:loading.attr="disabled" wire:target="updateProfile" class="btn-primary w-full sm:w-auto">
                             <span wire:loading.remove wire:target="updateProfile">Simpan Perubahan</span>
                             <span wire:loading wire:target="updateProfile">Menyimpan...</span>
                         </button>
@@ -160,7 +160,7 @@
                     </div>
 
                     <div class="flex justify-end border-t border-slate-100 pt-5">
-                        <button type="submit" wire:loading.attr="disabled" wire:target="updatePassword" class="btn-primary">
+                        <button type="submit" wire:loading.attr="disabled" wire:target="updatePassword" class="btn-primary w-full sm:w-auto">
                             <x-icon name="shield" class="h-4 w-4" />
                             <span wire:loading.remove wire:target="updatePassword">Perbarui Password</span>
                             <span wire:loading wire:target="updatePassword">Menyimpan...</span>

@@ -32,7 +32,7 @@
         <div
             x-show="open"
             x-transition
-            class="w-full max-w-lg overflow-y-auto rounded-t-3xl bg-white p-5 shadow-2xl shadow-slate-950/30 sm:rounded-3xl sm:p-6"
+            class="max-h-[calc(100dvh-1rem)] w-full max-w-lg overflow-y-auto overscroll-contain rounded-t-3xl bg-white p-5 shadow-2xl shadow-slate-950/30 sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl sm:p-6"
         >
             <div class="flex items-start justify-between gap-4">
                 <div>
