@@ -32,6 +32,12 @@
             </div>
         </div>
 
+        @php
+            $mapLat = is_numeric($office_lat) ? (float) $office_lat : -8.2192;
+            $mapLng = is_numeric($office_lng) ? (float) $office_lng : 114.3692;
+            $mapRadius = is_numeric($radius_m) ? (int) $radius_m : 150;
+        @endphp
+
         <div class="card">
             <div class="card-header">
                 <div class="flex items-center gap-3">
@@ -53,8 +59,72 @@
                     Buka Maps
                 </a>
             </div>
-            <div class="card-body" x-data="officeMapPicker({ lat: {{ (float) $office_lat }}, lng: {{ (float) $office_lng }} })">
-                <div class="grid gap-5 sm:grid-cols-2">
+            <div class="card-body" x-data="officeMapPicker({ lat: @js($mapLat), lng: @js($mapLng), radius: @js($mapRadius) })">
+                <div class="relative" x-on:click.outside="searchResults = []">
+                    <label class="label">Cari lokasi kantor</label>
+                    <div class="relative">
+                        <span class="pointer-events-none absolute inset-y-0 left-3 flex items-center text-slate-400">
+                            <x-icon name="search" class="h-4 w-4" />
+                        </span>
+                        <input
+                            x-model="search"
+                            x-on:input.debounce.350ms="searchPlaces()"
+                            x-on:keydown.escape="clearSearch()"
+                            type="search"
+                            class="input pl-9 pr-10"
+                            placeholder="Cari nama tempat atau alamat..."
+                            autocomplete="off"
+                        >
+                        <button
+                            type="button"
+                            x-show="search !== ''"
+                            x-cloak
+                            x-on:click="clearSearch()"
+                            class="absolute inset-y-0 right-2 my-auto flex h-7 w-7 items-center justify-center rounded-lg text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+                            aria-label="Hapus pencarian"
+                        >
+                            <x-icon name="x" class="h-4 w-4" />
+                        </button>
+                    </div>
+
+                    <div
+                        x-show="searchLoading || searchResults.length > 0 || searchError || (searchPerformed && search.length >= 3)"
+                        x-cloak
+                        class="absolute z-20 mt-2 w-full overflow-hidden rounded-xl border border-slate-200 bg-white shadow-xl shadow-slate-900/10"
+                    >
+                        <div x-show="searchLoading" class="flex items-center gap-2 px-4 py-3 text-xs text-slate-500">
+                            <span class="h-4 w-4 animate-spin rounded-full border-2 border-slate-200 border-t-brand-600"></span>
+                            Mencari lokasi...
+                        </div>
+
+                        <p x-show="searchError" x-text="searchError" class="px-4 py-3 text-xs font-medium text-rose-600"></p>
+
+                        <div x-show="! searchLoading && ! searchError && searchResults.length > 0" class="max-h-72 overflow-y-auto">
+                            <template x-for="result in searchResults" :key="result.id">
+                                <button
+                                    type="button"
+                                    x-on:click="selectSearchResult(result)"
+                                    class="flex w-full items-start gap-3 border-b border-slate-100 px-4 py-3 text-left transition last:border-b-0 hover:bg-brand-50/60"
+                                >
+                                    <x-icon name="map-pin" class="mt-0.5 h-4 w-4 shrink-0 text-brand-600" />
+                                    <span class="min-w-0">
+                                        <span class="block truncate text-sm font-semibold text-slate-800" x-text="result.name"></span>
+                                        <span x-show="result.detail" class="mt-0.5 block truncate text-xs text-slate-500" x-text="result.detail"></span>
+                                    </span>
+                                </button>
+                            </template>
+                        </div>
+
+                        <p
+                            x-show="! searchLoading && ! searchError && searchPerformed && searchResults.length === 0"
+                            class="px-4 py-3 text-xs text-slate-500"
+                        >
+                            Tidak ada hasil. Coba kata kunci lain.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-5 grid gap-5 sm:grid-cols-2">
                     <div>
                         <label class="label">Latitude</label>
                         <input x-ref="officeLat" x-on:input.debounce.400ms="syncFromInputs()" wire:model="office_lat" type="text" class="input" placeholder="-8.2192000">
@@ -67,7 +137,7 @@
                     </div>
                     <div>
                         <label class="label">Radius Absensi (meter)</label>
-                        <input wire:model="radius_m" type="number" min="10" max="5000" class="input">
+                        <input wire:model="radius_m" x-on:input.debounce.200ms="setRadius($event.target.value)" type="number" min="10" max="5000" class="input">
                         @error('radius_m') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
@@ -78,8 +148,38 @@
                 </div>
 
                 <div wire:ignore class="mt-5">
-                    <div x-ref="map" class="h-72 w-full overflow-hidden rounded-2xl border border-slate-200 bg-slate-100"></div>
-                    <p class="mt-2 text-xs text-slate-500">Klik peta atau geser pin untuk memilih titik pusat kantor.</p>
+                    <div class="relative h-80 overflow-hidden rounded-2xl border border-slate-200 bg-slate-100 sm:h-[420px]">
+                        <div x-ref="map" class="h-full w-full"></div>
+
+                        <button
+                            type="button"
+                            x-on:click="locateDevice()"
+                            class="absolute left-3 top-3 z-10 inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-white/95 px-3 py-2 text-xs font-semibold text-slate-700 shadow-lg backdrop-blur transition hover:bg-white"
+                        >
+                            <x-icon name="map-pin" class="h-4 w-4 text-brand-600" />
+                            Lokasi saya
+                        </button>
+
+                        <div
+                            x-show="! ready"
+                            x-cloak
+                            class="pointer-events-none absolute inset-0 flex flex-col items-center justify-center gap-2 bg-slate-100/90 text-sm text-slate-500"
+                        >
+                            <span class="h-6 w-6 animate-spin rounded-full border-2 border-slate-300 border-t-brand-600"></span>
+                            <span>Memuat peta...</span>
+                        </div>
+
+                        <div
+                            x-show="mapError"
+                            x-cloak
+                            x-text="mapError"
+                            class="absolute inset-x-3 bottom-3 rounded-xl border border-rose-200 bg-white/95 px-3 py-2 text-xs font-medium text-rose-600 shadow-lg"
+                        ></div>
+                    </div>
+                    <div class="mt-2 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-500">
+                        <p>Klik peta atau geser pin untuk memilih titik pusat kantor.</p>
+                        <p>Peta: OpenStreetMap · Pencarian: Photon</p>
+                    </div>
                 </div>
 
                 <div class="mt-5 flex items-start gap-3 rounded-xl border border-brand-100 bg-brand-50/60 p-4">
