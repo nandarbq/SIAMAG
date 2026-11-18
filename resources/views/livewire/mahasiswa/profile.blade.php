@@ -52,21 +52,10 @@
                         <div class="flex flex-wrap items-center justify-between gap-3">
                             <div>
                                 <p class="text-sm font-semibold text-slate-800">Foto profil</p>
-                                <p class="text-xs text-slate-500">JPG, PNG, atau WebP. Maksimal 2MB.</p>
+                                <p class="text-xs text-slate-500">JPG, PNG, atau WebP.</p>
                             </div>
                             <div class="flex flex-wrap items-center gap-2">
-                                <label class="btn-secondary cursor-pointer">
-                                    <x-icon name="camera" class="h-4 w-4" />
-                                    Ganti foto
-                                    <input type="file" wire:model="photo" accept="image/jpeg,image/png,image/webp" class="sr-only">
-                                </label>
-
-                                @if ($photo)
-                                    <button type="button" wire:click="updatePhoto" wire:loading.attr="disabled" wire:target="updatePhoto" class="btn-primary">
-                                        <span wire:loading.remove wire:target="updatePhoto">Simpan foto</span>
-                                        <span wire:loading wire:target="updatePhoto">Menyimpan...</span>
-                                    </button>
-                                @endif
+                                <x-avatar-cropper label="Ganti foto" />
 
                                 @if ($user->photo_path)
                                     <button
@@ -83,27 +72,7 @@
                             </div>
                         </div>
 
-                        @if ($photo)
-                            @php
-                                $photoPreviewable = in_array($photo->extension(), ['jpg', 'jpeg', 'png', 'webp'], true);
-                            @endphp
-                            <div class="mt-4 flex items-center gap-3 rounded-xl bg-slate-50 p-3 ring-1 ring-slate-100">
-                                @if ($photoPreviewable)
-                                    <img src="{{ $photo->temporaryUrl() }}" alt="Pratinjau foto profil" class="h-14 w-14 rounded-full object-cover ring-2 ring-white">
-                                @else
-                                    <span class="flex h-14 w-14 items-center justify-center rounded-full bg-rose-50 text-rose-500 ring-2 ring-white">
-                                        <x-icon name="alert" class="h-5 w-5" />
-                                    </span>
-                                @endif
-                                <div class="min-w-0">
-                                    <p class="truncate text-sm font-medium text-slate-800">{{ $photo->getClientOriginalName() }}</p>
-                                    <p class="text-xs text-slate-500">{{ $photoPreviewable ? 'Siap disimpan sebagai foto profil.' : 'Format file tidak didukung.' }}</p>
-                                </div>
-                            </div>
-                        @endif
-
-                        <p wire:loading wire:target="photo" class="mt-2 text-xs text-slate-500">Mengunggah foto...</p>
-                        @error('photo') <p class="form-error mt-2">{{ $message }}</p> @enderror
+                        <p class="mt-3 text-xs text-slate-400">Foto akan dipotong persegi 1:1 dan disimpan maksimal 2MB.</p>
                     </div>
 
                     <div class="mt-6 grid grid-cols-3 gap-2 text-center">
