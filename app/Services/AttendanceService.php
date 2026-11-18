@@ -10,6 +10,7 @@ use App\Models\LeaveRequest;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
@@ -75,20 +76,30 @@ class AttendanceService
             ]);
         }
 
-        return Attendance::query()->updateOrCreate(
-            ['user_id' => $user->id, 'date' => $date->toDateString()],
-            [
-                'check_in_at' => $now,
-                'status' => $status,
-                'late_minutes' => $lateMinutes,
-                'check_in_photo' => $photoPath,
-                'check_in_lat' => $this->valueOrNull($data, 'lat'),
-                'check_in_lng' => $this->valueOrNull($data, 'lng'),
-                'check_in_distance' => $distance,
-                'check_in_accuracy' => $accuracy,
-                'check_in_ip' => request()->ip(),
-            ]
-        );
+        try {
+            return Attendance::query()->updateOrCreate(
+                ['user_id' => $user->id, 'date' => $date->toDateString()],
+                [
+                    'check_in_at' => $now,
+                    'status' => $status,
+                    'late_minutes' => $lateMinutes,
+                    'check_in_photo' => $photoPath,
+                    'check_in_lat' => $this->valueOrNull($data, 'lat'),
+                    'check_in_lng' => $this->valueOrNull($data, 'lng'),
+                    'check_in_distance' => $distance,
+                    'check_in_accuracy' => $accuracy,
+                    'check_in_ip' => request()->ip(),
+                ]
+            );
+        } catch (UniqueConstraintViolationException) {
+            if ($photoPath) {
+                Storage::disk('local')->delete($photoPath);
+            }
+
+            throw ValidationException::withMessages([
+                'attendance' => 'Anda sudah melakukan absen masuk hari ini.',
+            ]);
+        }
     }
 
     public function checkOut(User $user, array $data): Attendance
