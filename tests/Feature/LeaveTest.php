@@ -81,6 +81,64 @@ class LeaveTest extends TestCase
         $this->assertDatabaseCount('leave_requests', 0);
     }
 
+    public function test_student_without_internship_profile_cannot_open_leave_form(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->call('openCreate')
+            ->assertSet('showModal', false);
+    }
+
+    public function test_student_without_internship_profile_cannot_submit_leave_request(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->set('type', LeaveType::Izin->value)
+            ->set('startDate', '2026-11-09')
+            ->set('reason', 'Mengurus keperluan keluarga yang mendesak.')
+            ->call('submit')
+            ->assertHasErrors(['startDate']);
+
+        $this->assertDatabaseCount('leave_requests', 0);
+        $this->assertDatabaseCount('attendances', 0);
+    }
+
+    public function test_student_cannot_submit_a_backdated_leave_request(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->set('type', LeaveType::Izin->value)
+            ->set('startDate', '2026-11-08')
+            ->set('reason', 'Mengurus keperluan keluarga yang mendesak.')
+            ->call('submit')
+            ->assertHasErrors(['startDate']);
+
+        $this->assertDatabaseCount('leave_requests', 0);
+        $this->assertDatabaseCount('attendances', 0);
+    }
+
+    public function test_student_cannot_submit_a_future_sick_leave_request(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLeaveIndex::class)
+            ->set('type', LeaveType::Sakit->value)
+            ->set('startDate', '2026-11-10')
+            ->set('reason', 'Demam dan perlu istirahat di rumah.')
+            ->call('submit')
+            ->assertHasErrors(['startDate']);
+
+        $this->assertDatabaseCount('leave_requests', 0);
+        $this->assertDatabaseCount('attendances', 0);
+    }
+
     public function test_student_can_submit_future_leave_after_checking_in_today(): void
     {
         $student = $this->makeStudent();
