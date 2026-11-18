@@ -259,6 +259,13 @@
                     @endforeach
                 </div>
 
+                <div class="mt-4 flex flex-wrap gap-x-4 gap-y-2 text-[11px] font-medium text-slate-500">
+                    <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-emerald-500"></span>Hadir</span>
+                    <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-amber-500"></span>Telat</span>
+                    <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-brand-500"></span>Izin / Sakit</span>
+                    <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-sky-500"></span>Libur</span>
+                    <span class="flex items-center gap-1.5"><span class="h-2 w-2 rounded-full bg-slate-300"></span>Belum ada data</span>
+                </div>
             </div>
         </div>
 
