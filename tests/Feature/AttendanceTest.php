@@ -149,6 +149,31 @@ class AttendanceTest extends TestCase
         ]));
     }
 
+    public function test_selfie_token_is_single_use(): void
+    {
+        $student = $this->makeStudent();
+        $service = app(AttendanceService::class);
+        $token = $service->storeSelfie($student, $this->selfieDataUri());
+
+        $this->assertNotNull($service->resolveSelfiePath($student, $token));
+
+        $this->expectException(ValidationException::class);
+
+        $service->resolveSelfiePath($student, $token);
+    }
+
+    public function test_expired_selfie_token_is_rejected(): void
+    {
+        $student = $this->makeStudent();
+        $service = app(AttendanceService::class);
+        $token = $service->storeSelfie($student, $this->selfieDataUri());
+
+        $this->travelTo(Carbon::parse('2026-11-09 07:11:00', 'Asia/Jakarta'));
+        $this->expectException(ValidationException::class);
+
+        $service->resolveSelfiePath($student, $token);
+    }
+
     public function test_check_out_requires_a_previous_check_in(): void
     {
         $this->expectException(ValidationException::class);
