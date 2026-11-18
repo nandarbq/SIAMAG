@@ -47,7 +47,7 @@
             </div>
 
             <div class="relative overflow-hidden bg-brand-950 p-6 text-white sm:p-7">
-                <x-banyuwangi-ornament variant="gajah-oling" class="pointer-events-none absolute inset-0 h-full w-full select-none opacity-[0.12]" />
+                <x-banyuwangi-ornament variant="gajah-oling" class="pointer-events-none absolute inset-0 h-full w-full select-none opacity-[0.10]" />
 
                 <div class="relative">
                     @if ($announcements->isNotEmpty())
