@@ -45,21 +45,24 @@ class StudentDashboardTest extends TestCase
 
         Livewire::actingAs($student)
             ->test(StudentDashboard::class)
-            ->assertSee('Magang di')
+            ->assertSee('Portal Mahasiswa Magang')
+            ->assertSee('progres magang Anda di')
             ->assertSee('BMKG Banyuwangi')
             ->assertSee('Universitas Jember')
+            ->assertSee('Pengumuman terbaru')
             ->assertSee('Jadwal Apel Senin')
             ->assertDontSee('Pengumuman Nonaktif')
             ->assertDontSee('progres magang Anda di Universitas Jember');
     }
 
-    public function test_dashboard_hides_announcement_masthead_without_announcements(): void
+    public function test_dashboard_shows_today_focus_without_announcements(): void
     {
         $student = $this->makeStudent();
 
         Livewire::actingAs($student)
             ->test(StudentDashboard::class)
-            ->assertDontSee('Pusat Informasi')
+            ->assertSee('Fokus hari ini')
+            ->assertSee('Absen masuk belum tercatat.')
             ->assertDontSee('Pengumuman terbaru');
     }
 
@@ -75,7 +78,7 @@ class StudentDashboardTest extends TestCase
 
         Livewire::actingAs($student)
             ->test(StudentDashboard::class)
-            ->assertSee('Pusat Informasi')
+            ->assertSee('Pengumuman terbaru')
             ->assertSee('Satu Pengumuman')
             ->assertDontSee('Lihat semua')
             ->assertDontSee('1 info');
@@ -99,6 +102,7 @@ class StudentDashboardTest extends TestCase
 
         Livewire::actingAs($student)
             ->test(StudentDashboard::class)
+            ->assertSee('Pengumuman terbaru')
             ->assertSee('2 info')
             ->assertSee('Lihat semua')
             ->assertSee('Pengumuman Pertama')
