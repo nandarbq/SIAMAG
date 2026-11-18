@@ -110,6 +110,19 @@ class AnnouncementsTest extends TestCase
         $this->assertDatabaseMissing('announcements', ['id' => $announcement->id]);
     }
 
+    public function test_delete_action_uses_app_confirm_dialog(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Announcement::factory()->create();
+
+        $response = $this->actingAs($admin)->get(route('admin.announcements'));
+
+        $response->assertOk();
+        $response->assertSee('app-confirm', false);
+        $response->assertSee('Hapus pengumuman?', false);
+        $response->assertDontSee('wire:confirm', false);
+    }
+
     public function test_announcement_requires_title_and_body(): void
     {
         $admin = User::factory()->admin()->create();
