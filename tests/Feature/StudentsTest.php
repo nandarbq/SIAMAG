@@ -47,7 +47,9 @@ class StudentsTest extends TestCase
         Storage::fake('local');
 
         $admin = User::factory()->admin()->create();
-        $student = User::factory()->mahasiswa()->create();
+        $student = User::factory()->mahasiswa()->create([
+            'photo_path' => 'avatars/student-delete/profile.jpg',
+        ]);
 
         $attendance = Attendance::factory()->for($student)->create([
             'check_in_photo' => 'attendance/'.$student->id.'/in.jpg',
@@ -62,7 +64,7 @@ class StudentsTest extends TestCase
             'attachment_path' => 'logbooks/'.$student->id.'/lampiran.pdf',
         ]);
 
-        foreach ([$attendance->check_in_photo, $attendance->check_out_photo, $leave->attachment_path, $logbook->attachment_path] as $path) {
+        foreach ([$attendance->check_in_photo, $attendance->check_out_photo, $leave->attachment_path, $logbook->attachment_path, $student->photo_path] as $path) {
             Storage::disk('local')->put($path, 'file-bytes');
         }
 
@@ -74,6 +76,7 @@ class StudentsTest extends TestCase
         Storage::disk('local')->assertMissing($attendance->check_out_photo);
         Storage::disk('local')->assertMissing($leave->attachment_path);
         Storage::disk('local')->assertMissing($logbook->attachment_path);
+        Storage::disk('local')->assertMissing($student->photo_path);
     }
 
     public function test_admin_student_views_render_profile_photo(): void

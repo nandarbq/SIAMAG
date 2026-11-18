@@ -15,6 +15,7 @@ class StudentFileCleaner
             ->flatMap(fn ($attendance) => [$attendance->check_in_photo, $attendance->check_out_photo])
             ->merge($user->leaveRequests->pluck('attachment_path'))
             ->merge($user->logbooks->pluck('attachment_path'))
+            ->push($user->photo_path)
             ->filter()
             ->unique();
 
