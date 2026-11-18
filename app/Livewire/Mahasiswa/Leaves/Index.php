@@ -42,7 +42,13 @@ class Index extends Component
 
         $profile = auth()->user()->internProfile;
 
-        if ($profile && ! today()->betweenIncluded($profile->start_date, $profile->end_date)) {
+        if (! $profile) {
+            session()->flash('error', 'Profil magang belum lengkap. Hubungi admin sebelum mengajukan izin atau sakit.');
+
+            return;
+        }
+
+        if (! today()->betweenIncluded($profile->start_date, $profile->end_date)) {
             session()->flash('error', 'Pengajuan izin hanya dapat dilakukan selama periode magang.');
 
             return;
@@ -64,16 +70,19 @@ class Index extends Component
         $userId = auth()->id();
         $profile = auth()->user()->internProfile;
 
-        $this->validate([
+        if (! $profile) {
+            $this->addError('startDate', 'Profil magang belum lengkap. Hubungi admin sebelum mengajukan izin atau sakit.');
+
+            return;
+        }
+
+        $rules = [
             'type' => ['required', 'in:izin,sakit'],
             'startDate' => [
                 'required',
                 'date',
+                'after_or_equal:today',
                 function (string $attribute, mixed $value, \Closure $fail) use ($profile) {
-                    if (! $profile) {
-                        return;
-                    }
-
                     $date = Carbon::parse($value);
 
                     if ($date->lessThan($profile->start_date) || $date->greaterThan($profile->end_date)) {
@@ -83,10 +92,18 @@ class Index extends Component
             ],
             'reason' => ['required', 'string', 'min:10', 'max:1000'],
             'attachment' => ['nullable', 'file', 'mimes:jpg,jpeg,png,pdf', 'max:4096'],
-        ], [
+        ];
+
+        if ($this->type === LeaveType::Sakit->value) {
+            $rules['startDate'][] = 'before_or_equal:today';
+        }
+
+        $this->validate($rules, [
             'type.required' => 'Pilih jenis pengajuan.',
             'type.in' => 'Jenis pengajuan tidak valid.',
             'startDate.required' => 'Tanggal wajib diisi.',
+            'startDate.after_or_equal' => 'Tanggal pengajuan tidak boleh di masa lalu.',
+            'startDate.before_or_equal' => 'Pengajuan sakit hanya dapat dimulai hari ini.',
             'reason.required' => 'Alasan pengajuan wajib diisi.',
             'reason.min' => 'Alasan minimal 10 karakter.',
             'attachment.mimes' => 'Lampiran harus berupa JPG, PNG, atau PDF.',
