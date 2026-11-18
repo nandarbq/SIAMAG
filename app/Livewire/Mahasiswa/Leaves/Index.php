@@ -8,6 +8,7 @@ use App\Models\Attendance;
 use App\Models\LeaveRequest;
 use App\Services\AttendanceService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -21,6 +22,8 @@ class Index extends Component
 {
     use WithFileUploads;
     use WithPagination;
+
+    private const PER_PAGE = 10;
 
     public bool $showModal = false;
 
@@ -176,25 +179,38 @@ class Index extends Component
         }
 
         $leave->delete();
+        $this->resetPageAfterDelete();
         session()->flash('success', 'Pengajuan berhasil dibatalkan.');
     }
 
     public function render()
     {
-        $userId = auth()->id();
-
-        $leaves = LeaveRequest::query()
-            ->where('user_id', $userId)
-            ->where('status', LeaveStatus::Approved->value)
+        $leaves = $this->leavesQuery()
             ->latest('start_date')
             ->latest()
-            ->paginate(8);
+            ->paginate(self::PER_PAGE);
 
         return view('livewire.mahasiswa.leaves.index', [
             'leaves' => $leaves,
             'types' => LeaveType::cases(),
             'profile' => auth()->user()->internProfile,
         ]);
+    }
+
+    private function leavesQuery(): Builder
+    {
+        return LeaveRequest::query()
+            ->where('user_id', auth()->id())
+            ->where('status', LeaveStatus::Approved->value);
+    }
+
+    private function resetPageAfterDelete(): void
+    {
+        $lastPage = max(1, (int) ceil($this->leavesQuery()->count() / self::PER_PAGE));
+
+        if ($this->getPage() > $lastPage) {
+            $this->setPage($lastPage);
+        }
     }
 
     private function resetForm(): void

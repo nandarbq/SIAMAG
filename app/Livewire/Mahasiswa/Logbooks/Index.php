@@ -7,6 +7,7 @@ use App\Models\Setting;
 use App\Services\LogbookExportService;
 use App\Services\LogbookProgressService;
 use Carbon\Carbon;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -20,6 +21,8 @@ class Index extends Component
 {
     use WithFileUploads;
     use WithPagination;
+
+    private const PER_PAGE = 10;
 
     public string $search = '';
 
@@ -183,6 +186,7 @@ class Index extends Component
         }
 
         $logbook->delete();
+        $this->resetPageAfterDelete();
         session()->flash('success', 'Logbook berhasil dihapus.');
     }
 
@@ -191,17 +195,10 @@ class Index extends Component
         $userId = auth()->id();
         $profile = auth()->user()->internProfile;
 
-        $logbooks = Logbook::query()
-            ->where('user_id', $userId)
-            ->when($this->search !== '', function ($query) {
-                $search = '%'.$this->search.'%';
-                $query->where(fn ($q) => $q
-                    ->where('activity', 'like', $search)
-                    ->orWhere('description', 'like', $search));
-            })
+        $logbooks = $this->logbooksQuery()
             ->latest('date')
             ->latest()
-            ->paginate(8);
+            ->paginate(self::PER_PAGE);
 
         $exportService = app(LogbookExportService::class);
 
@@ -213,6 +210,27 @@ class Index extends Component
             'exportOpen' => $profile ? $exportService->canExport($profile) : false,
             'exportOpensAt' => $profile ? $exportService->opensAt($profile) : null,
         ]);
+    }
+
+    private function logbooksQuery(): Builder
+    {
+        return Logbook::query()
+            ->where('user_id', auth()->id())
+            ->when($this->search !== '', function (Builder $query) {
+                $search = '%'.$this->search.'%';
+                $query->where(fn ($q) => $q
+                    ->where('activity', 'like', $search)
+                    ->orWhere('description', 'like', $search));
+            });
+    }
+
+    private function resetPageAfterDelete(): void
+    {
+        $lastPage = max(1, (int) ceil($this->logbooksQuery()->count() / self::PER_PAGE));
+
+        if ($this->getPage() > $lastPage) {
+            $this->setPage($lastPage);
+        }
     }
 
     private function persist(): void
