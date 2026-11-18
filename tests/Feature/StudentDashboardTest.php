@@ -63,6 +63,24 @@ class StudentDashboardTest extends TestCase
             ->assertDontSee('Pengumuman terbaru');
     }
 
+    public function test_dashboard_hides_expand_control_for_single_announcement(): void
+    {
+        $student = $this->makeStudent();
+
+        Announcement::factory()->create([
+            'title' => 'Satu Pengumuman',
+            'is_active' => true,
+            'published_at' => Carbon::parse('2026-11-09 08:00:00'),
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentDashboard::class)
+            ->assertSee('Pusat Informasi')
+            ->assertSee('Satu Pengumuman')
+            ->assertDontSee('Lihat semua')
+            ->assertDontSee('1 info');
+    }
+
     public function test_dashboard_builds_weekly_activity_statuses(): void
     {
         $student = $this->makeStudent();
