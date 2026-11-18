@@ -44,7 +44,7 @@ Route::post('/logout', [AuthController::class, 'logout'])
     ->middleware('auth')
     ->name('logout');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'active'])->group(function () {
     Route::post('/attendance/selfie', AttendanceSelfieController::class)
         ->middleware(['role:mahasiswa', 'throttle:10,1'])
         ->name('attendance.selfie');

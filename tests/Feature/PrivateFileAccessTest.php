@@ -116,6 +116,21 @@ class PrivateFileAccessTest extends TestCase
             ->assertOk();
     }
 
+    public function test_inactive_user_cannot_access_private_files(): void
+    {
+        Storage::disk('local')->put('avatars/inactive.jpg', 'image-bytes');
+
+        $student = User::factory()->mahasiswa()->inactive()->create([
+            'photo_path' => 'avatars/inactive.jpg',
+        ]);
+
+        $this->actingAs($student)
+            ->get(route('user.photo', $student))
+            ->assertRedirect(route('login'));
+
+        $this->assertGuest();
+    }
+
     public function test_other_students_cannot_view_profile_photo(): void
     {
         Storage::disk('local')->put('avatars/owner.jpg', 'image-bytes');
