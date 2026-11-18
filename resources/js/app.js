@@ -16,6 +16,7 @@ document.addEventListener('alpine:init', () => {
         searchPerformed: false,
         searchError: '',
         ready: false,
+        scrollEnabled: false,
 
         async init() {
             try {

@@ -56,9 +56,11 @@ export default function officeMapPicker({ lat, lng, radius = DEFAULT_RADIUS } = 
         searchError: '',
         mapError: '',
         ready: false,
+        scrollEnabled: false,
         searchController: null,
         loadTimer: null,
         resizeObserver: null,
+        mapLeaveHandler: null,
 
         init() {
             this.map = new Map({
@@ -69,6 +71,7 @@ export default function officeMapPicker({ lat, lng, radius = DEFAULT_RADIUS } = 
                 attributionControl: true,
             });
 
+            this.map.scrollZoom.disable();
             this.map.addControl(new NavigationControl({ showCompass: true }), 'top-right');
             this.map.addControl(new ScaleControl({ unit: 'metric', maxWidth: 120 }), 'bottom-left');
 
@@ -85,8 +88,17 @@ export default function officeMapPicker({ lat, lng, radius = DEFAULT_RADIUS } = 
             });
 
             this.map.on('click', (event) => {
+                if (!this.scrollEnabled) {
+                    this.activateScrollZoom();
+
+                    return;
+                }
+
                 this.applyPoint(event.lngLat.lat, event.lngLat.lng, true);
             });
+
+            this.mapLeaveHandler = () => this.deactivateScrollZoom();
+            this.map.getContainer().addEventListener('mouseleave', this.mapLeaveHandler);
 
             this.map.on('load', () => {
                 this.ready = true;
@@ -111,6 +123,24 @@ export default function officeMapPicker({ lat, lng, radius = DEFAULT_RADIUS } = 
             this.resizeObserver.observe(this.$refs.map);
 
             this.$nextTick(() => this.map?.resize());
+        },
+
+        activateScrollZoom() {
+            if (!this.map) {
+                return;
+            }
+
+            this.map.scrollZoom.enable();
+            this.scrollEnabled = true;
+        },
+
+        deactivateScrollZoom() {
+            if (!this.map) {
+                return;
+            }
+
+            this.map.scrollZoom.disable();
+            this.scrollEnabled = false;
         },
 
         addRadiusLayer() {
@@ -334,10 +364,16 @@ export default function officeMapPicker({ lat, lng, radius = DEFAULT_RADIUS } = 
             window.clearTimeout(this.loadTimer);
             this.searchController?.abort();
             this.resizeObserver?.disconnect();
+
+            if (this.map && this.mapLeaveHandler) {
+                this.map.getContainer().removeEventListener('mouseleave', this.mapLeaveHandler);
+            }
+
             this.marker?.remove();
             this.map?.remove();
             this.map = null;
             this.marker = null;
+            this.mapLeaveHandler = null;
         },
     };
 }
