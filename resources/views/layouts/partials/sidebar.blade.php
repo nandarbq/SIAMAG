@@ -30,10 +30,18 @@
         <div class="flex h-10 w-10 items-center justify-center rounded-xl bg-white p-1.5">
             <img src="{{ asset('images/logo-bmkg.png') }}" alt="Logo BMKG" class="h-full w-auto">
         </div>
-        <div>
+        <div class="min-w-0">
             <p class="text-base font-bold tracking-tight">SIAMAG</p>
             <p class="text-[10px] font-medium uppercase tracking-[0.18em] text-slate-300">BMKG Banyuwangi</p>
         </div>
+        <button
+            type="button"
+            class="ml-auto flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/10 hover:text-white lg:hidden"
+            @click="sidebarOpen = false"
+            aria-label="Tutup menu"
+        >
+            <x-icon name="x" class="h-5 w-5" />
+        </button>
     </div>
 
     <div class="scrollbar-thin flex-1 overflow-y-auto px-3 py-5">
@@ -46,6 +54,7 @@
                 <a
                     href="{{ route($item['route']) }}"
                     wire:navigate
+                    @click="sidebarOpen = false"
                     @class([
                         'nav-link',
                         'nav-link-active' => request()->routeIs($item['route']) || request()->routeIs($item['route'].'.*'),
@@ -64,6 +73,7 @@
                     <a
                         href="{{ route($item['route']) }}"
                         wire:navigate
+                        @click="sidebarOpen = false"
                         @class([
                             'nav-link',
                             'nav-link-active' => request()->routeIs($item['route']) || request()->routeIs($item['route'].'.*'),
@@ -92,6 +102,7 @@
             <a
                 href="{{ $isAdmin ? route('admin.settings') : route('mahasiswa.profile') }}"
                 wire:navigate
+                @click="sidebarOpen = false"
                 class="group flex min-w-0 flex-1 items-center gap-3 rounded-xl p-2 transition hover:bg-white/5"
             >
                 <x-user-avatar :user="auth()->user()" size="sm" />

@@ -19,7 +19,12 @@
     @livewireStyles
 </head>
 <body class="min-h-full bg-slate-50">
-    <div x-data="{ sidebarOpen: false }" class="min-h-screen">
+    <div
+        x-data="{ sidebarOpen: false }"
+        x-effect="document.body.classList.toggle('overflow-hidden', sidebarOpen)"
+        @keydown.escape.window="sidebarOpen = false"
+        class="min-h-screen"
+    >
         <div
             x-cloak
             x-show="sidebarOpen"
@@ -29,9 +34,10 @@
         ></div>
 
         <aside
+            id="app-sidebar"
             x-cloak
             :class="sidebarOpen ? 'translate-x-0' : '-translate-x-full'"
-            class="fixed inset-y-0 left-0 z-50 w-72 transform transition-transform duration-300 ease-out lg:translate-x-0"
+            class="fixed inset-y-0 left-0 z-50 w-[min(18rem,82vw)] transform transition-transform duration-300 ease-out lg:translate-x-0"
         >
             @include('layouts.partials.sidebar')
         </aside>
@@ -45,6 +51,8 @@
                             class="btn-ghost -ml-2 px-2.5 py-2 lg:hidden"
                             @click="sidebarOpen = true"
                             aria-label="Buka menu"
+                            aria-controls="app-sidebar"
+                            :aria-expanded="sidebarOpen"
                         >
                             <x-icon name="menu" class="h-5 w-5" />
                         </button>
