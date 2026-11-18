@@ -74,8 +74,13 @@
                                         </button>
                                         <button
                                             type="button"
-                                            wire:click="delete({{ $group->id }})"
-                                            wire:confirm="Yakin ingin menghapus kelompok {{ $group->code }}?"
+                                            @click="$dispatch('app-confirm', {
+                                                title: 'Hapus kelompok?',
+                                                message: @js('Kelompok '.$group->code.' akan dihapus permanen. Pastikan tidak ada anggota yang masih terdaftar.'),
+                                                confirmLabel: 'Hapus kelompok',
+                                                workingLabel: 'Menghapus...',
+                                                onConfirm: () => $wire.delete({{ $group->id }}),
+                                            })"
                                             class="btn-ghost btn-sm text-rose-600"
                                             title="Hapus"
                                         >

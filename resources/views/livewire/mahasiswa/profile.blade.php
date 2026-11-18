@@ -60,10 +60,13 @@
                                 @if ($user->photo_path)
                                     <button
                                         type="button"
-                                        wire:click="removePhoto"
-                                        wire:confirm="Hapus foto profil Anda?"
-                                        wire:loading.attr="disabled"
-                                        wire:target="removePhoto"
+                                        @click="$dispatch('app-confirm', {
+                                            title: 'Hapus foto profil?',
+                                            message: 'Foto profil Anda akan dihapus. Anda dapat mengunggah foto baru kapan saja.',
+                                            confirmLabel: 'Hapus foto',
+                                            workingLabel: 'Menghapus...',
+                                            onConfirm: () => $wire.removePhoto(),
+                                        })"
                                         class="btn-ghost text-rose-600 hover:bg-rose-50"
                                     >
                                         Hapus

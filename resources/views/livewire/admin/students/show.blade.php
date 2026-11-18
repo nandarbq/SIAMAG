@@ -203,8 +203,13 @@
             </div>
             <button
                 type="button"
-                wire:click="delete"
-                wire:confirm="Yakin ingin menghapus {{ $student->name }} beserta seluruh datanya?"
+                @click="$dispatch('app-confirm', {
+                    title: 'Hapus data mahasiswa?',
+                    message: @js('Yakin ingin menghapus '.$student->name.'? Semua absensi, logbook, dan pengajuan terkait akan ikut terhapus permanen.'),
+                    confirmLabel: 'Hapus mahasiswa',
+                    workingLabel: 'Menghapus...',
+                    onConfirm: () => $wire.delete(),
+                })"
                 class="btn-danger"
             >
                 <x-icon name="trash" class="h-4 w-4" />

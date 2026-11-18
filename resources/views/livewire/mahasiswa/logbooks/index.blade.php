@@ -204,7 +204,18 @@
                                         <button type="button" wire:click="openEdit({{ $logbook->id }})" class="btn-ghost btn-sm" title="Ubah logbook">
                                             <x-icon name="pencil" class="h-4 w-4" />
                                         </button>
-                                        <button type="button" wire:click="delete({{ $logbook->id }})" wire:confirm="Hapus logbook ini?" class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50" title="Hapus logbook">
+                                        <button
+                                            type="button"
+                                            @click="$dispatch('app-confirm', {
+                                                title: 'Hapus logbook?',
+                                                message: 'Logbook ini akan dihapus permanen dan tidak dapat dikembalikan.',
+                                                confirmLabel: 'Hapus logbook',
+                                                workingLabel: 'Menghapus...',
+                                                onConfirm: () => $wire.delete({{ $logbook->id }}),
+                                            })"
+                                            class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50"
+                                            title="Hapus logbook"
+                                        >
                                             <x-icon name="trash" class="h-4 w-4" />
                                         </button>
                                     @else

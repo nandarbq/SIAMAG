@@ -69,8 +69,13 @@
                         </button>
                         <button
                             type="button"
-                            wire:click="delete({{ $holiday->id }})"
-                            wire:confirm="Hapus hari libur {{ $holiday->name }}?"
+                            @click="$dispatch('app-confirm', {
+                                title: 'Hapus hari libur?',
+                                message: @js('Hari libur '.$holiday->name.' akan dihapus dari perhitungan absensi.'),
+                                confirmLabel: 'Hapus hari libur',
+                                workingLabel: 'Menghapus...',
+                                onConfirm: () => $wire.delete({{ $holiday->id }}),
+                            })"
                             class="btn-ghost btn-sm text-rose-500 hover:bg-rose-50 hover:text-rose-600"
                             title="Hapus"
                         >

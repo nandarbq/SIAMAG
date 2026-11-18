@@ -71,7 +71,18 @@
                                     @endphp
 
                                     @if ($canCancel)
-                                        <button type="button" wire:click="delete({{ $leave->id }})" wire:confirm="Batalkan pengajuan ini? Absensi terkait juga akan dihapus." class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50" title="Batalkan pengajuan">
+                                        <button
+                                            type="button"
+                                            @click="$dispatch('app-confirm', {
+                                                title: 'Batalkan pengajuan?',
+                                                message: 'Pengajuan ini akan dibatalkan. Absensi terkait juga akan dihapus.',
+                                                confirmLabel: 'Batalkan pengajuan',
+                                                workingLabel: 'Membatalkan...',
+                                                onConfirm: () => $wire.delete({{ $leave->id }}),
+                                            })"
+                                            class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50"
+                                            title="Batalkan pengajuan"
+                                        >
                                             <x-icon name="trash" class="h-4 w-4" />
                                         </button>
                                     @endif

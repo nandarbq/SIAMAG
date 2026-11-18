@@ -117,8 +117,13 @@
         <p class="text-xs text-rose-700">Kelompok beranggotakan mahasiswa tidak bisa dihapus.</p>
         <button
             type="button"
-            wire:click="delete"
-            wire:confirm="Yakin ingin menghapus kelompok {{ $group->code }}?"
+            @click="$dispatch('app-confirm', {
+                title: 'Hapus kelompok?',
+                message: @js('Kelompok '.$group->code.' akan dihapus permanen. Pastikan tidak ada anggota yang masih terdaftar.'),
+                confirmLabel: 'Hapus kelompok',
+                workingLabel: 'Menghapus...',
+                onConfirm: () => $wire.delete(),
+            })"
             class="btn-danger"
         >
             <x-icon name="trash" class="h-4 w-4" />
