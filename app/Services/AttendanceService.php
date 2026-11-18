@@ -10,6 +10,7 @@ use App\Models\LeaveRequest;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Crypt;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
@@ -20,6 +21,8 @@ use Intervention\Image\ImageManager;
 
 class AttendanceService
 {
+    private const SELFIE_TOKEN_TTL_MINUTES = 10;
+
     public function __construct(
         private readonly GeofenceService $geofence,
         private readonly WorkdayService $workdays,
@@ -457,6 +460,8 @@ class AttendanceService
         return Crypt::encryptString(json_encode([
             'user_id' => $user->id,
             'path' => $path,
+            'date' => now()->toDateString(),
+            'expires_at' => now()->addMinutes(self::SELFIE_TOKEN_TTL_MINUTES)->timestamp,
         ], JSON_THROW_ON_ERROR));
     }
 
@@ -529,6 +534,14 @@ class AttendanceService
             return null;
         }
 
+        $tokenKey = 'attendance-selfie-token:'.hash('sha256', $token);
+
+        if (Cache::has($tokenKey)) {
+            throw ValidationException::withMessages([
+                'photo' => 'Sesi foto selfie sudah digunakan. Ambil ulang foto.',
+            ]);
+        }
+
         try {
             $payload = json_decode(Crypt::decryptString($token), true, 512, JSON_THROW_ON_ERROR);
         } catch (\Throwable) {
@@ -539,8 +552,16 @@ class AttendanceService
 
         $userId = (int) ($payload['user_id'] ?? 0);
         $path = $payload['path'] ?? null;
+        $date = $payload['date'] ?? null;
+        $expiresAt = (int) ($payload['expires_at'] ?? 0);
 
-        if ($userId !== $user->id || ! is_string($path) || ! str_starts_with($path, 'attendance/'.$user->id.'/')) {
+        if (
+            $userId !== $user->id
+            || ! is_string($path)
+            || ! str_starts_with($path, 'attendance/'.$user->id.'/')
+            || $date !== now()->toDateString()
+            || $expiresAt < now()->timestamp
+        ) {
             throw ValidationException::withMessages([
                 'photo' => 'Sesi foto selfie tidak valid. Ambil ulang foto.',
             ]);
@@ -551,6 +572,8 @@ class AttendanceService
                 'photo' => 'Foto selfie tidak ditemukan. Ambil ulang foto.',
             ]);
         }
+
+        Cache::put($tokenKey, true, now()->addMinutes(self::SELFIE_TOKEN_TTL_MINUTES));
 
         return $path;
     }
