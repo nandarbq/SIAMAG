@@ -31,52 +31,74 @@
     </section>
 
     @if ($announcements->isNotEmpty())
-        @php $latestAnnouncement = $announcements->first(); @endphp
-        <section x-data="{ open: false }" class="overflow-hidden rounded-2xl border border-brand-100 bg-brand-50/70">
-            <div class="flex flex-col gap-4 p-5 sm:flex-row sm:items-start sm:justify-between">
-                <div class="flex gap-3">
-                    <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand-600 shadow-sm ring-1 ring-inset ring-brand-100">
-                        <x-icon name="megaphone" class="h-5 w-5" />
-                    </span>
-                    <div class="min-w-0">
-                        <div class="flex flex-wrap items-center gap-2">
-                            <p class="text-xs font-bold uppercase tracking-wide text-brand-700">Pengumuman</p>
+        @php
+            $latestAnnouncement = $announcements->first();
+            $isLatestNew = $latestAnnouncement->published_at?->gte(now()->subDays(7)) ?? false;
+        @endphp
+        <section x-data="{ open: false }" class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-card">
+            <div class="grid lg:grid-cols-[230px_minmax(0,1fr)]">
+                <div class="relative overflow-hidden bg-linear-to-br from-brand-700 via-brand-800 to-brand-950 p-5 text-white sm:p-6">
+                    <div class="pointer-events-none absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;"></div>
+                    <div class="relative flex h-full flex-col justify-between gap-4 sm:gap-6">
+                        <div class="flex items-center justify-between gap-3">
+                            <span class="flex h-11 w-11 items-center justify-center rounded-2xl bg-white/10 text-accent-300 ring-1 ring-inset ring-white/15">
+                                <x-icon name="megaphone" class="h-5 w-5" />
+                            </span>
                             @if ($announcements->count() > 1)
-                                <span class="badge-blue badge-compact">{{ $announcements->count() }} terbaru</span>
+                                <span class="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white ring-1 ring-inset ring-white/15">
+                                    {{ $announcements->count() }} info
+                                </span>
                             @endif
                         </div>
-                        <h2 class="mt-1 text-base font-bold text-slate-900">{{ $latestAnnouncement->title }}</h2>
-                        <p class="mt-1 line-clamp-3 max-w-3xl text-sm leading-relaxed text-slate-600">{{ $latestAnnouncement->body }}</p>
-                        <p class="mt-2 text-[11px] text-slate-500">{{ $latestAnnouncement->published_at?->translatedFormat('d F Y') }}</p>
+                        <div>
+                            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-200">Pusat Informasi</p>
+                            <p class="mt-1 text-2xl font-bold leading-tight">Pengumuman terbaru</p>
+                        </div>
                     </div>
                 </div>
 
-                @if ($announcements->count() > 1)
-                    <button
-                        type="button"
-                        @click="open = !open"
-                        :aria-expanded="open"
-                        class="btn-secondary btn-sm shrink-0 self-start"
-                    >
-                        <span x-text="open ? 'Tutup' : 'Lihat semua'"></span>
-                        <x-icon name="chevron-down" class="h-3.5 w-3.5 transition-transform" x-bind:class="open ? 'rotate-180' : ''" />
-                    </button>
-                @endif
-            </div>
-
-            @if ($announcements->count() > 1)
-                <div x-cloak x-show="open" x-transition class="border-t border-brand-100/80 bg-white/60">
-                    @foreach ($announcements->skip(1) as $announcement)
-                        <div wire:key="announcement-{{ $announcement->id }}" class="border-b border-brand-100/60 px-5 py-3 last:border-0">
-                            <div class="flex flex-wrap items-center justify-between gap-2">
-                                <p class="text-sm font-semibold text-slate-800">{{ $announcement->title }}</p>
-                                <span class="text-[11px] text-slate-500">{{ $announcement->published_at?->translatedFormat('d M Y') }}</span>
+                <div class="p-5 sm:p-6">
+                    <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                @if ($isLatestNew)
+                                    <span class="badge-amber badge-compact">Terbaru</span>
+                                @endif
+                                <p class="text-[11px] font-medium text-slate-400">{{ $latestAnnouncement->published_at?->translatedFormat('d F Y') }}</p>
                             </div>
-                            <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">{{ $announcement->body }}</p>
+                            <h2 class="mt-2 text-lg font-bold tracking-tight text-slate-900 sm:text-xl">{{ $latestAnnouncement->title }}</h2>
+                            <p class="mt-1.5 line-clamp-3 max-w-3xl text-sm leading-relaxed text-slate-600">{{ $latestAnnouncement->body }}</p>
                         </div>
-                    @endforeach
+
+                        @if ($announcements->count() > 1)
+                            <button
+                                type="button"
+                                @click="open = !open"
+                                :aria-expanded="open"
+                                class="btn-secondary btn-sm shrink-0 self-start"
+                            >
+                                <span x-text="open ? 'Tutup' : 'Lihat semua'"></span>
+                                <span class="rounded-full bg-slate-100 px-1.5 py-0.5 text-[10px] font-bold text-slate-500">{{ $announcements->count() }}</span>
+                                <x-icon name="chevron-down" class="h-3.5 w-3.5 transition-transform" x-bind:class="open ? 'rotate-180' : ''" />
+                            </button>
+                        @endif
+                    </div>
+
+                    @if ($announcements->count() > 1)
+                        <div x-cloak x-show="open" x-transition class="mt-4 divide-y divide-slate-100 border-t border-slate-100">
+                            @foreach ($announcements->skip(1) as $announcement)
+                                <div wire:key="announcement-{{ $announcement->id }}" class="py-3">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <p class="text-sm font-semibold text-slate-800">{{ $announcement->title }}</p>
+                                        <span class="text-[11px] text-slate-400">{{ $announcement->published_at?->translatedFormat('d M Y') }}</span>
+                                    </div>
+                                    <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-500">{{ $announcement->body }}</p>
+                                </div>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
-            @endif
+            </div>
         </section>
     @endif
 
