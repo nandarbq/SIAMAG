@@ -87,18 +87,29 @@
         </div>
     </div>
 
-    <div class="border-t border-white/10 p-4">
-        <div class="flex items-center gap-3 rounded-2xl bg-white/5 p-3 ring-1 ring-white/10">
-            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br from-accent-400 to-accent-600 text-sm font-bold text-slate-900">
-                {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-            </span>
-            <div class="min-w-0 flex-1">
-                <p class="truncate text-sm font-semibold">{{ auth()->user()->name }}</p>
-                <p class="truncate text-[11px] text-slate-400">{{ auth()->user()->email }}</p>
-            </div>
+    <div class="border-t border-white/10 p-3">
+        <div class="flex items-center gap-1.5">
+            <a
+                href="{{ $isAdmin ? route('admin.settings') : route('mahasiswa.profile') }}"
+                wire:navigate
+                class="group flex min-w-0 flex-1 items-center gap-3 rounded-xl p-2 transition hover:bg-white/5"
+            >
+                <x-user-avatar :user="auth()->user()" size="sm" />
+                <span class="min-w-0 flex-1">
+                    <span class="block truncate text-sm font-semibold">{{ auth()->user()->name }}</span>
+                    <span class="block truncate text-[11px] text-slate-400">{{ $isAdmin ? 'Administrator' : 'Mahasiswa Magang' }}</span>
+                </span>
+                <x-icon name="chevron-down" class="h-4 w-4 shrink-0 -rotate-90 text-slate-500 transition group-hover:translate-x-0.5 group-hover:text-white" />
+            </a>
+
             <form method="POST" action="{{ route('logout') }}">
                 @csrf
-                <button type="submit" class="rounded-lg p-1.5 text-slate-400 transition hover:bg-white/10 hover:text-white" title="Keluar">
+                <button
+                    type="submit"
+                    class="flex h-10 w-10 items-center justify-center rounded-xl text-slate-400 transition hover:bg-white/5 hover:text-white"
+                    title="Keluar"
+                    aria-label="Keluar"
+                >
                     <x-icon name="logout" class="h-4 w-4" />
                 </button>
             </form>

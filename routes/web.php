@@ -7,6 +7,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\LeaveAttachmentController;
 use App\Http\Controllers\LogbookPhotoController;
 use App\Http\Controllers\Mahasiswa\LogbookExportController;
+use App\Http\Controllers\ProfilePhotoController;
 use App\Livewire\Admin\Announcements\Index as AnnouncementIndex;
 use App\Livewire\Admin\Attendances\Index as AttendanceIndex;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
@@ -55,6 +56,8 @@ Route::middleware('auth')->group(function () {
     Route::get('/leaves/{leave}/attachment', LeaveAttachmentController::class)->name('leave.attachment');
 
     Route::get('/logbooks/{logbook}/photo', LogbookPhotoController::class)->name('logbook.photo');
+
+    Route::get('/users/{user}/photo', ProfilePhotoController::class)->name('user.photo');
 });
 
 Route::middleware(['auth', 'role:admin'])

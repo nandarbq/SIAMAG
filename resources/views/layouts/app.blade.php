@@ -1,8 +1,9 @@
 @php
-    $activeAnnouncementCount = \App\Models\Announcement::query()
-        ->where('is_active', true)
-        ->where('published_at', '<=', now())
-        ->count();
+    $user = auth()->user();
+    $isAdmin = $user->role === \App\Enums\UserRole::Admin;
+    $accountRoute = $isAdmin ? route('admin.settings') : route('mahasiswa.profile');
+    $accountLabel = $isAdmin ? 'Pengaturan' : 'Profil Saya';
+    $accountDescription = $isAdmin ? 'Kelola preferensi sistem' : 'Perbarui data akun Anda';
 @endphp
 
 <!DOCTYPE html>
@@ -58,53 +59,78 @@
                         </div>
                     </div>
 
-                    <div class="flex items-center gap-2 sm:gap-4">
-                        @if (auth()->user()->role === \App\Enums\UserRole::Mahasiswa)
-                            <a href="{{ route('mahasiswa.dashboard') }}" class="btn-ghost relative px-2.5 py-2" aria-label="Pengumuman">
-                                <x-icon name="bell" class="h-5 w-5" />
-                                @if (($activeAnnouncementCount ?? 0) > 0)
-                                    <span class="absolute right-1 top-1 flex h-2 w-2 rounded-full bg-rose-500 ring-2 ring-white"></span>
-                                @endif
-                            </a>
-                        @endif
-
-                        <div x-data="{ open: false }" class="relative" @click.outside="open = false">
+                    <div class="flex items-center gap-3">
+                        <div x-data="{ open: false }" class="relative" @click.outside="open = false" @keydown.escape.window="open = false">
                             <button
                                 type="button"
                                 @click="open = !open"
-                                class="flex items-center gap-3 rounded-xl border border-slate-200 bg-white px-2.5 py-1.5 text-left shadow-sm transition hover:border-slate-300"
+                                :aria-expanded="open"
+                                aria-haspopup="menu"
+                                class="group flex items-center gap-2.5 rounded-full p-1 text-left transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-brand-500/40 sm:pr-3"
                             >
-                                <span class="flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-br from-brand-600 to-brand-800 text-xs font-bold text-white">
-                                    {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
-                                </span>
+                                <x-user-avatar :user="$user" size="sm" />
                                 <span class="hidden min-w-0 sm:block">
-                                    <span class="block max-w-[140px] truncate text-sm font-semibold text-slate-800">{{ auth()->user()->name }}</span>
-                                    <span class="block text-[11px] text-slate-500">{{ auth()->user()->role->label() }}</span>
+                                    <span class="block max-w-[150px] truncate text-sm font-semibold leading-tight text-slate-800">{{ $user->name }}</span>
+                                    <span class="block text-[11px] leading-tight text-slate-500">{{ $user->role->label() }}</span>
                                 </span>
-                                <x-icon name="chevron-down" class="h-4 w-4 text-slate-400" />
+                                <x-icon
+                                    name="chevron-down"
+                                    class="hidden h-4 w-4 text-slate-400 transition-transform duration-200 sm:block"
+                                    x-bind:class="open ? 'rotate-180' : ''"
+                                />
                             </button>
 
                             <div
                                 x-cloak
                                 x-show="open"
                                 x-transition.origin.top.right
-                                class="absolute right-0 mt-2 w-56 overflow-hidden rounded-2xl border border-slate-200 bg-white p-1.5 shadow-xl shadow-slate-900/10"
+                                class="absolute right-0 mt-3 w-72 max-w-[calc(100vw-2rem)] overflow-hidden rounded-2xl border border-slate-200/80 bg-white/95 p-2 shadow-2xl shadow-slate-900/10 backdrop-blur-xl"
                             >
-                                <div class="border-b border-slate-100 px-3 py-2.5">
-                                    <p class="truncate text-sm font-semibold text-slate-900">{{ auth()->user()->name }}</p>
-                                    <p class="truncate text-xs text-slate-500">{{ auth()->user()->email }}</p>
+                                <div class="flex items-center gap-3 rounded-xl bg-slate-50/80 p-3">
+                                    <x-user-avatar :user="$user" size="md" />
+                                    <div class="min-w-0 flex-1">
+                                        <p class="truncate text-sm font-semibold text-slate-900">{{ $user->name }}</p>
+                                        <p class="truncate text-xs text-slate-500">{{ $user->email }}</p>
+                                        <span @class([
+                                            'mt-1.5 inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide',
+                                            'bg-brand-50 text-brand-700' => $isAdmin,
+                                            'bg-emerald-50 text-emerald-700' => ! $isAdmin,
+                                        ])>
+                                            {{ $user->role->label() }}
+                                        </span>
+                                    </div>
                                 </div>
-                                <a href="{{ auth()->user()->role === \App\Enums\UserRole::Admin ? route('admin.settings') : route('mahasiswa.profile') }}" class="flex items-center gap-2 rounded-xl px-3 py-2 text-sm text-slate-600 hover:bg-slate-50">
-                                    <x-icon name="user" class="h-4 w-4" />
-                                    {{ auth()->user()->role === \App\Enums\UserRole::Admin ? 'Pengaturan' : 'Profil Saya' }}
-                                </a>
-                                <form method="POST" action="{{ route('logout') }}">
-                                    @csrf
-                                    <button type="submit" class="flex w-full items-center gap-2 rounded-xl px-3 py-2 text-sm text-rose-600 hover:bg-rose-50">
-                                        <x-icon name="logout" class="h-4 w-4" />
-                                        Keluar
-                                    </button>
-                                </form>
+
+                                <div class="mt-2">
+                                    <a
+                                        href="{{ $accountRoute }}"
+                                        wire:navigate
+                                        class="group flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-slate-600 transition hover:bg-slate-100 hover:text-slate-900"
+                                    >
+                                        <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500 transition group-hover:bg-white group-hover:text-brand-600">
+                                            <x-icon :name="$isAdmin ? 'settings' : 'user'" class="h-4 w-4" />
+                                        </span>
+                                        <span class="min-w-0">
+                                            <span class="block">{{ $accountLabel }}</span>
+                                            <span class="block text-[11px] font-normal text-slate-400">{{ $accountDescription }}</span>
+                                        </span>
+                                    </a>
+                                </div>
+
+                                <div class="mt-2 border-t border-slate-100 pt-2">
+                                    <form method="POST" action="{{ route('logout') }}">
+                                        @csrf
+                                        <button
+                                            type="submit"
+                                            class="group flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium text-rose-600 transition hover:bg-rose-50"
+                                        >
+                                            <span class="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-rose-50 text-rose-500 transition group-hover:bg-white">
+                                                <x-icon name="logout" class="h-4 w-4" />
+                                            </span>
+                                            Keluar
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         </div>
                     </div>

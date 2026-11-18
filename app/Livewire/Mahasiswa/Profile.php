@@ -4,16 +4,22 @@ namespace App\Livewire\Mahasiswa;
 
 use App\Services\LogbookProgressService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\Rule;
 use Illuminate\Validation\Rules\Password;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
+use Livewire\WithFileUploads;
 
 #[Layout('layouts.app')]
 #[Title('Profil Saya')]
 class Profile extends Component
 {
+    use WithFileUploads;
+
+    public $photo = null;
+
     public string $name = '';
 
     public string $email = '';
@@ -60,6 +66,47 @@ class Profile extends Component
         ]);
 
         session()->flash('success', 'Profil berhasil diperbarui.');
+    }
+
+    public function updatePhoto(): void
+    {
+        $this->validate([
+            'photo' => ['required', 'image', 'max:2048', 'mimes:jpg,jpeg,png,webp'],
+        ], [
+            'photo.required' => 'Pilih foto terlebih dahulu.',
+            'photo.image' => 'File harus berupa gambar.',
+            'photo.max' => 'Ukuran foto maksimal 2MB.',
+            'photo.mimes' => 'Format foto harus jpg, jpeg, png, atau webp.',
+        ]);
+
+        $user = auth()->user();
+        $oldPhoto = $user->photo_path;
+        $path = $this->photo->store('avatars/'.$user->id, 'local');
+
+        $user->update(['photo_path' => $path]);
+
+        if ($oldPhoto) {
+            Storage::disk('local')->delete($oldPhoto);
+        }
+
+        $this->reset('photo');
+        session()->flash('success', 'Foto profil berhasil diperbarui.');
+        $this->redirectRoute('mahasiswa.profile', navigate: true);
+    }
+
+    public function removePhoto(): void
+    {
+        $user = auth()->user();
+
+        if (! $user->photo_path) {
+            return;
+        }
+
+        Storage::disk('local')->delete($user->photo_path);
+        $user->update(['photo_path' => null]);
+
+        session()->flash('success', 'Foto profil berhasil dihapus.');
+        $this->redirectRoute('mahasiswa.profile', navigate: true);
     }
 
     public function updatePassword(): void

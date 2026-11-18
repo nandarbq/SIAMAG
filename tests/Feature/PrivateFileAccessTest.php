@@ -98,6 +98,50 @@ class PrivateFileAccessTest extends TestCase
             ->assertNotFound();
     }
 
+    public function test_owner_and_admin_can_view_profile_photo(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Storage::disk('local')->put('avatars/student.jpg', 'image-bytes');
+
+        $student = User::factory()->mahasiswa()->create([
+            'photo_path' => 'avatars/student.jpg',
+        ]);
+
+        $this->actingAs($student)
+            ->get(route('user.photo', $student))
+            ->assertOk();
+
+        $this->actingAs($admin)
+            ->get(route('user.photo', $student))
+            ->assertOk();
+    }
+
+    public function test_other_students_cannot_view_profile_photo(): void
+    {
+        Storage::disk('local')->put('avatars/owner.jpg', 'image-bytes');
+
+        $owner = User::factory()->mahasiswa()->create([
+            'photo_path' => 'avatars/owner.jpg',
+        ]);
+        $other = User::factory()->mahasiswa()->create();
+
+        $this->actingAs($other)
+            ->get(route('user.photo', $owner))
+            ->assertForbidden();
+    }
+
+    public function test_profile_photo_returns_not_found_when_file_is_missing(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create([
+            'photo_path' => 'avatars/missing.jpg',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('user.photo', $student))
+            ->assertNotFound();
+    }
+
     public function test_owner_and_admin_can_view_leave_attachment(): void
     {
         $admin = User::factory()->admin()->create();
