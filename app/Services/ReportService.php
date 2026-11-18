@@ -28,13 +28,25 @@ class ReportService
             ->orderBy('name')
             ->get();
 
-        $rows = $students->map(function (User $student) use ($periodStart, $periodEnd, $holidayDates) {
-            $counts = Attendance::query()
-                ->where('user_id', $student->id)
-                ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
-                ->selectRaw('status, count(*) as total')
-                ->groupBy('status')
-                ->pluck('total', 'status');
+        $studentIds = $students->pluck('id');
+
+        $attendanceCounts = Attendance::query()
+            ->whereIn('user_id', $studentIds)
+            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
+            ->selectRaw('user_id, status, count(*) as total')
+            ->groupBy('user_id', 'status')
+            ->get()
+            ->groupBy('user_id');
+
+        $logbookCounts = Logbook::query()
+            ->whereIn('user_id', $studentIds)
+            ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
+            ->selectRaw('user_id, count(*) as total')
+            ->groupBy('user_id')
+            ->pluck('total', 'user_id');
+
+        $rows = $students->map(function (User $student) use ($periodStart, $periodEnd, $holidayDates, $attendanceCounts, $logbookCounts) {
+            $counts = $attendanceCounts->get($student->id, collect())->pluck('total', 'status');
 
             $hadir = (int) ($counts[AttendanceStatus::Hadir->value] ?? 0);
             $terlambat = (int) ($counts[AttendanceStatus::Terlambat->value] ?? 0);
@@ -45,10 +57,7 @@ class ReportService
             $recorded = $hadir + $terlambat + $izin + $sakit;
             $alpha = max(0, $workdays - $recorded);
 
-            $logbookTotal = Logbook::query()
-                ->where('user_id', $student->id)
-                ->whereBetween('date', [$periodStart->toDateString(), $periodEnd->toDateString()])
-                ->count();
+            $logbookTotal = (int) ($logbookCounts[$student->id] ?? 0);
 
             return [
                 'id' => $student->id,
