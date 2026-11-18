@@ -110,21 +110,25 @@
                 <x-icon name="alert" class="mt-0.5 h-5 w-5 shrink-0" />
                 <div class="min-w-0 flex-1">
                     <p class="font-semibold">Ada {{ $progress['missing'] }} hari kerja yang belum diisi logbook.</p>
-                    <p class="mt-0.5 text-xs">Lengkapi sekarang agar laporan akhir magang Anda tidak terhambat.</p>
-                    @if ($exportOpen)
-                        <p class="mt-1 text-xs font-medium">Anda tetap dapat mengunduh logbook, tetapi lengkapi hari terlewat agar laporan lebih utuh.</p>
-                    @endif
-                    <div class="mt-3 flex flex-wrap gap-2">
-                        @foreach (array_slice($progress['missing_dates'], 0, 8) as $missingDate)
-                            <button type="button" wire:click="openCreateForDate('{{ $missingDate }}')" class="btn-secondary btn-sm">
-                                <x-icon name="plus" class="h-3.5 w-3.5" />
-                                {{ \Carbon\Carbon::parse($missingDate)->translatedFormat('d M') }}
-                            </button>
-                        @endforeach
-                        @if (count($progress['missing_dates']) > 8)
-                            <span class="self-center text-xs font-medium text-amber-700">+{{ count($progress['missing_dates']) - 8 }} tanggal lainnya</span>
+                    @if ($progress['today_status'] === 'outside')
+                        <p class="mt-0.5 text-xs">Periode magang telah berakhir. Logbook yang terlewat tidak dapat ditambahkan lagi.</p>
+                    @else
+                        <p class="mt-0.5 text-xs">Lengkapi sekarang agar laporan akhir magang Anda tidak terhambat.</p>
+                        @if ($exportOpen)
+                            <p class="mt-1 text-xs font-medium">Anda tetap dapat mengunduh logbook, tetapi lengkapi hari terlewat agar laporan lebih utuh.</p>
                         @endif
-                    </div>
+                        <div class="mt-3 flex flex-wrap gap-2">
+                            @foreach (array_slice($progress['missing_dates'], 0, 8) as $missingDate)
+                                <button type="button" wire:click="openCreateForDate('{{ $missingDate }}')" class="btn-secondary btn-sm">
+                                    <x-icon name="plus" class="h-3.5 w-3.5" />
+                                    {{ \Carbon\Carbon::parse($missingDate)->translatedFormat('d M') }}
+                                </button>
+                            @endforeach
+                            @if (count($progress['missing_dates']) > 8)
+                                <span class="self-center text-xs font-medium text-amber-700">+{{ count($progress['missing_dates']) - 8 }} tanggal lainnya</span>
+                            @endif
+                        </div>
+                    @endif
                 </div>
             </div>
         </div>

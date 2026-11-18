@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Mahasiswa\Logbooks;
 
+use App\Models\InternProfile;
 use App\Models\Logbook;
 use App\Models\Setting;
 use App\Services\LogbookExportService;
@@ -64,7 +65,7 @@ class Index extends Component
 
         $profile = auth()->user()->internProfile;
 
-        if ($profile && ! today()->betweenIncluded($profile->start_date, $profile->end_date)) {
+        if ($this->isOutsideInternshipPeriod($profile)) {
             session()->flash('error', 'Anda hanya dapat mengisi logbook selama periode magang.');
 
             return;
@@ -91,6 +92,12 @@ class Index extends Component
 
         $profile = auth()->user()->internProfile;
         $date = Carbon::parse($date)->startOfDay();
+
+        if ($this->isOutsideInternshipPeriod($profile)) {
+            session()->flash('error', 'Anda hanya dapat mengisi logbook selama periode magang.');
+
+            return;
+        }
 
         if ($date->greaterThan(today())) {
             session()->flash('error', 'Logbook tidak dapat diisi untuk tanggal yang akan datang.');
@@ -233,6 +240,11 @@ class Index extends Component
         }
     }
 
+    private function isOutsideInternshipPeriod(?InternProfile $profile): bool
+    {
+        return $profile !== null && ! today()->betweenIncluded($profile->start_date, $profile->end_date);
+    }
+
     private function persist(): void
     {
         $userId = auth()->id();
@@ -244,6 +256,12 @@ class Index extends Component
 
         if ($logbook && ! $logbook->isEditable()) {
             session()->flash('error', 'Logbook ini tidak dapat diubah karena sudah terkunci.');
+
+            return;
+        }
+
+        if (! $logbook && $this->isOutsideInternshipPeriod($profile)) {
+            session()->flash('error', 'Anda hanya dapat mengisi logbook selama periode magang.');
 
             return;
         }
