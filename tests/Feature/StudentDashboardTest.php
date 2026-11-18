@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AttendanceStatus;
 use App\Livewire\Mahasiswa\Dashboard as StudentDashboard;
 use App\Models\Announcement;
+use App\Models\Attendance;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
@@ -49,6 +51,24 @@ class StudentDashboardTest extends TestCase
             ->assertSee('Jadwal Apel Senin')
             ->assertDontSee('Pengumuman Nonaktif')
             ->assertDontSee('progres magang Anda di Universitas Jember');
+    }
+
+    public function test_dashboard_builds_weekly_activity_statuses(): void
+    {
+        $student = $this->makeStudent();
+
+        Attendance::factory()->for($student)->create([
+            'date' => '2026-11-10',
+            'status' => AttendanceStatus::Hadir,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentDashboard::class)
+            ->assertViewHas('week', function (array $week): bool {
+                $today = collect($week)->firstWhere('isToday', true);
+
+                return $today !== null && $today['status_label'] === 'Hadir';
+            });
     }
 
     private function makeStudent(): User
