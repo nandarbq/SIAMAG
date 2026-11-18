@@ -251,7 +251,7 @@
                             <div class="flex flex-wrap items-center justify-between gap-2">
                                 <p class="text-xs leading-relaxed text-slate-500">Posisikan wajah di dalam oval, gunakan kamera depan, dan pastikan pencahayaan cukup.</p>
 
-                                <div class="flex gap-2">
+                                <div class="flex w-full flex-wrap gap-2 sm:w-auto">
                                     <button type="button" x-show="started && cameraReady && ! capturedUrl" @click="capture()" class="btn-primary btn-sm">
                                         <x-icon name="camera" class="h-4 w-4" />
                                         Ambil Foto
@@ -458,7 +458,42 @@
                 <p class="mt-0.5 text-xs text-slate-500">10 absensi terakhir Anda</p>
             </div>
         </div>
-        <div class="overflow-x-auto">
+        <div class="divide-y divide-slate-100 sm:hidden">
+            @forelse ($history as $attendance)
+                <div class="space-y-3 p-4">
+                    <div class="flex items-start justify-between gap-3">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800">{{ $attendance->date?->translatedFormat('d M Y') }}</p>
+                            <p class="text-xs text-slate-400">{{ $attendance->date?->translatedFormat('l') }}</p>
+                        </div>
+                        <x-attendance-status :status="$attendance->status" />
+                    </div>
+
+                    <dl class="grid grid-cols-2 gap-2 text-xs">
+                        <div class="rounded-xl bg-slate-50 p-2.5">
+                            <dt class="font-semibold uppercase tracking-wide text-slate-400">Masuk</dt>
+                            <dd class="mt-0.5 font-semibold text-slate-800">{{ $attendance->check_in_at?->format('H:i') ?? '—' }}</dd>
+                        </div>
+                        <div class="rounded-xl bg-slate-50 p-2.5">
+                            <dt class="font-semibold uppercase tracking-wide text-slate-400">Pulang</dt>
+                            <dd class="mt-0.5 font-semibold text-slate-800">{{ $attendance->check_out_at?->format('H:i') ?? '—' }}</dd>
+                            @if ($attendance->early_leave_minutes > 0)
+                                <p class="mt-1 text-[11px] font-medium text-amber-600">Pulang lebih awal {{ $attendance->early_leave_duration }}</p>
+                            @endif
+                        </div>
+                    </dl>
+
+                    <p class="text-xs text-slate-500">
+                        Lokasi:
+                        <span class="font-semibold text-slate-700">{{ $attendance->check_in_distance !== null ? $attendance->check_in_distance.' m' : '—' }}</span>
+                    </p>
+                </div>
+            @empty
+                <p class="px-4 py-12 text-center text-sm text-slate-500">Belum ada riwayat absensi.</p>
+            @endforelse
+        </div>
+
+        <div class="hidden overflow-x-auto sm:block">
             <table class="min-w-full text-left text-sm">
                 <thead>
                     <tr class="border-b border-slate-100 bg-slate-50/80">
@@ -506,7 +541,7 @@
 
     @if ($needsSickRecoveryPrompt)
         <div
-            class="fixed inset-0 z-50 overflow-y-auto"
+            class="fixed inset-0 z-50 overflow-y-auto overscroll-contain"
             role="alertdialog"
             aria-modal="true"
             aria-labelledby="sick-recovery-title"
@@ -514,7 +549,7 @@
         >
             <div class="fixed inset-0 bg-slate-950/45"></div>
 
-            <div class="relative flex min-h-full items-center justify-center p-4">
+            <div class="relative flex min-h-full items-start justify-center p-4 py-6 sm:items-center sm:p-4">
                 <div class="w-full max-w-md overflow-hidden rounded-3xl bg-white shadow-2xl ring-1 ring-slate-900/5">
                     <div class="border-b border-slate-100 px-6 py-5">
                         <span class="flex h-12 w-12 items-center justify-center rounded-2xl bg-emerald-50 text-emerald-600">
