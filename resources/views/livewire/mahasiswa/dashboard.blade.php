@@ -3,7 +3,7 @@
         <div class="grid lg:grid-cols-[minmax(0,1fr)_400px]">
             <div class="relative overflow-hidden bg-linear-to-br from-white via-white to-brand-50/70 p-6 sm:p-8">
                 <div class="pointer-events-none absolute -right-24 top-1/2 hidden h-80 w-80 -translate-y-1/2 rounded-full border border-brand-100/70 sm:block"></div>
-                <x-banyuwangi-ornament variant="gandrung" class="pointer-events-none absolute -right-10 bottom-0 hidden h-[115%] w-auto select-none text-brand-950/[0.055] sm:block" />
+                <x-banyuwangi-ornament variant="gandrung" class="pointer-events-none absolute -right-4 bottom-0 hidden h-full w-auto select-none opacity-[0.08] sm:block" />
 
                 <div class="relative">
                     <p class="page-eyebrow">Portal Mahasiswa Magang</p>
@@ -47,7 +47,7 @@
             </div>
 
             <div class="relative overflow-hidden bg-brand-950 p-6 text-white sm:p-7">
-                <x-banyuwangi-ornament variant="gajah-oling" class="pointer-events-none absolute inset-0 h-full w-full select-none text-white opacity-[0.08]" />
+                <x-banyuwangi-ornament variant="gajah-oling" class="pointer-events-none absolute inset-0 h-full w-full select-none opacity-[0.12]" />
 
                 <div class="relative">
                     @if ($announcements->isNotEmpty())
