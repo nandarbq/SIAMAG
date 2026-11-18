@@ -69,6 +69,23 @@ class StudentDashboardTest extends TestCase
             ->assertDontSee('Pengumuman terbaru');
     }
 
+    public function test_today_focus_describes_excused_attendance_without_check_in(): void
+    {
+        $student = $this->makeStudent();
+
+        Attendance::factory()->for($student)->create([
+            'date' => '2026-11-10',
+            'status' => AttendanceStatus::Sakit,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentDashboard::class)
+            ->assertSee('Izin atau sakit hari ini tercatat.')
+            ->assertSee('Sakit tercatat')
+            ->assertDontSee('Sudah masuk')
+            ->assertDontSee('Belum ada catatan');
+    }
+
     public function test_today_focus_reminds_student_to_fill_logbook(): void
     {
         $student = $this->makeStudent();

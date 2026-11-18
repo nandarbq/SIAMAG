@@ -146,16 +146,27 @@ class Dashboard extends Component
 
         $attendanceValue = match (true) {
             ! $isWorkday => 'Libur',
+            $today?->status === AttendanceStatus::Izin => 'Izin',
+            $today?->status === AttendanceStatus::Sakit => 'Sakit',
+            $today?->status === AttendanceStatus::Libur => 'Libur',
+            $today?->status === AttendanceStatus::Alpha => 'Alpha',
             $today !== null => 'Sudah masuk',
             default => 'Belum absen',
         };
         $attendanceHint = match (true) {
             ! $isWorkday => 'Tidak perlu absen',
+            $today?->status === AttendanceStatus::Izin => 'Izin tercatat',
+            $today?->status === AttendanceStatus::Sakit => 'Sakit tercatat',
+            $today?->status === AttendanceStatus::Libur => 'Tidak perlu absen',
+            $today?->status === AttendanceStatus::Alpha => 'Tidak hadir',
             $today?->check_in_at !== null => 'Masuk '.$today->check_in_at->format('H:i'),
             default => 'Belum ada catatan',
         };
         $attendanceTone = match (true) {
             ! $isWorkday => 'bg-sky-400/15 text-sky-300 ring-sky-300/20',
+            in_array($today?->status, [AttendanceStatus::Izin, AttendanceStatus::Libur], true) => 'bg-sky-400/15 text-sky-300 ring-sky-300/20',
+            $today?->status === AttendanceStatus::Sakit => 'bg-violet-400/15 text-violet-300 ring-violet-300/20',
+            $today?->status === AttendanceStatus::Alpha => 'bg-rose-400/15 text-rose-300 ring-rose-300/20',
             $today !== null => 'bg-emerald-400/15 text-emerald-300 ring-emerald-300/20',
             default => 'bg-amber-400/15 text-amber-300 ring-amber-300/20',
         };
