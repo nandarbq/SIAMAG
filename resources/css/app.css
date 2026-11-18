@@ -79,7 +79,7 @@
     }
 
     .btn-sm {
-        @apply min-h-11 px-3 py-1.5 text-xs sm:min-h-0;
+        @apply min-h-11 min-w-11 px-3 py-1.5 text-xs sm:min-h-0 sm:min-w-0;
     }
 
     .card {
