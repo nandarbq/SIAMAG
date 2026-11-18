@@ -201,69 +201,76 @@
                 @else
                     <div x-data="attendanceCamera({ uploadUrl: @js(route('attendance.selfie')) })" wire:key="attendance-camera" class="space-y-5">
                         <div class="space-y-3">
-                            <div x-cloak class="relative flex min-h-56 items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-slate-950/90 p-2">
-                            <template x-if="capturedUrl">
-                                <img :src="capturedUrl" alt="Pratinjau selfie" class="absolute inset-0 h-full w-full object-cover">
-                            </template>
+                            <div x-cloak class="relative mx-auto w-full max-w-xs">
+                                <div class="relative aspect-[3/4] overflow-hidden rounded-[50%] border border-white/15 bg-slate-950 shadow-[0_24px_60px_-30px_rgba(15,23,42,0.55)] ring-1 ring-slate-900/10">
+                                    <template x-if="capturedUrl">
+                                        <img :src="capturedUrl" alt="Pratinjau selfie" class="absolute inset-0 h-full w-full object-cover">
+                                    </template>
 
-                            <video x-show="started && ! capturedUrl" x-ref="video" autoplay muted playsinline class="absolute inset-0 h-full w-full object-cover"></video>
-                            <canvas x-ref="canvas" class="hidden"></canvas>
+                                    <video x-show="started && ! capturedUrl" x-ref="video" autoplay muted playsinline class="absolute inset-0 h-full w-full object-cover"></video>
+                                    <canvas x-ref="canvas" class="hidden"></canvas>
 
-                            <div x-show="! started" class="relative flex flex-col items-center gap-3 px-4 text-center text-white">
-                                <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
-                                    <x-icon name="camera" class="h-6 w-6" />
-                                </span>
-                                <div>
-                                    <p class="text-sm font-bold">Kamera belum aktif</p>
-                                    <p class="mt-1 text-xs leading-relaxed text-slate-300">Tekan tombol mulai untuk menyalakan kamera dan mengambil selfie.</p>
+                                    <div x-show="started && cameraReady && ! capturedUrl" class="pointer-events-none absolute inset-0">
+                                        <div class="absolute inset-4 rounded-[50%] border border-white/30"></div>
+                                        <div class="animate-scan-face absolute inset-x-8 top-1/2 h-0.5 bg-gradient-to-r from-transparent via-accent-300 to-transparent shadow-[0_0_16px_rgba(251,191,36,0.85)] motion-reduce:animate-none"></div>
+                                    </div>
+
+                                    <div x-show="! started" class="relative flex h-full flex-col items-center justify-center gap-3 px-6 text-center text-white">
+                                        <span class="flex h-12 w-12 items-center justify-center rounded-full bg-white/10">
+                                            <x-icon name="camera" class="h-6 w-6" />
+                                        </span>
+                                        <div>
+                                            <p class="text-sm font-bold">Kamera belum aktif</p>
+                                            <p class="mt-1 text-xs leading-relaxed text-slate-300">Tekan tombol mulai untuk menyalakan kamera dan mengambil selfie.</p>
+                                        </div>
+                                        <button type="button" @click="startCamera()" class="btn-primary btn-sm">
+                                            <x-icon name="camera" class="h-4 w-4" />
+                                            {{ $today?->check_in_at ? 'Mulai Absen Pulang' : 'Mulai Absen' }}
+                                        </button>
+                                    </div>
+
+                                    <div x-show="started && ! cameraReady && ! capturedUrl && ! cameraError" class="relative flex h-full flex-col items-center justify-center gap-2 text-center text-xs font-semibold text-white">
+                                        <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
+                                        Menyiapkan kamera...
+                                    </div>
+
+                                    <div x-show="saving" class="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/75 px-3 py-1.5 text-center text-[11px] font-semibold text-white backdrop-blur-sm">
+                                        Menyimpan foto...
+                                    </div>
+
+                                    <span x-show="capturedUrl && ! saving" class="absolute bottom-5 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
+                                        Selfie siap digunakan
+                                    </span>
                                 </div>
-                                <button type="button" @click="startCamera()" class="btn-primary btn-sm">
-                                    <x-icon name="camera" class="h-4 w-4" />
-                                    {{ $today?->check_in_at ? 'Mulai Absen Pulang' : 'Mulai Absen' }}
-                                </button>
+
+                                <div x-show="started && cameraError" class="mx-auto mt-3 max-w-[19rem] rounded-2xl bg-rose-50 px-4 py-3 text-center text-xs font-medium leading-relaxed text-rose-700 shadow-sm">
+                                    <p x-text="cameraError"></p>
+                                </div>
                             </div>
 
-                            <div x-show="started && ! cameraReady && ! capturedUrl && ! cameraError" class="relative flex flex-col items-center gap-2 text-center text-xs font-semibold text-white">
-                                <span class="h-5 w-5 animate-spin rounded-full border-2 border-white/40 border-t-white"></span>
-                                Menyiapkan kamera...
-                            </div>
+                            <div class="flex flex-wrap items-center justify-between gap-2">
+                                <p class="text-xs leading-relaxed text-slate-500">Posisikan wajah di dalam oval, gunakan kamera depan, dan pastikan pencahayaan cukup.</p>
 
-                            <div x-show="started && cameraError" class="relative mx-4 rounded-2xl bg-rose-50/95 px-4 py-3 text-center text-xs font-medium leading-relaxed text-rose-700 shadow-sm">
-                                <p x-text="cameraError"></p>
-                            </div>
-
-                            <div x-show="saving" class="absolute inset-x-0 bottom-0 bg-slate-950/70 px-4 py-3 text-center text-xs font-semibold text-white backdrop-blur-sm">
-                                Menyimpan foto...
-                            </div>
-
-                            <span x-show="capturedUrl && ! saving" class="absolute bottom-3 left-1/2 -translate-x-1/2 rounded-full bg-slate-950/70 px-3 py-1.5 text-xs font-semibold text-white backdrop-blur">
-                                Selfie siap digunakan
-                            </span>
-                        </div>
-
-                        <div class="flex flex-wrap items-center justify-between gap-2">
-                            <p class="text-xs leading-relaxed text-slate-500">Gunakan kamera depan, pastikan wajah terlihat jelas dan pencahayaan cukup.</p>
-
-                            <div class="flex gap-2">
-                                <button type="button" x-show="started && cameraReady && ! capturedUrl" @click="capture()" class="btn-primary btn-sm">
-                                    <x-icon name="camera" class="h-4 w-4" />
-                                    Ambil Foto
-                                </button>
-                                <button type="button" x-show="started && cameraError && ! cameraReady && ! capturedUrl" @click="startCamera()" class="btn-secondary btn-sm">
-                                    <x-icon name="refresh" class="h-4 w-4" />
-                                    Coba Lagi
-                                </button>
-                                <button type="button" x-show="cameraError && capturedUrl && ! saving" @click="retryUpload()" class="btn-primary btn-sm">
-                                    <x-icon name="refresh" class="h-4 w-4" />
-                                    Simpan Ulang
-                                </button>
-                                <button type="button" x-show="capturedUrl && ! saving" @click="retake()" class="btn-secondary btn-sm">
-                                    <x-icon name="refresh" class="h-4 w-4" />
-                                    Ambil Ulang
-                                </button>
+                                <div class="flex gap-2">
+                                    <button type="button" x-show="started && cameraReady && ! capturedUrl" @click="capture()" class="btn-primary btn-sm">
+                                        <x-icon name="camera" class="h-4 w-4" />
+                                        Ambil Foto
+                                    </button>
+                                    <button type="button" x-show="started && cameraError && ! cameraReady && ! capturedUrl" @click="startCamera()" class="btn-secondary btn-sm">
+                                        <x-icon name="refresh" class="h-4 w-4" />
+                                        Coba Lagi
+                                    </button>
+                                    <button type="button" x-show="cameraError && capturedUrl && ! saving" @click="retryUpload()" class="btn-primary btn-sm">
+                                        <x-icon name="refresh" class="h-4 w-4" />
+                                        Simpan Ulang
+                                    </button>
+                                    <button type="button" x-show="capturedUrl && ! saving" @click="retake()" class="btn-secondary btn-sm">
+                                        <x-icon name="refresh" class="h-4 w-4" />
+                                        Ambil Ulang
+                                    </button>
+                                </div>
                             </div>
                         </div>
-                    </div>
 
                     @if ($requireGeofence)
                         <div class="rounded-2xl border border-slate-200 bg-white p-4">
