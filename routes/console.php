@@ -10,3 +10,4 @@ Artisan::command('inspire', function () {
 
 Schedule::command('attendance:prune-photos')->dailyAt('02:00');
 Schedule::command('attendance:sync-ongoing-sick-leaves')->dailyAt('00:05');
+Schedule::command('holidays:sync')->monthlyOn(1, '01:00')->withoutOverlapping();
