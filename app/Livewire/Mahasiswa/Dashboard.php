@@ -6,6 +6,7 @@ use App\Enums\AttendanceStatus;
 use App\Models\Announcement;
 use App\Models\Attendance;
 use App\Models\Holiday;
+use App\Models\InternProfile;
 use App\Models\Logbook;
 use App\Models\Setting;
 use App\Services\LogbookProgressService;
@@ -41,17 +42,21 @@ class Dashboard extends Component
 
         $workdays = app(WorkdayService::class);
         $todayDate = now()->startOfDay();
+        $isWorkday = $workdays->isWorkday($todayDate);
+        $nonWorkingLabel = $workdays->nonWorkingLabel($todayDate);
+        $logbookProgress = app(LogbookProgressService::class)->for($user);
 
         return view('livewire.mahasiswa.dashboard', [
             'profile' => $profile,
             'today' => $today,
-            'isWorkday' => $workdays->isWorkday($todayDate),
+            'isWorkday' => $isWorkday,
             'todayHoliday' => $workdays->holidayFor($todayDate),
-            'nonWorkingLabel' => $workdays->nonWorkingLabel($todayDate),
+            'nonWorkingLabel' => $nonWorkingLabel,
             'hadir' => (int) ($monthCounts[AttendanceStatus::Hadir->value] ?? 0),
             'terlambat' => (int) ($monthCounts[AttendanceStatus::Terlambat->value] ?? 0),
             'izinSakit' => (int) ($monthCounts[AttendanceStatus::Izin->value] ?? 0) + (int) ($monthCounts[AttendanceStatus::Sakit->value] ?? 0),
-            'logbookProgress' => app(LogbookProgressService::class)->for($user),
+            'logbookProgress' => $logbookProgress,
+            'todayFocus' => $this->buildTodayFocus($isWorkday, $today, $logbookProgress, $nonWorkingLabel, $profile),
             'recentLogbooks' => Logbook::query()
                 ->where('user_id', $user->id)
                 ->latest('date')
@@ -78,6 +83,122 @@ class Dashboard extends Component
             now()->hour < 18 => 'Selamat sore',
             default => 'Selamat malam',
         };
+    }
+
+    /**
+     * @param  array{expected: int, filled: int, missing: int, percentage: int|null, today_status: string}  $logbookProgress
+     * @return array{title: string, body: string, cta_label: string|null, cta_url: string|null, items: array<int, array{label: string, value: string, hint: string, icon: string, tone: string}>}
+     */
+    private function buildTodayFocus(bool $isWorkday, ?Attendance $today, array $logbookProgress, ?string $nonWorkingLabel, ?InternProfile $profile): array
+    {
+        $todayStatus = $logbookProgress['today_status'];
+
+        [$title, $body, $ctaLabel, $ctaUrl] = match (true) {
+            $profile === null => [
+                'Lengkapi profil magang Anda.',
+                'Data institusi, jurusan, dan periode magang diperlukan sebelum absensi dimulai.',
+                'Buka profil',
+                route('mahasiswa.profile'),
+            ],
+            ! $isWorkday => [
+                'Hari ini libur.',
+                ($nonWorkingLabel ?? 'Hari ini libur').'. Tidak perlu absensi atau logbook.',
+                null,
+                null,
+            ],
+            $todayStatus === 'not_started' => [
+                'Magang belum dimulai.',
+                'Anda bisa mulai absensi dan logbook sesuai tanggal awal periode magang.',
+                null,
+                null,
+            ],
+            $todayStatus === 'outside' => [
+                'Periode magang sudah berakhir.',
+                'Absensi dan logbook tidak lagi diperlukan untuk periode ini.',
+                null,
+                null,
+            ],
+            $today === null => [
+                'Absen masuk belum tercatat.',
+                'Mulai hari dengan absen masuk agar kehadiran dan logbook tercatat rapi.',
+                'Absen sekarang',
+                route('mahasiswa.attendance'),
+            ],
+            $todayStatus === 'missing' => [
+                'Logbook hari ini belum diisi.',
+                'Luangkan waktu sebentar untuk mencatat aktivitas magang hari ini.',
+                'Isi logbook',
+                route('mahasiswa.logbooks'),
+            ],
+            $todayStatus === 'excused' => [
+                'Izin atau sakit hari ini tercatat.',
+                'Tidak perlu mengisi logbook untuk hari ini. Jaga kesehatan Anda.',
+                null,
+                null,
+            ],
+            default => [
+                'Administrasi hari ini beres.',
+                'Absensi dan logbook sudah lengkap. Lanjutkan aktivitas magang dengan tenang.',
+                'Buka logbook',
+                route('mahasiswa.logbooks'),
+            ],
+        };
+
+        $attendanceValue = match (true) {
+            ! $isWorkday => 'Libur',
+            $today !== null => 'Sudah masuk',
+            default => 'Belum absen',
+        };
+        $attendanceHint = match (true) {
+            ! $isWorkday => 'Tidak perlu absen',
+            $today?->check_in_at !== null => 'Masuk '.$today->check_in_at->format('H:i'),
+            default => 'Belum ada catatan',
+        };
+        $attendanceTone = match (true) {
+            ! $isWorkday => 'bg-sky-400/15 text-sky-300 ring-sky-300/20',
+            $today !== null => 'bg-emerald-400/15 text-emerald-300 ring-emerald-300/20',
+            default => 'bg-amber-400/15 text-amber-300 ring-amber-300/20',
+        };
+
+        $logbookValue = match ($todayStatus) {
+            'filled' => 'Sudah diisi',
+            'missing' => 'Belum diisi',
+            'holiday' => 'Libur',
+            'excused' => 'Izin/Sakit',
+            'not_attended' => 'Belum absen',
+            default => 'Belum ada data',
+        };
+        $logbookHint = match ($todayStatus) {
+            'filled' => $logbookProgress['filled'].' dari '.$logbookProgress['expected'].' hari',
+            'missing' => 'Isi sebelum hari berganti',
+            'holiday', 'excused' => 'Tidak perlu diisi',
+            'not_attended' => 'Absen masuk dulu',
+            default => 'Belum ada data',
+        };
+        $logbookTone = match ($todayStatus) {
+            'filled' => 'bg-emerald-400/15 text-emerald-300 ring-emerald-300/20',
+            'missing' => 'bg-rose-400/15 text-rose-300 ring-rose-300/20',
+            'holiday', 'excused' => 'bg-sky-400/15 text-sky-300 ring-sky-300/20',
+            default => 'bg-amber-400/15 text-amber-300 ring-amber-300/20',
+        };
+
+        return [
+            'title' => $title,
+            'body' => $body,
+            'cta_label' => $ctaLabel,
+            'cta_url' => $ctaUrl,
+            'items' => [
+                ['label' => 'Absensi', 'value' => $attendanceValue, 'hint' => $attendanceHint, 'icon' => 'camera', 'tone' => $attendanceTone],
+                ['label' => 'Logbook', 'value' => $logbookValue, 'hint' => $logbookHint, 'icon' => 'book', 'tone' => $logbookTone],
+                [
+                    'label' => 'Progres',
+                    'value' => $profile !== null ? $profile->progressPercent().'%' : '—',
+                    'hint' => $profile !== null ? $profile->remainingDays().' hari tersisa' : 'Lengkapi profil',
+                    'icon' => 'trending-up',
+                    'tone' => 'bg-white/10 text-accent-300 ring-white/15',
+                ],
+            ],
+        ];
     }
 
     /**
