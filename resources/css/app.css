@@ -241,6 +241,23 @@
     animation: pulse-ring 2s infinite;
 }
 
+@keyframes scan-face {
+    0%,
+    100% {
+        opacity: 0.25;
+        transform: translateY(-7rem);
+    }
+
+    50% {
+        opacity: 0.9;
+        transform: translateY(7rem);
+    }
+}
+
+.animate-scan-face {
+    animation: scan-face 2.8s ease-in-out infinite;
+}
+
 .scrollbar-thin {
     scrollbar-width: thin;
     scrollbar-color: rgb(148 163 184 / 0.5) transparent;
