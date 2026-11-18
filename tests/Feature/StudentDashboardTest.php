@@ -71,6 +71,22 @@ class StudentDashboardTest extends TestCase
             });
     }
 
+    public function test_monthly_attendance_includes_the_last_day_of_the_month(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-30 10:00:00', 'Asia/Jakarta'));
+
+        $student = $this->makeStudent();
+
+        Attendance::factory()->for($student)->create([
+            'date' => '2026-11-30',
+            'status' => AttendanceStatus::Hadir,
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentDashboard::class)
+            ->assertViewHas('hadir', 1);
+    }
+
     private function makeStudent(): User
     {
         $student = User::factory()->mahasiswa()->create();
