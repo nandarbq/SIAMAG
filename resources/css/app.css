@@ -186,6 +186,32 @@
     .animate-fade-up {
         animation: fade-up 0.45s ease-out both;
     }
+
+    .avatar-cropper .cropper-modal {
+        opacity: 0;
+    }
+
+    .avatar-cropper .cropper-bg {
+        background-color: #0f172a;
+        background-image: none;
+    }
+
+    .avatar-cropper .cropper-view-box {
+        border-radius: 9999px;
+        outline: 2px solid rgb(255 255 255 / 0.9);
+        box-shadow: 0 0 0 9999px rgb(15 23 42 / 0.72);
+    }
+
+    .avatar-cropper .cropper-face {
+        border-radius: 9999px;
+    }
+
+    .avatar-cropper .cropper-dashed,
+    .avatar-cropper .cropper-center,
+    .avatar-cropper .cropper-line,
+    .avatar-cropper .cropper-point {
+        display: none;
+    }
 }
 
 @keyframes fade-up {
