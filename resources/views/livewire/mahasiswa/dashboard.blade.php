@@ -2,8 +2,8 @@
     <section x-data="{ open: false }" class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-card">
         <div class="grid lg:grid-cols-[minmax(0,1fr)_400px]">
             <div class="relative overflow-hidden bg-linear-to-br from-white via-white to-brand-50/70 p-6 sm:p-8">
-                <div class="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full border border-brand-100/80"></div>
-                <div class="pointer-events-none absolute -right-6 top-20 h-28 w-28 rounded-full border border-brand-100/60"></div>
+                <div class="pointer-events-none absolute -right-24 top-1/2 hidden h-80 w-80 -translate-y-1/2 rounded-full border border-brand-100/70 sm:block"></div>
+                <x-banyuwangi-ornament variant="gandrung" class="pointer-events-none absolute -right-10 bottom-0 hidden h-[115%] w-auto select-none text-brand-950/[0.055] sm:block" />
 
                 <div class="relative">
                     <p class="page-eyebrow">Portal Mahasiswa Magang</p>
@@ -47,7 +47,7 @@
             </div>
 
             <div class="relative overflow-hidden bg-brand-950 p-6 text-white sm:p-7">
-                <div class="pointer-events-none absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 1px 1px, white 1px, transparent 0); background-size: 18px 18px;"></div>
+                <x-banyuwangi-ornament variant="gajah-oling" class="pointer-events-none absolute inset-0 h-full w-full select-none text-white opacity-[0.08]" />
 
                 <div class="relative">
                     @if ($announcements->isNotEmpty())
