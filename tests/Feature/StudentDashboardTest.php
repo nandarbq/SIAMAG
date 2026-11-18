@@ -83,6 +83,25 @@ class StudentDashboardTest extends TestCase
             ->assertSee('Isi logbook');
     }
 
+    public function test_today_focus_marks_completed_day(): void
+    {
+        $student = $this->makeStudent();
+
+        Attendance::factory()->for($student)->create([
+            'date' => '2026-11-10',
+            'status' => AttendanceStatus::Hadir,
+        ]);
+
+        Logbook::factory()->for($student)->create([
+            'date' => '2026-11-10',
+        ]);
+
+        Livewire::actingAs($student)
+            ->test(StudentDashboard::class)
+            ->assertSee('Administrasi hari ini beres.')
+            ->assertSee('Buka logbook');
+    }
+
     public function test_dashboard_hides_expand_control_for_single_announcement(): void
     {
         $student = $this->makeStudent();
