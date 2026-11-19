@@ -26,7 +26,7 @@
 
         <div class="min-w-0 flex-1">
             <button type="button" x-on:click="openPicker()" class="btn-secondary w-full justify-start">
-                <x-icon name="camera" class="h-4 w-4 shrink-0 text-brand-600" />
+                <x-icon name="paperclip" class="h-4 w-4 shrink-0 text-brand-600" />
                 <span x-text="hasSelection ? 'Ganti Dokumentasi' : 'Tambah Dokumentasi'"></span>
             </button>
 
