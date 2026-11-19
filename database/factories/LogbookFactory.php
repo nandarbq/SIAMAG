@@ -27,10 +27,6 @@ class LogbookFactory extends Factory
             'date' => now()->toDateString(),
             'activity' => fake()->randomElement($activities),
             'description' => fake()->paragraph(3),
-            'start_time' => '08:00',
-            'end_time' => '15:30',
-            'result' => fake()->sentence(10),
-            'obstacle' => fake()->boolean(30) ? fake()->sentence(6) : null,
         ];
     }
 }
