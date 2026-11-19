@@ -15,10 +15,6 @@ class Logbook extends Model
         'date',
         'activity',
         'description',
-        'start_time',
-        'end_time',
-        'result',
-        'obstacle',
         'attachment_path',
     ];
 
@@ -37,24 +33,6 @@ class Logbook extends Model
     public function attendance()
     {
         return $this->belongsTo(Attendance::class);
-    }
-
-    public function getDurationAttribute(): ?string
-    {
-        if (! $this->start_time || ! $this->end_time) {
-            return null;
-        }
-
-        $start = strtotime($this->start_time);
-        $end = strtotime($this->end_time);
-
-        if ($end <= $start) {
-            return null;
-        }
-
-        $minutes = (int) round(($end - $start) / 60);
-
-        return sprintf('%d jam %02d menit', intdiv($minutes, 60), $minutes % 60);
     }
 
     public function isEditable(): bool
