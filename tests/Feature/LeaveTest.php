@@ -15,6 +15,7 @@ use App\Models\User;
 use App\Services\AttendanceService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
@@ -57,6 +58,13 @@ class LeaveTest extends TestCase
             ->firstOrFail();
 
         $this->assertSame(AttendanceStatus::Izin, $attendance->status);
+    }
+
+    public function test_leave_requests_table_does_not_have_review_columns(): void
+    {
+        foreach (['review_note', 'reviewed_by', 'reviewed_at'] as $column) {
+            $this->assertFalse(Schema::hasColumn('leave_requests', $column));
+        }
     }
 
     public function test_student_cannot_submit_leave_after_checking_in_on_same_date(): void

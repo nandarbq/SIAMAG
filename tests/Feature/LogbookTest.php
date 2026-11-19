@@ -9,6 +9,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\UploadedFile;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
@@ -43,11 +44,23 @@ class LogbookTest extends TestCase
         $this->assertSame('2026-11-09', $logbook->date->toDateString());
         $this->assertSame('Analisis data curah hujan', $logbook->activity);
         $this->assertSame('Mengolah data observasi harian.', $logbook->description);
-        $this->assertNull($logbook->start_time);
-        $this->assertNull($logbook->end_time);
-        $this->assertNull($logbook->result);
-        $this->assertNull($logbook->obstacle);
         $this->assertNotNull($logbook->attachment_path);
+    }
+
+    public function test_logbooks_table_does_not_have_unused_columns(): void
+    {
+        foreach ([
+            'start_time',
+            'end_time',
+            'result',
+            'obstacle',
+            'status',
+            'review_note',
+            'reviewed_by',
+            'reviewed_at',
+        ] as $column) {
+            $this->assertFalse(Schema::hasColumn('logbooks', $column));
+        }
     }
 
     public function test_logbook_form_only_shows_activity_description_and_photo(): void
