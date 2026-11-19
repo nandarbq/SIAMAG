@@ -314,13 +314,13 @@
 
                     <form wire:submit="save" class="space-y-5 p-6">
                         <div>
-                            <label class="form-label">Kegiatan <span class="font-normal text-rose-500">(wajib)</span></label>
+                            <label class="form-label">Kegiatan</label>
                             <input type="text" wire:model="activity" placeholder="Contoh: Analisis data curah hujan harian" class="input">
                             @error('activity') <p class="form-error">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label class="form-label">Uraian Kegiatan <span class="font-normal text-rose-500">(wajib)</span></label>
+                            <label class="form-label">Uraian Kegiatan</label>
                             <textarea wire:model="description" rows="3" placeholder="Jelaskan langkah kerja, data yang digunakan, dan proses yang dilakukan..." class="input resize-none"></textarea>
                             @error('description') <p class="form-error">{{ $message }}</p> @enderror
                         </div>
@@ -329,7 +329,6 @@
                             <x-documentation-picker
                                 input-name="photo"
                                 :existing-url="$existingPhoto && $logbookId ? route('logbook.photo', $logbookId) : null"
-                                required
                             />
                             @error('photo') <p class="form-error">{{ $message }}</p> @enderror
                         </div>

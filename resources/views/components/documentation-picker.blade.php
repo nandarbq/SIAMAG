@@ -2,7 +2,6 @@
     'label' => 'Dokumentasi',
     'inputName' => 'photo',
     'existingUrl' => null,
-    'required' => false,
 ])
 
 <div
@@ -10,12 +9,7 @@
     x-on:keydown.escape.window="close()"
     {{ $attributes->merge(['class' => 'space-y-2']) }}
 >
-    <label class="form-label">
-        {{ $label }}
-        @if ($required)
-            <span class="font-normal text-rose-500">(wajib)</span>
-        @endif
-    </label>
+    <label class="form-label">{{ $label }}</label>
 
     <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
         <template x-if="hasSelection">
