@@ -198,6 +198,7 @@ class LogbookTest extends TestCase
             ->test(StudentLogbookIndex::class)
             ->set('date', '2026-11-09')
             ->set('activity', 'Aktivitas lain')
+            ->set('description', 'Uraian aktivitas lain.')
             ->set('photo', UploadedFile::fake()->image('kegiatan.jpg'))
             ->call('save')
             ->assertHasErrors(['date']);
@@ -236,6 +237,7 @@ class LogbookTest extends TestCase
             ->set('logbookId', $logbook->id)
             ->set('date', '2026-12-30')
             ->set('activity', 'Aktivitas palsu')
+            ->set('description', 'Uraian aktivitas palsu.')
             ->call('save')
             ->assertHasNoErrors();
 
@@ -276,6 +278,7 @@ class LogbookTest extends TestCase
             ->test(StudentLogbookIndex::class)
             ->set('date', '2026-12-30')
             ->set('activity', 'Aktivitas baru')
+            ->set('description', 'Uraian aktivitas baru.')
             ->call('save');
 
         $this->assertDatabaseCount('logbooks', 0);
@@ -289,6 +292,7 @@ class LogbookTest extends TestCase
             ->test(StudentLogbookIndex::class)
             ->call('openCreate')
             ->set('activity', 'Analisis data curah hujan')
+            ->set('description', 'Mengolah data observasi harian.')
             ->set('photo', UploadedFile::fake()->image('kegiatan.jpg'))
             ->call('save')
             ->assertHasNoErrors();
@@ -347,6 +351,21 @@ class LogbookTest extends TestCase
         Storage::disk('local')->assertExists($path);
     }
 
+    public function test_student_cannot_save_a_logbook_without_description(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreate')
+            ->set('activity', 'Analisis data curah hujan')
+            ->set('photo', UploadedFile::fake()->image('kegiatan.jpg'))
+            ->call('save')
+            ->assertHasErrors(['description' => 'Uraian kegiatan wajib diisi.']);
+
+        $this->assertDatabaseCount('logbooks', 0);
+    }
+
     public function test_student_cannot_save_a_logbook_without_documentation(): void
     {
         $student = $this->makeStudent();
@@ -355,6 +374,7 @@ class LogbookTest extends TestCase
             ->test(StudentLogbookIndex::class)
             ->call('openCreate')
             ->set('activity', 'Analisis data curah hujan')
+            ->set('description', 'Mengolah data observasi harian.')
             ->call('save')
             ->assertHasErrors(['photo' => 'Dokumentasi wajib diunggah.']);
 
@@ -369,6 +389,7 @@ class LogbookTest extends TestCase
             ->test(StudentLogbookIndex::class)
             ->call('openCreate')
             ->set('activity', 'Analisis data curah hujan')
+            ->set('description', 'Mengolah data observasi harian.')
             ->set('photo', UploadedFile::fake()->create('dokumen.pdf', 100, 'application/pdf'))
             ->call('save')
             ->assertHasErrors(['photo' => 'Dokumentasi harus berupa gambar.']);

@@ -289,7 +289,7 @@ class Index extends Component
                 },
             ],
             'activity' => ['required', 'string', 'max:200'],
-            'description' => ['nullable', 'string', 'max:2000'],
+            'description' => ['required', 'string', 'max:2000'],
             'photo' => [
                 'nullable',
                 Rule::requiredIf(fn (): bool => $this->existingPhoto === null),
@@ -303,6 +303,7 @@ class Index extends Component
             'date.unique' => 'Anda sudah memiliki logbook pada tanggal tersebut.',
             'activity.required' => 'Kegiatan wajib diisi.',
             'activity.max' => 'Kegiatan maksimal 200 karakter.',
+            'description.required' => 'Uraian kegiatan wajib diisi.',
             'photo.required' => 'Dokumentasi wajib diunggah.',
             'photo.image' => 'Dokumentasi harus berupa gambar.',
             'photo.mimes' => 'Dokumentasi harus berformat JPG, PNG, atau WEBP.',
@@ -326,7 +327,7 @@ class Index extends Component
             'attendance_id' => $attendance?->id,
             'date' => $this->date,
             'activity' => $this->activity,
-            'description' => $this->description ?: null,
+            'description' => $this->description,
             'attachment_path' => $attachmentPath,
         ])->save();
 
