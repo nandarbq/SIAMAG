@@ -65,13 +65,10 @@
     <table class="data">
         <thead>
             <tr>
-                <th class="center" style="width: 4%;">No</th>
-                <th style="width: 11%;">Tanggal</th>
-                <th style="width: 17%;">Aktivitas</th>
-                <th style="width: 28%;">Uraian Kegiatan</th>
-                <th style="width: 20%;">Hasil</th>
-                <th style="width: 13%;">Kendala</th>
-                <th class="center" style="width: 7%;">Waktu</th>
+                <th class="center" style="width: 5%;">No</th>
+                <th style="width: 15%;">Tanggal</th>
+                <th style="width: 25%;">Kegiatan</th>
+                <th style="width: 55%;">Uraian Kegiatan</th>
             </tr>
         </thead>
         <tbody>
@@ -81,19 +78,10 @@
                     <td>{{ $logbook->date?->translatedFormat('d M Y') ?? '-' }}</td>
                     <td>{{ $logbook->activity ?: '-' }}</td>
                     <td>{!! nl2br(e($logbook->description ?: '-')) !!}</td>
-                    <td>{!! nl2br(e($logbook->result ?: '-')) !!}</td>
-                    <td>{!! nl2br(e($logbook->obstacle ?: '-')) !!}</td>
-                    <td class="center">
-                        @if ($logbook->start_time || $logbook->end_time)
-                            {{ substr((string) $logbook->start_time, 0, 5) }} - {{ substr((string) $logbook->end_time, 0, 5) }}
-                        @else
-                            -
-                        @endif
-                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="7" class="empty">Belum ada logbook pada periode magang.</td>
+                    <td colspan="4" class="empty">Belum ada logbook pada periode magang.</td>
                 </tr>
             @endforelse
         </tbody>

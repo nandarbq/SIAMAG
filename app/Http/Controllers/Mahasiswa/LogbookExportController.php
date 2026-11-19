@@ -51,7 +51,7 @@ class LogbookExportController extends Controller
             'unit' => 'pct',
         ]);
 
-        $headers = ['No', 'Tanggal', 'Aktivitas', 'Uraian Kegiatan', 'Hasil', 'Kendala', 'Waktu'];
+        $headers = ['No', 'Tanggal', 'Kegiatan', 'Uraian Kegiatan'];
         $table->addRow();
         foreach ($headers as $header) {
             $table->addCell(1200, ['bgColor' => '1E3A8A'])->addText($header, ['bold' => true, 'color' => 'FFFFFF', 'size' => 9]);
@@ -63,14 +63,11 @@ class LogbookExportController extends Controller
             $table->addCell(1200)->addText($logbook->date?->translatedFormat('d M Y') ?? '-', ['size' => 8]);
             $table->addCell(1800)->addText($logbook->activity ?: '-', ['size' => 8]);
             $table->addCell(2800)->addText($logbook->description ?: '-', ['size' => 8]);
-            $table->addCell(2200)->addText($logbook->result ?: '-', ['size' => 8]);
-            $table->addCell(1800)->addText($logbook->obstacle ?: '-', ['size' => 8]);
-            $table->addCell(900)->addText($this->timeRange($logbook), ['size' => 8], ['alignment' => Jc::CENTER]);
         }
 
         if ($logbooks->isEmpty()) {
             $table->addRow();
-            $table->addCell(11200, ['gridSpan' => 7])->addText('Belum ada logbook pada periode magang.', ['size' => 9], ['alignment' => Jc::CENTER]);
+            $table->addCell(11200, ['gridSpan' => 4])->addText('Belum ada logbook pada periode magang.', ['size' => 9], ['alignment' => Jc::CENTER]);
         }
 
         $section->addTextBreak(2);
@@ -126,14 +123,5 @@ class LogbookExportController extends Controller
         $table->addCell(1800)->addText($label, ['size' => 10]);
         $table->addCell(300)->addText(':', ['size' => 10]);
         $table->addCell(6000)->addText($value, ['size' => 10]);
-    }
-
-    private function timeRange($logbook): string
-    {
-        if (! $logbook->start_time && ! $logbook->end_time) {
-            return '-';
-        }
-
-        return trim(substr((string) $logbook->start_time, 0, 5).' - '.substr((string) $logbook->end_time, 0, 5));
     }
 }
