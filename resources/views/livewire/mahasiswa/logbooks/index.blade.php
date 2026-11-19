@@ -179,7 +179,7 @@
                         @if ($logbook->attachment_path)
                             <a href="{{ route('logbook.photo', $logbook) }}" target="_blank" class="mt-2 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700">
                                 <x-icon name="camera" class="h-3.5 w-3.5" />
-                                Foto kegiatan
+                                Lihat dokumentasi
                             </a>
                         @endif
                     </div>
@@ -244,7 +244,7 @@
                                 @if ($logbook->attachment_path)
                                     <a href="{{ route('logbook.photo', $logbook) }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700">
                                         <x-icon name="camera" class="h-3.5 w-3.5" />
-                                        Foto kegiatan
+                                        Lihat dokumentasi
                                     </a>
                                 @endif
                             </td>
@@ -325,48 +325,12 @@
                             @error('description') <p class="form-error">{{ $message }}</p> @enderror
                         </div>
 
-                        <div>
-                            <label class="form-label">Foto Kegiatan <span class="font-normal text-rose-500">(wajib)</span></label>
-                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                @if ($existingPhoto && $logbookId)
-                                    <a href="{{ route('logbook.photo', $logbookId) }}" target="_blank" class="block shrink-0">
-                                        <img src="{{ route('logbook.photo', $logbookId) }}" alt="Foto kegiatan" class="h-16 w-16 rounded-xl object-cover ring-1 ring-slate-200">
-                                    </a>
-                                @endif
-                                <div class="grid flex-1 gap-2 sm:grid-cols-2">
-                                    <label for="logbook-camera" class="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-brand-300 hover:bg-brand-50/40">
-                                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm ring-1 ring-slate-200">
-                                            <x-icon name="camera" class="h-4 w-4" />
-                                        </span>
-                                        <span class="min-w-0 text-xs">
-                                            <span class="block font-semibold text-slate-700">Ambil Foto</span>
-                                            <span class="text-slate-400">Kamera perangkat</span>
-                                        </span>
-                                    </label>
-                                    <label for="logbook-file" class="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-brand-300 hover:bg-brand-50/40">
-                                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm ring-1 ring-slate-200">
-                                            <x-icon name="download" class="h-4 w-4" />
-                                        </span>
-                                        <span class="min-w-0 text-xs">
-                                            <span class="block font-semibold text-slate-700">Pilih File</span>
-                                            <span class="text-slate-400">JPG, PNG, atau WEBP maksimal 4 MB</span>
-                                        </span>
-                                    </label>
-                                </div>
-                                <input id="logbook-camera" type="file" accept="image/*" capture="environment" wire:model="photo" class="sr-only">
-                                <input id="logbook-file" type="file" accept=".jpg,.jpeg,.png,.webp" wire:model="photo" class="sr-only">
-                            </div>
-                            <div class="mt-2 flex items-center gap-2 text-xs">
-                                @if ($photo)
-                                    <span class="min-w-0 truncate font-semibold text-slate-700">{{ $photo->getClientOriginalName() }}</span>
-                                @elseif ($existingPhoto)
-                                    <span class="font-semibold text-slate-700">Foto kegiatan sudah tersimpan.</span>
-                                    <span class="text-slate-400">Pilih foto baru untuk menggantinya.</span>
-                                @else
-                                    <span class="text-slate-400">Belum ada foto dipilih.</span>
-                                @endif
-                                <span wire:loading wire:target="photo" class="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600"></span>
-                            </div>
+                        <div wire:key="logbook-documentation-{{ $logbookId ?? 'new' }}">
+                            <x-documentation-picker
+                                input-name="photo"
+                                :existing-url="$existingPhoto && $logbookId ? route('logbook.photo', $logbookId) : null"
+                                required
+                            />
                             @error('photo') <p class="form-error">{{ $message }}</p> @enderror
                         </div>
 

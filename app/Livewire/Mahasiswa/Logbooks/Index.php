@@ -303,10 +303,10 @@ class Index extends Component
             'date.unique' => 'Anda sudah memiliki logbook pada tanggal tersebut.',
             'activity.required' => 'Kegiatan wajib diisi.',
             'activity.max' => 'Kegiatan maksimal 200 karakter.',
-            'photo.required' => 'Foto kegiatan wajib diunggah.',
-            'photo.image' => 'Foto kegiatan harus berupa gambar.',
-            'photo.mimes' => 'Foto kegiatan harus berformat JPG, PNG, atau WEBP.',
-            'photo.max' => 'Ukuran foto kegiatan maksimal 4 MB.',
+            'photo.required' => 'Dokumentasi wajib diunggah.',
+            'photo.image' => 'Dokumentasi harus berupa gambar.',
+            'photo.mimes' => 'Dokumentasi harus berformat JPG, PNG, atau WEBP.',
+            'photo.max' => 'Ukuran dokumentasi maksimal 4 MB.',
         ]);
 
         $logbook ??= new Logbook(['user_id' => $userId]);

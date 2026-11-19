@@ -44,7 +44,7 @@
                                 @if ($logbook->attachment_path)
                                     <a href="{{ route('logbook.photo', $logbook) }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700">
                                         <x-icon name="camera" class="h-3.5 w-3.5" />
-                                        Foto kegiatan
+                                        Lihat dokumentasi
                                     </a>
                                 @endif
                             </td>
@@ -106,9 +106,9 @@
 
                     @if ($viewing->attachment_path)
                         <div>
-                            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Foto Kegiatan</p>
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Dokumentasi</p>
                             <a href="{{ route('logbook.photo', $viewing) }}" target="_blank" class="mt-2 block">
-                                <img src="{{ route('logbook.photo', $viewing) }}" alt="Foto kegiatan" class="max-h-72 w-full rounded-xl bg-slate-50 object-contain ring-1 ring-slate-200">
+                                <img src="{{ route('logbook.photo', $viewing) }}" alt="Dokumentasi logbook" class="max-h-72 w-full rounded-xl bg-slate-50 object-contain ring-1 ring-slate-200">
                             </a>
                         </div>
                     @endif

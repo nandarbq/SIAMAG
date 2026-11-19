@@ -2,6 +2,7 @@ import Chart from 'chart.js/auto';
 import attendanceCamera from './attendance-camera';
 import avatarCropper from './avatar-cropper';
 import confirmDialog from './confirm-dialog';
+import documentationPicker from './documentation-picker';
 
 window.Chart = Chart;
 window.attendanceCamera = attendanceCamera;
@@ -9,6 +10,7 @@ window.attendanceCamera = attendanceCamera;
 document.addEventListener('alpine:init', () => {
     window.Alpine.data('avatarCropper', avatarCropper);
     window.Alpine.data('confirmDialog', confirmDialog);
+    window.Alpine.data('documentationPicker', documentationPicker);
 
     window.Alpine.data('officeMapPicker', (options) => ({
         mapError: '',

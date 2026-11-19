@@ -65,7 +65,7 @@ class LogbookTest extends TestCase
         }
     }
 
-    public function test_logbook_form_only_shows_activity_description_and_photo(): void
+    public function test_logbook_form_only_shows_activity_description_and_documentation(): void
     {
         $student = $this->makeStudent();
 
@@ -74,12 +74,29 @@ class LogbookTest extends TestCase
             ->call('openCreate')
             ->assertSee('Kegiatan')
             ->assertSee('Uraian Kegiatan')
-            ->assertSee('Ambil Foto')
-            ->assertSee('Pilih File')
+            ->assertSee('Dokumentasi')
+            ->assertSee('Ambil dengan kamera')
+            ->assertSee('Pilih dari galeri')
+            ->assertDontSee('Foto Kegiatan')
             ->assertDontSee('Jam Mulai')
             ->assertDontSee('Jam Selesai')
             ->assertDontSee('Hasil')
             ->assertDontSee('Kendala');
+    }
+
+    public function test_documentation_picker_separates_camera_and_gallery_sources(): void
+    {
+        $student = $this->makeStudent();
+
+        $component = Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreate')
+            ->assertSee('capture="environment"', false)
+            ->assertSee('accept="image/jpeg,image/png,image/webp"', false)
+            ->assertSee('Balik kamera', false);
+
+        $component->assertSee('Ambil dengan kamera')
+            ->assertSee('Pilih dari galeri');
     }
 
     public function test_student_can_open_logbook_form_on_final_internship_day(): void
@@ -330,7 +347,7 @@ class LogbookTest extends TestCase
         Storage::disk('local')->assertExists($path);
     }
 
-    public function test_student_cannot_save_a_logbook_without_a_photo(): void
+    public function test_student_cannot_save_a_logbook_without_documentation(): void
     {
         $student = $this->makeStudent();
 
@@ -339,7 +356,7 @@ class LogbookTest extends TestCase
             ->call('openCreate')
             ->set('activity', 'Analisis data curah hujan')
             ->call('save')
-            ->assertHasErrors(['photo']);
+            ->assertHasErrors(['photo' => 'Dokumentasi wajib diunggah.']);
 
         $this->assertDatabaseCount('logbooks', 0);
     }
@@ -354,7 +371,7 @@ class LogbookTest extends TestCase
             ->set('activity', 'Analisis data curah hujan')
             ->set('photo', UploadedFile::fake()->create('dokumen.pdf', 100, 'application/pdf'))
             ->call('save')
-            ->assertHasErrors(['photo']);
+            ->assertHasErrors(['photo' => 'Dokumentasi harus berupa gambar.']);
 
         $this->assertDatabaseMissing('logbooks', ['user_id' => $student->id]);
     }
