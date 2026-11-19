@@ -28,7 +28,6 @@
                         <th class="table-th">Mahasiswa</th>
                         <th class="table-th">Tanggal</th>
                         <th class="table-th">Kegiatan</th>
-                        <th class="table-th">Durasi</th>
                         <th class="table-th text-center">Aksi</th>
                     </tr>
                 </thead>
@@ -42,7 +41,6 @@
                             <td class="table-td whitespace-nowrap">{{ $logbook->date?->translatedFormat('d M Y') }}</td>
                             <td class="table-td">
                                 <p class="max-w-xs truncate font-medium text-slate-700">{{ $logbook->activity }}</p>
-                                <p class="max-w-xs truncate text-xs text-slate-400">{{ $logbook->result }}</p>
                                 @if ($logbook->attachment_path)
                                     <a href="{{ route('logbook.photo', $logbook) }}" target="_blank" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700">
                                         <x-icon name="camera" class="h-3.5 w-3.5" />
@@ -50,7 +48,6 @@
                                     </a>
                                 @endif
                             </td>
-                            <td class="table-td whitespace-nowrap">{{ $logbook->duration ?? '-' }}</td>
                             <td class="table-td">
                                 <div class="flex justify-center">
                                     <button type="button" wire:click="openDetail({{ $logbook->id }})" class="btn-ghost btn-sm">
@@ -62,7 +59,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="5" class="px-5 py-12">
+                            <td colspan="4" class="px-5 py-12">
                                 <div class="mx-auto flex max-w-sm flex-col items-center gap-2 text-center">
                                     <x-icon name="book" class="h-10 w-10 text-slate-300" />
                                     <p class="font-semibold text-slate-600">Tidak ada logbook</p>
@@ -102,37 +99,10 @@
                         <p class="mt-1 text-sm font-semibold text-slate-900">{{ $viewing->activity }}</p>
                     </div>
 
-                    <div class="grid gap-4 sm:grid-cols-3">
-                        <div class="rounded-xl bg-slate-50 p-3">
-                            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Mulai</p>
-                            <p class="mt-1 text-sm font-semibold text-slate-700">{{ $viewing->start_time ?: '-' }}</p>
-                        </div>
-                        <div class="rounded-xl bg-slate-50 p-3">
-                            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Selesai</p>
-                            <p class="mt-1 text-sm font-semibold text-slate-700">{{ $viewing->end_time ?: '-' }}</p>
-                        </div>
-                        <div class="rounded-xl bg-slate-50 p-3">
-                            <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Durasi</p>
-                            <p class="mt-1 text-sm font-semibold text-slate-700">{{ $viewing->duration ?? '-' }}</p>
-                        </div>
-                    </div>
-
                     <div>
                         <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Uraian Kegiatan</p>
                         <p class="mt-1 whitespace-pre-line text-sm leading-relaxed text-slate-600">{{ $viewing->description }}</p>
                     </div>
-
-                    <div>
-                        <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Hasil</p>
-                        <p class="mt-1 whitespace-pre-line text-sm leading-relaxed text-slate-600">{{ $viewing->result }}</p>
-                    </div>
-
-                    @if ($viewing->obstacle)
-                        <div class="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                            <p class="text-[11px] font-bold uppercase tracking-wide text-amber-600">Kendala</p>
-                            <p class="mt-1 text-sm leading-relaxed text-amber-800">{{ $viewing->obstacle }}</p>
-                        </div>
-                    @endif
 
                     @if ($viewing->attachment_path)
                         <div>
