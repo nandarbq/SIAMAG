@@ -32,11 +32,9 @@ class LogbookTest extends TestCase
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
             ->call('openCreate')
-            ->set('date', '2026-11-09')
             ->set('activity', 'Analisis data curah hujan')
             ->set('description', 'Mengolah data observasi harian.')
-            ->set('startTime', '08:00')
-            ->set('endTime', '10:00')
+            ->set('photo', UploadedFile::fake()->image('kegiatan.jpg'))
             ->call('save')
             ->assertHasNoErrors();
 
@@ -44,6 +42,29 @@ class LogbookTest extends TestCase
 
         $this->assertSame('2026-11-09', $logbook->date->toDateString());
         $this->assertSame('Analisis data curah hujan', $logbook->activity);
+        $this->assertSame('Mengolah data observasi harian.', $logbook->description);
+        $this->assertNull($logbook->start_time);
+        $this->assertNull($logbook->end_time);
+        $this->assertNull($logbook->result);
+        $this->assertNull($logbook->obstacle);
+        $this->assertNotNull($logbook->attachment_path);
+    }
+
+    public function test_logbook_form_only_shows_activity_description_and_photo(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreate')
+            ->assertSee('Kegiatan')
+            ->assertSee('Uraian Kegiatan')
+            ->assertSee('Ambil Foto')
+            ->assertSee('Pilih File')
+            ->assertDontSee('Jam Mulai')
+            ->assertDontSee('Jam Selesai')
+            ->assertDontSee('Hasil')
+            ->assertDontSee('Kendala');
     }
 
     public function test_student_can_open_logbook_form_on_final_internship_day(): void
@@ -72,6 +93,7 @@ class LogbookTest extends TestCase
             ->call('openEdit', $logbook->id)
             ->assertSet('logbookId', $logbook->id)
             ->set('activity', 'Aktivitas baru')
+            ->set('photo', UploadedFile::fake()->image('edit.jpg'))
             ->call('save')
             ->assertHasNoErrors();
 
@@ -131,6 +153,7 @@ class LogbookTest extends TestCase
             ->test(StudentLogbookIndex::class)
             ->set('date', '2026-11-09')
             ->set('activity', 'Aktivitas lain')
+            ->set('photo', UploadedFile::fake()->image('kegiatan.jpg'))
             ->call('save')
             ->assertHasErrors(['date']);
     }
@@ -220,7 +243,6 @@ class LogbookTest extends TestCase
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
             ->call('openCreate')
-            ->set('date', '2026-11-09')
             ->set('activity', 'Analisis data curah hujan')
             ->set('photo', UploadedFile::fake()->image('kegiatan.jpg'))
             ->call('save')
@@ -257,7 +279,7 @@ class LogbookTest extends TestCase
         Storage::disk('local')->assertExists($logbook->attachment_path);
     }
 
-    public function test_student_can_remove_a_logbook_photo(): void
+    public function test_student_keeps_existing_photo_when_editing_without_upload(): void
     {
         $student = $this->makeStudent();
         $path = 'logbook-photos/'.$student->id.'/old.jpg';
@@ -271,12 +293,27 @@ class LogbookTest extends TestCase
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
             ->call('openEdit', $logbook->id)
-            ->call('removePhoto')
+            ->set('activity', 'Aktivitas diperbarui')
             ->call('save')
             ->assertHasNoErrors();
 
-        $this->assertNull($logbook->fresh()->attachment_path);
-        Storage::disk('local')->assertMissing($path);
+        $this->assertSame('Aktivitas diperbarui', $logbook->fresh()->activity);
+        $this->assertSame($path, $logbook->fresh()->attachment_path);
+        Storage::disk('local')->assertExists($path);
+    }
+
+    public function test_student_cannot_save_a_logbook_without_a_photo(): void
+    {
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreate')
+            ->set('activity', 'Analisis data curah hujan')
+            ->call('save')
+            ->assertHasErrors(['photo']);
+
+        $this->assertDatabaseCount('logbooks', 0);
     }
 
     public function test_logbook_photo_must_be_an_image(): void
@@ -286,7 +323,6 @@ class LogbookTest extends TestCase
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
             ->call('openCreate')
-            ->set('date', '2026-11-09')
             ->set('activity', 'Analisis data curah hujan')
             ->set('photo', UploadedFile::fake()->create('dokumen.pdf', 100, 'application/pdf'))
             ->call('save')

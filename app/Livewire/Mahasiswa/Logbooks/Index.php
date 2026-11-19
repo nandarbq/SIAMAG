@@ -4,12 +4,12 @@ namespace App\Livewire\Mahasiswa\Logbooks;
 
 use App\Models\InternProfile;
 use App\Models\Logbook;
-use App\Models\Setting;
 use App\Services\LogbookExportService;
 use App\Services\LogbookProgressService;
 use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -37,19 +37,9 @@ class Index extends Component
 
     public string $description = '';
 
-    public string $startTime = '';
-
-    public string $endTime = '';
-
-    public string $result = '';
-
-    public string $obstacle = '';
-
     public $photo;
 
     public ?string $existingPhoto = null;
-
-    public bool $photoRemoved = false;
 
     public function updating(string $property): void
     {
@@ -80,8 +70,6 @@ class Index extends Component
         }
 
         $this->date = now()->toDateString();
-        $this->startTime = Setting::get('work_start', '07:30');
-        $this->endTime = Setting::get('work_end', '16:00');
         $this->showModal = true;
     }
 
@@ -120,8 +108,6 @@ class Index extends Component
         }
 
         $this->date = $date->toDateString();
-        $this->startTime = Setting::get('work_start', '07:30');
-        $this->endTime = Setting::get('work_end', '16:00');
         $this->showModal = true;
     }
 
@@ -140,13 +126,8 @@ class Index extends Component
         $this->date = $logbook->date->toDateString();
         $this->activity = $logbook->activity;
         $this->description = $logbook->description ?? '';
-        $this->startTime = $logbook->start_time ? substr($logbook->start_time, 0, 5) : '';
-        $this->endTime = $logbook->end_time ? substr($logbook->end_time, 0, 5) : '';
-        $this->result = $logbook->result ?? '';
-        $this->obstacle = $logbook->obstacle ?? '';
         $this->photo = null;
         $this->existingPhoto = $logbook->attachment_path;
-        $this->photoRemoved = false;
         $this->showModal = true;
     }
 
@@ -155,22 +136,6 @@ class Index extends Component
         $this->showModal = false;
         $this->resetForm();
         $this->resetValidation();
-    }
-
-    public function updatedPhoto(): void
-    {
-        $this->photoRemoved = false;
-    }
-
-    public function removePhoto(): void
-    {
-        $this->photo = null;
-        $this->photoRemoved = true;
-    }
-
-    public function undoRemovePhoto(): void
-    {
-        $this->photoRemoved = false;
     }
 
     public function save(): void
@@ -296,18 +261,20 @@ class Index extends Component
             ],
             'activity' => ['required', 'string', 'max:200'],
             'description' => ['nullable', 'string', 'max:2000'],
-            'startTime' => ['nullable', 'date_format:H:i'],
-            'endTime' => ['nullable', 'date_format:H:i', 'after:startTime'],
-            'result' => ['nullable', 'string', 'max:2000'],
-            'obstacle' => ['nullable', 'string', 'max:2000'],
-            'photo' => ['nullable', 'image', 'mimes:jpg,jpeg,png,webp', 'max:4096'],
+            'photo' => [
+                'nullable',
+                Rule::requiredIf(fn (): bool => $this->existingPhoto === null),
+                'image',
+                'mimes:jpg,jpeg,png,webp',
+                'max:4096',
+            ],
         ], [
             'date.required' => 'Tanggal logbook wajib diisi.',
             'date.before_or_equal' => 'Logbook tidak dapat diisi untuk tanggal yang akan datang.',
             'date.unique' => 'Anda sudah memiliki logbook pada tanggal tersebut.',
-            'activity.required' => 'Aktivitas utama wajib diisi.',
-            'activity.max' => 'Aktivitas maksimal 200 karakter.',
-            'endTime.after' => 'Jam selesai harus setelah jam mulai.',
+            'activity.required' => 'Kegiatan wajib diisi.',
+            'activity.max' => 'Kegiatan maksimal 200 karakter.',
+            'photo.required' => 'Foto kegiatan wajib diunggah.',
             'photo.image' => 'Foto kegiatan harus berupa gambar.',
             'photo.mimes' => 'Foto kegiatan harus berformat JPG, PNG, atau WEBP.',
             'photo.max' => 'Ukuran foto kegiatan maksimal 4 MB.',
@@ -320,8 +287,6 @@ class Index extends Component
 
         if ($this->photo) {
             $attachmentPath = $this->photo->store('logbook-photos/'.$userId, 'local');
-        } elseif ($this->photoRemoved) {
-            $attachmentPath = null;
         }
 
         $attendance = auth()->user()->attendances()
@@ -333,10 +298,6 @@ class Index extends Component
             'date' => $this->date,
             'activity' => $this->activity,
             'description' => $this->description ?: null,
-            'start_time' => $this->startTime ?: null,
-            'end_time' => $this->endTime ?: null,
-            'result' => $this->result ?: null,
-            'obstacle' => $this->obstacle ?: null,
             'attachment_path' => $attachmentPath,
         ])->save();
 
@@ -356,13 +317,8 @@ class Index extends Component
             'date',
             'activity',
             'description',
-            'startTime',
-            'endTime',
-            'result',
-            'obstacle',
             'photo',
             'existingPhoto',
-            'photoRemoved',
         ]);
     }
 }

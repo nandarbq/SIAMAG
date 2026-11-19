@@ -323,7 +323,9 @@
                     <div class="flex items-center justify-between border-b border-slate-100 px-6 py-5">
                         <div>
                             <h2 class="text-lg font-bold text-slate-900">{{ $logbookId ? 'Ubah Logbook' : 'Tulis Logbook' }}</h2>
-                            <p class="mt-0.5 text-xs text-slate-500">Lengkapi aktivitas yang Anda kerjakan.</p>
+                            <p class="mt-0.5 text-xs text-slate-500">
+                                {{ $logbookId ? 'Ubah logbook' : 'Logbook baru' }} untuk {{ \Carbon\Carbon::parse($date)->translatedFormat('l, d F Y') }}
+                            </p>
                         </div>
                         <button type="button" wire:click="closeModal" class="btn-ghost btn-sm" title="Tutup">
                             <x-icon name="x" class="h-5 w-5" />
@@ -331,85 +333,60 @@
                     </div>
 
                     <form wire:submit="save" class="space-y-5 p-6">
-                        <div class="grid gap-4 sm:grid-cols-3">
-                            <div class="sm:col-span-1">
-                                <label class="form-label">Tanggal</label>
-                                <input type="date" wire:model="date" max="{{ now()->toDateString() }}" class="input">
-                                @error('date') <p class="form-error">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="form-label">Jam Mulai</label>
-                                <input type="time" wire:model="startTime" class="input">
-                                @error('startTime') <p class="form-error">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="form-label">Jam Selesai</label>
-                                <input type="time" wire:model="endTime" class="input">
-                                @error('endTime') <p class="form-error">{{ $message }}</p> @enderror
-                            </div>
-                        </div>
-
                         <div>
-                            <label class="form-label">Aktivitas Utama</label>
+                            <label class="form-label">Kegiatan</label>
                             <input type="text" wire:model="activity" placeholder="Contoh: Analisis data curah hujan harian" class="input">
                             @error('activity') <p class="form-error">{{ $message }}</p> @enderror
                         </div>
 
                         <div>
-                            <label class="form-label">Uraian Pekerjaan</label>
+                            <label class="form-label">Uraian Kegiatan</label>
                             <textarea wire:model="description" rows="3" placeholder="Jelaskan langkah kerja, data yang digunakan, dan proses yang dilakukan..." class="input resize-none"></textarea>
                             @error('description') <p class="form-error">{{ $message }}</p> @enderror
                         </div>
 
-                        <div class="grid gap-4 sm:grid-cols-2">
-                            <div>
-                                <label class="form-label">Hasil</label>
-                                <textarea wire:model="result" rows="3" placeholder="Hasil atau output dari pekerjaan..." class="input resize-none"></textarea>
-                                @error('result') <p class="form-error">{{ $message }}</p> @enderror
-                            </div>
-                            <div>
-                                <label class="form-label">Kendala</label>
-                                <textarea wire:model="obstacle" rows="3" placeholder="Kendala yang dihadapi (opsional)..." class="input resize-none"></textarea>
-                                @error('obstacle') <p class="form-error">{{ $message }}</p> @enderror
-                            </div>
-                        </div>
-
                         <div>
-                            <label class="form-label">Foto Kegiatan <span class="font-normal text-slate-400">(opsional)</span></label>
+                            <label class="form-label">Foto Kegiatan <span class="font-normal text-rose-500">(wajib)</span></label>
                             <div class="flex flex-col gap-3 sm:flex-row sm:items-center">
-                                @if ($existingPhoto && ! $photoRemoved && $logbookId)
+                                @if ($existingPhoto && $logbookId)
                                     <a href="{{ route('logbook.photo', $logbookId) }}" target="_blank" class="block shrink-0">
                                         <img src="{{ route('logbook.photo', $logbookId) }}" alt="Foto kegiatan" class="h-16 w-16 rounded-xl object-cover ring-1 ring-slate-200">
                                     </a>
                                 @endif
-                                <label for="logbook-photo" class="flex flex-1 cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-brand-300 hover:bg-brand-50/40">
-                                    <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm ring-1 ring-slate-200">
-                                        <x-icon name="camera" class="h-4 w-4" />
-                                    </span>
-                                    <span class="min-w-0 flex-1 text-xs">
-                                        @if ($photo)
-                                            <span class="block truncate font-semibold text-slate-700">{{ $photo->getClientOriginalName() }}</span>
-                                            <span class="text-slate-400">Klik untuk mengganti foto</span>
-                                        @elseif ($existingPhoto && ! $photoRemoved)
-                                            <span class="block font-semibold text-slate-700">Foto kegiatan sudah tersimpan</span>
-                                            <span class="text-slate-400">Klik untuk mengganti foto</span>
-                                        @else
-                                            <span class="block font-semibold text-slate-700">Unggah foto kegiatan</span>
+                                <div class="grid flex-1 gap-2 sm:grid-cols-2">
+                                    <label for="logbook-camera" class="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-brand-300 hover:bg-brand-50/40">
+                                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm ring-1 ring-slate-200">
+                                            <x-icon name="camera" class="h-4 w-4" />
+                                        </span>
+                                        <span class="min-w-0 text-xs">
+                                            <span class="block font-semibold text-slate-700">Ambil Foto</span>
+                                            <span class="text-slate-400">Kamera perangkat</span>
+                                        </span>
+                                    </label>
+                                    <label for="logbook-file" class="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-slate-200 bg-slate-50 px-4 py-3 transition hover:border-brand-300 hover:bg-brand-50/40">
+                                        <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white text-brand-600 shadow-sm ring-1 ring-slate-200">
+                                            <x-icon name="download" class="h-4 w-4" />
+                                        </span>
+                                        <span class="min-w-0 text-xs">
+                                            <span class="block font-semibold text-slate-700">Pilih File</span>
                                             <span class="text-slate-400">JPG, PNG, atau WEBP maksimal 4 MB</span>
-                                        @endif
-                                    </span>
-                                    <span wire:loading wire:target="photo" class="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600"></span>
-                                    <input id="logbook-photo" type="file" accept=".jpg,.jpeg,.png,.webp" wire:model="photo" class="sr-only">
-                                </label>
-                                @if ($existingPhoto && ! $photoRemoved)
-                                    <button type="button" wire:click="removePhoto" class="btn-ghost btn-sm text-rose-600 hover:bg-rose-50">Hapus</button>
-                                @elseif ($photoRemoved)
-                                    <button type="button" wire:click="undoRemovePhoto" class="btn-ghost btn-sm">Urungkan</button>
-                                @endif
+                                        </span>
+                                    </label>
+                                </div>
+                                <input id="logbook-camera" type="file" accept="image/*" capture="environment" wire:model="photo" class="sr-only">
+                                <input id="logbook-file" type="file" accept=".jpg,.jpeg,.png,.webp" wire:model="photo" class="sr-only">
                             </div>
-                            @if ($photoRemoved)
-                                <p class="mt-1 text-xs font-medium text-rose-600">Foto akan dihapus saat logbook disimpan.</p>
-                            @endif
+                            <div class="mt-2 flex items-center gap-2 text-xs">
+                                @if ($photo)
+                                    <span class="min-w-0 truncate font-semibold text-slate-700">{{ $photo->getClientOriginalName() }}</span>
+                                @elseif ($existingPhoto)
+                                    <span class="font-semibold text-slate-700">Foto kegiatan sudah tersimpan.</span>
+                                    <span class="text-slate-400">Pilih foto baru untuk menggantinya.</span>
+                                @else
+                                    <span class="text-slate-400">Belum ada foto dipilih.</span>
+                                @endif
+                                <span wire:loading wire:target="photo" class="h-4 w-4 animate-spin rounded-full border-2 border-brand-200 border-t-brand-600"></span>
+                            </div>
                             @error('photo') <p class="form-error">{{ $message }}</p> @enderror
                         </div>
 
