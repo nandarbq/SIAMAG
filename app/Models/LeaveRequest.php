@@ -19,9 +19,6 @@ class LeaveRequest extends Model
         'reason',
         'attachment_path',
         'status',
-        'review_note',
-        'reviewed_by',
-        'reviewed_at',
         'recovery_requested_at',
     ];
 
@@ -32,7 +29,6 @@ class LeaveRequest extends Model
             'status' => LeaveStatus::class,
             'start_date' => 'date',
             'end_date' => 'date',
-            'reviewed_at' => 'datetime',
             'recovery_requested_at' => 'datetime',
         ];
     }
@@ -40,11 +36,6 @@ class LeaveRequest extends Model
     public function user()
     {
         return $this->belongsTo(User::class);
-    }
-
-    public function reviewer()
-    {
-        return $this->belongsTo(User::class, 'reviewed_by');
     }
 
     public function isOngoing(): bool
