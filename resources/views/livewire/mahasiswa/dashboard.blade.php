@@ -11,7 +11,7 @@
                         {{ $greeting }}, {{ auth()->user()->name }}.
                     </h1>
                     <p class="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
-                        Jangan lupa absen masuk, isi logbook harian, dan pantau progres magang Anda di
+                        Jangan lupa absen masuk, isi logbook mingguan, dan pantau progres magang Anda di
                         <span class="font-semibold text-slate-800">{{ $officeName }}</span>.
                     </p>
 
@@ -233,12 +233,10 @@
 
         <div class="card card-body">
             @php
-                $logbookBadge = match ($logbookProgress['today_status']) {
+                $logbookBadge = match ($logbookProgress['week_status']) {
                     'filled' => ['badge-green', 'Sudah diisi'],
                     'missing' => ['badge-red', 'Belum diisi'],
-                    'holiday' => ['badge-blue', 'Libur'],
-                    'excused' => ['badge-blue', 'Izin/Sakit'],
-                    'not_attended' => ['badge-amber', 'Belum absen'],
+                    'not_required' => ['badge-amber', 'Belum perlu'],
                     default => ['badge-slate', 'Belum ada data'],
                 };
             @endphp
@@ -247,7 +245,7 @@
                 <div>
                     <p class="text-xs font-semibold uppercase tracking-wide text-slate-500">Progres Logbook</p>
                     <p class="mt-1 text-sm font-semibold text-slate-900">
-                        {{ $logbookProgress['missing'] > 0 ? $logbookProgress['missing'].' hari tertinggal' : 'Semua logbook lengkap' }}
+                        {{ $logbookProgress['missing'] > 0 ? $logbookProgress['missing'].' pekan tertinggal' : 'Semua logbook lengkap' }}
                     </p>
                 </div>
                 <span class="{{ $logbookBadge[0] }}">{{ $logbookBadge[1] }}</span>
@@ -256,16 +254,16 @@
             <p class="mt-4 text-3xl font-bold tracking-tight text-slate-900">
                 {{ $logbookProgress['percentage'] === null ? '—' : $logbookProgress['percentage'].'%' }}
             </p>
-            <p class="mt-1 text-xs text-slate-500">{{ $logbookProgress['filled'] }} dari {{ $logbookProgress['expected'] }} hari kerja</p>
+            <p class="mt-1 text-xs text-slate-500">{{ $logbookProgress['filled'] }} dari {{ $logbookProgress['expected'] }} pekan</p>
             <a href="{{ route('mahasiswa.logbooks') }}" class="btn-secondary mt-4 w-full">Buka Logbook</a>
         </div>
     </section>
 
-    @if ($logbookProgress['today_status'] === 'missing')
+    @if ($logbookProgress['week_status'] === 'missing')
         <div class="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 sm:flex-row sm:items-center">
             <div class="flex flex-1 items-start gap-3">
                 <x-icon name="alert" class="mt-0.5 h-5 w-5 shrink-0" />
-                <p>Logbook hari ini belum diisi. Lengkapi sebelum hari berganti.</p>
+                <p>Logbook pekan ini belum diisi. Lengkapi sebelum pekan berganti.</p>
             </div>
             <a href="{{ route('mahasiswa.logbooks') }}" class="btn-secondary btn-sm self-start sm:self-auto">Isi sekarang</a>
         </div>
@@ -273,7 +271,7 @@
         <div class="flex flex-col gap-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800 sm:flex-row sm:items-center">
             <div class="flex flex-1 items-start gap-3">
                 <x-icon name="alert" class="mt-0.5 h-5 w-5 shrink-0" />
-                <p>Ada {{ $logbookProgress['missing'] }} hari kerja yang belum diisi logbook.</p>
+                <p>Ada {{ $logbookProgress['missing'] }} pekan yang belum diisi logbook.</p>
             </div>
             <a href="{{ route('mahasiswa.logbooks') }}" class="btn-secondary btn-sm self-start sm:self-auto">Lengkapi</a>
         </div>
@@ -349,7 +347,7 @@
                     <h2 class="text-base font-bold text-slate-900">Logbook Terbaru</h2>
                     <p class="mt-0.5 text-xs text-slate-500">
                         @if ($logbookProgress['missing'] > 0)
-                            {{ $logbookProgress['missing'] }} hari kerja belum diisi
+                            {{ $logbookProgress['missing'] }} pekan belum diisi
                         @else
                             Semua logbook sudah lengkap
                         @endif

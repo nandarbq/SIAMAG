@@ -92,7 +92,7 @@
                 {{ $isAdmin ? 'Akses Administrator' : 'Magang Aktif' }}
             </div>
             <p class="mt-2 text-xs leading-relaxed text-slate-300">
-                {{ $isAdmin ? 'Kelola mahasiswa, absensi, logbook, dan laporan magang.' : 'Isi absensi dan logbook harian agar progres magang tercatat rapi.' }}
+                {{ $isAdmin ? 'Kelola mahasiswa, absensi, logbook, dan laporan magang.' : 'Isi absensi dan logbook mingguan agar progres magang tercatat rapi.' }}
             </p>
         </div>
     </div>

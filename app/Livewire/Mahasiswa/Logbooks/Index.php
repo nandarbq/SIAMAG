@@ -2,8 +2,10 @@
 
 namespace App\Livewire\Mahasiswa\Logbooks;
 
+use App\Enums\AttendanceStatus;
 use App\Models\InternProfile;
 use App\Models\Logbook;
+use App\Services\InternshipWeekService;
 use App\Services\LogbookExportService;
 use App\Services\LogbookProgressService;
 use Carbon\Carbon;
@@ -17,7 +19,7 @@ use Livewire\WithFileUploads;
 use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
-#[Title('Logbook Harian')]
+#[Title('Logbook Magang')]
 class Index extends Component
 {
     use WithFileUploads;
@@ -73,13 +75,13 @@ class Index extends Component
         $this->showModal = true;
     }
 
-    public function openCreateForDate(string $date): void
+    public function openCreateForWeek(int $week): void
     {
         $this->resetForm();
         $this->resetValidation();
 
         $profile = auth()->user()->internProfile;
-        $date = Carbon::parse($date)->startOfDay();
+        $weeks = app(InternshipWeekService::class);
 
         if ($this->isOutsideInternshipPeriod($profile)) {
             session()->flash('error', 'Anda hanya dapat mengisi logbook selama periode magang.');
@@ -87,14 +89,21 @@ class Index extends Component
             return;
         }
 
-        if ($date->greaterThan(today())) {
-            session()->flash('error', 'Logbook tidak dapat diisi untuk tanggal yang akan datang.');
+        if (! $profile || $week < 1 || $week > $weeks->count($profile)) {
+            session()->flash('error', 'Pekan logbook tidak valid.');
 
             return;
         }
 
-        if ($profile && ! $date->betweenIncluded($profile->start_date, $profile->end_date)) {
-            session()->flash('error', 'Tanggal logbook harus berada di dalam periode magang.');
+        ['start' => $weekStart, 'end' => $weekEnd] = $weeks->range($profile, $week);
+        $todayAttended = today()->betweenIncluded($weekStart, $weekEnd) && $this->hasAttendedOn(today());
+        $date = $todayAttended
+            ? today()->copy()
+            : ($this->firstAttendedDateInWeek($weekStart, $weekEnd)
+                ?? (today()->betweenIncluded($weekStart, $weekEnd) ? today()->copy() : $weekStart->copy()));
+
+        if ($date->greaterThan(today())) {
+            session()->flash('error', 'Logbook tidak dapat diisi untuk tanggal yang akan datang.');
 
             return;
         }
@@ -208,6 +217,26 @@ class Index extends Component
     private function isOutsideInternshipPeriod(?InternProfile $profile): bool
     {
         return $profile !== null && ! today()->betweenIncluded($profile->start_date, $profile->end_date);
+    }
+
+    private function firstAttendedDateInWeek(Carbon $start, Carbon $end): ?Carbon
+    {
+        $date = auth()->user()->attendances()
+            ->whereDate('date', '>=', $start->toDateString())
+            ->whereDate('date', '<=', $end->toDateString())
+            ->whereIn('status', [AttendanceStatus::Hadir, AttendanceStatus::Terlambat])
+            ->orderBy('date')
+            ->value('date');
+
+        return $date ? Carbon::parse($date)->startOfDay() : null;
+    }
+
+    private function hasAttendedOn(Carbon $date): bool
+    {
+        return auth()->user()->attendances()
+            ->whereDate('date', $date->toDateString())
+            ->whereIn('status', [AttendanceStatus::Hadir, AttendanceStatus::Terlambat])
+            ->exists();
     }
 
     private function persist(): void

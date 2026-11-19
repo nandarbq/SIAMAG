@@ -98,7 +98,7 @@ class StudentDashboardTest extends TestCase
         Livewire::actingAs($student)
             ->test(StudentDashboard::class)
             ->assertSee('Fokus hari ini')
-            ->assertSee('Logbook hari ini belum diisi.')
+            ->assertSee('Logbook pekan ini belum diisi.')
             ->assertSee('Isi logbook');
     }
 
@@ -117,7 +117,7 @@ class StudentDashboardTest extends TestCase
 
         Livewire::actingAs($student)
             ->test(StudentDashboard::class)
-            ->assertSee('Administrasi hari ini beres.')
+            ->assertSee('Administrasi pekan ini beres.')
             ->assertSee('Buka logbook');
     }
 

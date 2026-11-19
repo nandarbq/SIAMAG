@@ -12,7 +12,10 @@ use Illuminate\Support\Collection;
 
 class LogbookProgressService
 {
-    public function __construct(private readonly AttendanceService $attendanceService) {}
+    public function __construct(
+        private readonly AttendanceService $attendanceService,
+        private readonly InternshipWeekService $weeks,
+    ) {}
 
     public function for(User $user): array
     {
@@ -28,35 +31,56 @@ class LogbookProgressService
 
         $total = Logbook::query()
             ->where('user_id', $user->id)
-            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->whereDate('date', '>=', $start->toDateString())
+            ->whereDate('date', '<=', $end->toDateString())
             ->count();
 
         if ($today->lessThan($start)) {
             return $this->empty('not_started') + ['total' => $total];
         }
 
-        $expectedEnd = $today->greaterThan($end) ? $end->copy() : $today->copy()->subDay();
-
+        $expectedEnd = $today->greaterThan($end) ? $end->copy() : $today->copy();
         $expectedDates = $this->expectedDates($user, $start, $expectedEnd);
         $logbookDates = Logbook::query()
             ->where('user_id', $user->id)
-            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->whereDate('date', '>=', $start->toDateString())
+            ->whereDate('date', '<=', $end->toDateString())
             ->pluck('date')
             ->map(fn ($date) => Carbon::parse($date)->toDateString())
             ->unique();
 
-        $filled = $expectedDates->intersect($logbookDates)->count();
-        $missingDates = $expectedDates->diff($logbookDates)->values();
-        $expectedCount = $expectedDates->count();
+        $expectedWeeks = $this->weeks->weeks($profile)
+            ->filter(fn (array $week) => $expectedDates->contains(
+                fn (string $date) => Carbon::parse($date)->betweenIncluded($week['start'], $week['end'])
+            ))
+            ->map(fn (array $week) => [
+                'number' => $week['number'],
+                'start' => $week['start'],
+                'end' => $week['end'],
+                'label' => $week['label'],
+                'filled' => $logbookDates->contains(
+                    fn (string $date) => Carbon::parse($date)->betweenIncluded($week['start'], $week['end'])
+                ),
+            ])
+            ->values();
+
+        $filled = $expectedWeeks->where('filled', true)->count();
+        $missingWeeks = $expectedWeeks->where('filled', false)->values()->map(fn (array $week) => [
+            'number' => $week['number'],
+            'start' => $week['start'],
+            'end' => $week['end'],
+            'label' => $week['label'],
+        ])->all();
+        $expectedCount = $expectedWeeks->count();
 
         return [
             'expected' => $expectedCount,
             'filled' => $filled,
-            'missing' => $missingDates->count(),
+            'missing' => count($missingWeeks),
             'percentage' => $expectedCount > 0 ? (int) round(($filled / $expectedCount) * 100) : null,
-            'missing_dates' => $missingDates->all(),
+            'missing_weeks' => $missingWeeks,
             'total' => $total,
-            'today_status' => $this->todayStatus($user, $profile, $today),
+            'week_status' => $this->weekStatus($profile, $expectedWeeks, $today),
         ];
     }
 
@@ -68,7 +92,8 @@ class LogbookProgressService
 
         return Attendance::query()
             ->where('user_id', $user->id)
-            ->whereBetween('date', [$start->toDateString(), $end->toDateString()])
+            ->whereDate('date', '>=', $start->toDateString())
+            ->whereDate('date', '<=', $end->toDateString())
             ->whereIn('status', [AttendanceStatus::Hadir, AttendanceStatus::Terlambat])
             ->pluck('date')
             ->map(fn ($date) => Carbon::parse($date)->toDateString())
@@ -77,47 +102,31 @@ class LogbookProgressService
             ->values();
     }
 
-    private function todayStatus(User $user, InternProfile $profile, Carbon $today): string
+    private function weekStatus(InternProfile $profile, Collection $expectedWeeks, Carbon $today): string
     {
         if ($today->lessThan($profile->start_date) || $today->greaterThan($profile->end_date)) {
-            return 'outside';
+            return $today->lessThan($profile->start_date) ? 'not_started' : 'outside';
         }
 
-        if (! $this->attendanceService->isWorkday($today)) {
-            return 'holiday';
+        $currentWeek = $expectedWeeks->firstWhere('number', $this->weeks->number($profile, $today));
+
+        if ($currentWeek === null) {
+            return 'not_required';
         }
 
-        $attendance = Attendance::query()
-            ->where('user_id', $user->id)
-            ->whereDate('date', $today->toDateString())
-            ->first();
-
-        if (! $attendance || ! in_array($attendance->status, [AttendanceStatus::Hadir, AttendanceStatus::Terlambat], true)) {
-            if ($attendance && in_array($attendance->status, [AttendanceStatus::Izin, AttendanceStatus::Sakit, AttendanceStatus::Libur], true)) {
-                return 'excused';
-            }
-
-            return 'not_attended';
-        }
-
-        $hasLogbook = Logbook::query()
-            ->where('user_id', $user->id)
-            ->whereDate('date', $today->toDateString())
-            ->exists();
-
-        return $hasLogbook ? 'filled' : 'missing';
+        return $currentWeek['filled'] ? 'filled' : 'missing';
     }
 
-    private function empty(string $todayStatus): array
+    private function empty(string $weekStatus): array
     {
         return [
             'expected' => 0,
             'filled' => 0,
             'missing' => 0,
             'percentage' => null,
-            'missing_dates' => [],
+            'missing_weeks' => [],
             'total' => 0,
-            'today_status' => $todayStatus,
+            'week_status' => $weekStatus,
         ];
     }
 }

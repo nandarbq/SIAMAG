@@ -1,9 +1,9 @@
 <div class="space-y-6">
     <section class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-            <p class="page-eyebrow">Aktivitas Harian</p>
+            <p class="page-eyebrow">Aktivitas Mingguan</p>
             <h1 class="page-title">Logbook Magang</h1>
-            <p class="page-subtitle">Catat pekerjaan harian Anda agar laporan akhir magang lebih mudah disusun.</p>
+            <p class="page-subtitle">Catat aktivitas magang minimal sekali per pekan agar laporan akhir lebih mudah disusun.</p>
         </div>
         <div class="flex flex-wrap items-center gap-2">
             @if ($exportOpen)
@@ -33,27 +33,25 @@
     @endif
 
     @php
-        $todayLabels = [
+        $weekLabels = [
             'no_profile' => 'Profil belum ada',
             'not_started' => 'Belum mulai',
             'outside' => 'Di luar periode',
-            'holiday' => 'Hari libur',
-            'not_attended' => 'Belum absen',
-            'excused' => 'Izin/Sakit',
+            'not_required' => 'Belum perlu',
             'filled' => 'Sudah diisi',
             'missing' => 'Belum diisi',
         ];
-        $todayTone = match ($progress['today_status']) {
+        $weekTone = match ($progress['week_status']) {
             'filled' => 'emerald',
             'missing' => 'rose',
-            'not_attended' => 'amber',
+            'not_required' => 'amber',
             default => 'slate',
         };
         $stats = [
             [
                 'label' => 'Progres Logbook',
                 'value' => $progress['percentage'] === null ? '—' : $progress['percentage'].'%',
-                'note' => $progress['expected'] > 0 ? $progress['filled'].' dari '.$progress['expected'].' hari kerja' : 'Belum ada hari kerja berjalan',
+                'note' => $progress['expected'] > 0 ? $progress['filled'].' dari '.$progress['expected'].' pekan' : 'Belum ada pekan berjalan',
                 'icon' => 'chart',
                 'tone' => 'brand',
             ],
@@ -67,16 +65,16 @@
             [
                 'label' => 'Belum Diisi',
                 'value' => $progress['missing'],
-                'note' => $progress['missing'] > 0 ? 'Perlu dilengkapi' : 'Semua sudah terisi',
+                'note' => $progress['missing'] > 0 ? 'Pekan perlu dilengkapi' : 'Semua pekan terisi',
                 'icon' => 'alert',
                 'tone' => $progress['missing'] > 0 ? 'rose' : 'emerald',
             ],
             [
-                'label' => 'Hari Ini',
-                'value' => $todayLabels[$progress['today_status']] ?? '-',
+                'label' => 'Pekan Ini',
+                'value' => $weekLabels[$progress['week_status']] ?? '-',
                 'note' => now()->translatedFormat('l, d M Y'),
                 'icon' => 'calendar',
-                'tone' => $todayTone,
+                'tone' => $weekTone,
             ],
         ];
         $tones = [
@@ -109,23 +107,23 @@
             <div class="flex items-start gap-3">
                 <x-icon name="alert" class="mt-0.5 h-5 w-5 shrink-0" />
                 <div class="min-w-0 flex-1">
-                    <p class="font-semibold">Ada {{ $progress['missing'] }} hari kerja yang belum diisi logbook.</p>
-                    @if ($progress['today_status'] === 'outside')
-                        <p class="mt-0.5 text-xs">Periode magang telah berakhir. Logbook yang terlewat tidak dapat ditambahkan lagi.</p>
+                    <p class="font-semibold">Ada {{ $progress['missing'] }} pekan yang belum diisi logbook.</p>
+                    @if ($progress['week_status'] === 'outside')
+                        <p class="mt-0.5 text-xs">Periode magang telah berakhir. Logbook pekan yang terlewat tidak dapat ditambahkan lagi.</p>
                     @else
                         <p class="mt-0.5 text-xs">Lengkapi sekarang agar laporan akhir magang Anda tidak terhambat.</p>
                         @if ($exportOpen)
-                            <p class="mt-1 text-xs font-medium">Anda tetap dapat mengunduh logbook, tetapi lengkapi hari terlewat agar laporan lebih utuh.</p>
+                            <p class="mt-1 text-xs font-medium">Anda tetap dapat mengunduh logbook, tetapi lengkapi pekan terlewat agar laporan lebih utuh.</p>
                         @endif
                         <div class="mt-3 flex flex-wrap gap-2">
-                            @foreach (array_slice($progress['missing_dates'], 0, 8) as $missingDate)
-                                <button type="button" wire:click="openCreateForDate('{{ $missingDate }}')" class="btn-secondary btn-sm">
+                            @foreach (array_slice($progress['missing_weeks'], 0, 8) as $missingWeek)
+                                <button type="button" wire:click="openCreateForWeek({{ $missingWeek['number'] }})" class="btn-secondary btn-sm">
                                     <x-icon name="plus" class="h-3.5 w-3.5" />
-                                    {{ \Carbon\Carbon::parse($missingDate)->translatedFormat('d M') }}
+                                    {{ $missingWeek['label'] }}
                                 </button>
                             @endforeach
-                            @if (count($progress['missing_dates']) > 8)
-                                <span class="self-center text-xs font-medium text-amber-700">+{{ count($progress['missing_dates']) - 8 }} tanggal lainnya</span>
+                            @if (count($progress['missing_weeks']) > 8)
+                                <span class="self-center text-xs font-medium text-amber-700">+{{ count($progress['missing_weeks']) - 8 }} pekan lainnya</span>
                             @endif
                         </div>
                     @endif
@@ -134,20 +132,20 @@
         </div>
     @endif
 
-    @if ($progress['today_status'] === 'missing')
+    @if ($progress['week_status'] === 'missing')
         <div class="flex flex-col gap-3 rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800 sm:flex-row sm:items-center">
             <div class="flex flex-1 items-start gap-3">
                 <x-icon name="alert" class="mt-0.5 h-5 w-5 shrink-0" />
-                <p>Logbook hari ini belum diisi. Luangkan waktu sejenak untuk mencatat aktivitas Anda.</p>
+                <p>Logbook pekan ini belum diisi. Luangkan waktu sejenak untuk mencatat aktivitas Anda.</p>
             </div>
-            <button type="button" wire:click="openCreateForDate('{{ now()->toDateString() }}')" class="btn-secondary btn-sm self-start sm:self-auto">
-                Isi hari ini
+            <button type="button" wire:click="openCreate" class="btn-secondary btn-sm self-start sm:self-auto">
+                Isi pekan ini
             </button>
         </div>
-    @elseif ($progress['today_status'] === 'not_attended')
+    @elseif ($progress['week_status'] === 'not_required')
         <div class="flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-700">
             <x-icon name="clock" class="mt-0.5 h-5 w-5 shrink-0" />
-            <p>Absen masuk dulu, lalu isi logbook hari ini.</p>
+            <p>Belum ada absen masuk pada pekan ini. Absen dulu, lalu isi logbook.</p>
         </div>
     @endif
 
@@ -217,7 +215,7 @@
                         <x-icon name="book" class="h-6 w-6" />
                     </span>
                     <p class="mt-3 text-sm font-semibold text-slate-700">Belum ada logbook</p>
-                    <p class="mt-1 text-xs text-slate-500">Mulai catat aktivitas magang Anda hari ini.</p>
+                    <p class="mt-1 text-xs text-slate-500">Mulai catat aktivitas magang Anda pekan ini.</p>
                 </div>
             @endforelse
         </div>
@@ -283,7 +281,7 @@
                                     <x-icon name="book" class="h-6 w-6" />
                                 </span>
                                 <p class="mt-3 text-sm font-semibold text-slate-700">Belum ada logbook</p>
-                                <p class="mt-1 text-xs text-slate-500">Mulai catat aktivitas magang Anda hari ini.</p>
+                                <p class="mt-1 text-xs text-slate-500">Mulai catat aktivitas magang Anda pekan ini.</p>
                             </td>
                         </tr>
                     @endforelse

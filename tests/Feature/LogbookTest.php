@@ -2,8 +2,10 @@
 
 namespace Tests\Feature;
 
+use App\Enums\AttendanceStatus;
 use App\Livewire\Admin\Logbooks\Index as AdminLogbookIndex;
 use App\Livewire\Mahasiswa\Logbooks\Index as StudentLogbookIndex;
+use App\Models\Attendance;
 use App\Models\Logbook;
 use App\Models\User;
 use Carbon\Carbon;
@@ -113,35 +115,48 @@ class LogbookTest extends TestCase
         $this->assertSame('Aktivitas baru', $logbook->fresh()->activity);
     }
 
-    public function test_student_can_open_a_missing_logbook_date(): void
+    public function test_student_can_open_a_missing_logbook_week(): void
     {
         $student = $this->makeStudent();
+        Attendance::factory()->for($student)->create([
+            'date' => '2026-11-05',
+            'status' => AttendanceStatus::Hadir,
+        ]);
 
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
-            ->call('openCreateForDate', '2026-11-05')
+            ->call('openCreateForWeek', 1)
             ->assertSet('showModal', true)
             ->assertSet('date', '2026-11-05');
     }
 
-    public function test_student_cannot_open_a_future_or_out_of_period_logbook_date(): void
+    public function test_student_cannot_open_a_future_or_invalid_logbook_week(): void
     {
         $student = $this->makeStudent();
 
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
-            ->call('openCreateForDate', '2026-11-10')
+            ->call('openCreateForWeek', 3)
             ->assertSet('showModal', false);
 
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
-            ->call('openCreateForDate', '2026-10-31')
+            ->call('openCreateForWeek', 0)
+            ->assertSet('showModal', false);
+
+        Livewire::actingAs($student)
+            ->test(StudentLogbookIndex::class)
+            ->call('openCreateForWeek', 10)
             ->assertSet('showModal', false);
     }
 
-    public function test_opening_an_existing_missing_date_loads_it_for_editing(): void
+    public function test_opening_an_existing_missing_week_loads_it_for_editing(): void
     {
         $student = $this->makeStudent();
+        Attendance::factory()->for($student)->create([
+            'date' => '2026-11-08',
+            'status' => AttendanceStatus::Hadir,
+        ]);
 
         $logbook = Logbook::factory()->for($student)->create([
             'date' => '2026-11-08',
@@ -149,7 +164,7 @@ class LogbookTest extends TestCase
 
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
-            ->call('openCreateForDate', '2026-11-08')
+            ->call('openCreateForWeek', 2)
             ->assertSet('showModal', true)
             ->assertSet('logbookId', $logbook->id);
     }
@@ -222,7 +237,7 @@ class LogbookTest extends TestCase
             ->assertSet('showModal', false);
     }
 
-    public function test_student_cannot_open_a_missing_logbook_date_after_internship_ends(): void
+    public function test_student_cannot_open_a_missing_logbook_week_after_internship_ends(): void
     {
         $this->travelTo(Carbon::parse('2027-01-05 10:00:00', 'Asia/Jakarta'));
 
@@ -230,7 +245,7 @@ class LogbookTest extends TestCase
 
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
-            ->call('openCreateForDate', '2026-12-30')
+            ->call('openCreateForWeek', 1)
             ->assertSet('showModal', false);
     }
 

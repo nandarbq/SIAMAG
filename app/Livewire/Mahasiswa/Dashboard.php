@@ -86,12 +86,12 @@ class Dashboard extends Component
     }
 
     /**
-     * @param  array{expected: int, filled: int, missing: int, percentage: int|null, today_status: string}  $logbookProgress
+     * @param  array{expected: int, filled: int, missing: int, percentage: int|null, week_status: string}  $logbookProgress
      * @return array{title: string, body: string, cta_label: string|null, cta_url: string|null, items: array<int, array{label: string, value: string, hint: string, icon: string, tone: string}>}
      */
     private function buildTodayFocus(bool $isWorkday, ?Attendance $today, array $logbookProgress, ?string $nonWorkingLabel, ?InternProfile $profile): array
     {
-        $todayStatus = $logbookProgress['today_status'];
+        $todayStatus = $logbookProgress['week_status'];
 
         [$title, $body, $ctaLabel, $ctaUrl] = match (true) {
             $profile === null => [
@@ -102,7 +102,7 @@ class Dashboard extends Component
             ],
             ! $isWorkday => [
                 'Hari ini libur.',
-                ($nonWorkingLabel ?? 'Hari ini libur').'. Tidak perlu absensi atau logbook.',
+                ($nonWorkingLabel ?? 'Hari ini libur').'. Tidak perlu absensi hari ini.',
                 null,
                 null,
             ],
@@ -125,20 +125,26 @@ class Dashboard extends Component
                 route('mahasiswa.attendance'),
             ],
             $todayStatus === 'missing' => [
-                'Logbook hari ini belum diisi.',
-                'Luangkan waktu sebentar untuk mencatat aktivitas magang hari ini.',
+                'Logbook pekan ini belum diisi.',
+                'Luangkan waktu sebentar untuk mencatat aktivitas magang pekan ini.',
                 'Isi logbook',
                 route('mahasiswa.logbooks'),
             ],
-            $todayStatus === 'excused' => [
+            $todayStatus === 'not_required' && in_array($today?->status, [AttendanceStatus::Izin, AttendanceStatus::Sakit], true) => [
                 'Izin atau sakit hari ini tercatat.',
                 'Tidak perlu mengisi logbook untuk hari ini. Jaga kesehatan Anda.',
                 null,
                 null,
             ],
+            $todayStatus === 'not_required' => [
+                'Belum ada absen masuk pada pekan ini.',
+                'Absen masuk terlebih dahulu, lalu isi logbook pekan ini.',
+                'Absen sekarang',
+                route('mahasiswa.attendance'),
+            ],
             default => [
-                'Administrasi hari ini beres.',
-                'Absensi dan logbook sudah lengkap. Lanjutkan aktivitas magang dengan tenang.',
+                'Administrasi pekan ini beres.',
+                'Absensi hari ini dan logbook pekan ini sudah lengkap. Lanjutkan aktivitas magang dengan tenang.',
                 'Buka logbook',
                 route('mahasiswa.logbooks'),
             ],
@@ -174,22 +180,19 @@ class Dashboard extends Component
         $logbookValue = match ($todayStatus) {
             'filled' => 'Sudah diisi',
             'missing' => 'Belum diisi',
-            'holiday' => 'Libur',
-            'excused' => 'Izin/Sakit',
-            'not_attended' => 'Belum absen',
+            'not_required' => 'Belum perlu',
             default => 'Belum ada data',
         };
         $logbookHint = match ($todayStatus) {
-            'filled' => $logbookProgress['filled'].' dari '.$logbookProgress['expected'].' hari',
-            'missing' => 'Isi sebelum hari berganti',
-            'holiday', 'excused' => 'Tidak perlu diisi',
-            'not_attended' => 'Absen masuk dulu',
+            'filled' => $logbookProgress['filled'].' dari '.$logbookProgress['expected'].' pekan',
+            'missing' => 'Isi sebelum pekan berganti',
+            'not_required' => 'Belum ada absen masuk',
             default => 'Belum ada data',
         };
         $logbookTone = match ($todayStatus) {
             'filled' => 'bg-emerald-400/15 text-emerald-300 ring-emerald-300/20',
             'missing' => 'bg-rose-400/15 text-rose-300 ring-rose-300/20',
-            'holiday', 'excused' => 'bg-sky-400/15 text-sky-300 ring-sky-300/20',
+            'not_required' => 'bg-sky-400/15 text-sky-300 ring-sky-300/20',
             default => 'bg-amber-400/15 text-amber-300 ring-amber-300/20',
         };
 

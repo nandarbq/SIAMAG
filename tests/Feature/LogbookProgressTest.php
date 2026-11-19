@@ -9,6 +9,7 @@ use App\Models\Attendance;
 use App\Models\Holiday;
 use App\Models\Logbook;
 use App\Models\User;
+use App\Services\InternshipWeekService;
 use App\Services\LogbookProgressService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -19,7 +20,7 @@ class LogbookProgressTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_progress_counts_only_past_attended_workdays(): void
+    public function test_progress_counts_only_weeks_with_past_attendance(): void
     {
         $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
 
@@ -38,16 +39,18 @@ class LogbookProgressTest extends TestCase
 
         $progress = app(LogbookProgressService::class)->for($student);
 
-        $this->assertSame(3, $progress['expected']);
-        $this->assertSame(2, $progress['filled']);
+        $this->assertSame(2, $progress['expected']);
+        $this->assertSame(1, $progress['filled']);
         $this->assertSame(1, $progress['missing']);
-        $this->assertSame(67, $progress['percentage']);
-        $this->assertSame(['2026-11-03'], $progress['missing_dates']);
+        $this->assertSame(50, $progress['percentage']);
+        $this->assertCount(1, $progress['missing_weeks']);
+        $this->assertSame(2, $progress['missing_weeks'][0]['number']);
+        $this->assertSame('Pekan 2 · 09 Nov–15 Nov 2026', $progress['missing_weeks'][0]['label']);
         $this->assertSame(2, $progress['total']);
-        $this->assertSame('missing', $progress['today_status']);
+        $this->assertSame('missing', $progress['week_status']);
     }
 
-    public function test_today_is_reported_separately_from_missing_days(): void
+    public function test_current_week_is_reported_separately_from_missing_weeks(): void
     {
         $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
 
@@ -57,10 +60,10 @@ class LogbookProgressTest extends TestCase
 
         $progress = app(LogbookProgressService::class)->for($student);
 
-        $this->assertSame(0, $progress['expected']);
-        $this->assertNull($progress['percentage']);
-        $this->assertSame([], $progress['missing_dates']);
-        $this->assertSame('filled', $progress['today_status']);
+        $this->assertSame(1, $progress['expected']);
+        $this->assertSame(100, $progress['percentage']);
+        $this->assertSame([], $progress['missing_weeks']);
+        $this->assertSame('filled', $progress['week_status']);
     }
 
     public function test_progress_excludes_leave_sick_holidays_and_weekends(): void
@@ -78,10 +81,12 @@ class LogbookProgressTest extends TestCase
 
         $this->assertSame(0, $progress['expected']);
         $this->assertSame(0, $progress['missing']);
+        $this->assertSame([], $progress['missing_weeks']);
         $this->assertNull($progress['percentage']);
+        $this->assertSame('not_required', $progress['week_status']);
     }
 
-    public function test_progress_reports_not_attended_today(): void
+    public function test_progress_reports_current_week_without_attendance(): void
     {
         $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
 
@@ -89,7 +94,7 @@ class LogbookProgressTest extends TestCase
 
         $progress = app(LogbookProgressService::class)->for($student);
 
-        $this->assertSame('not_attended', $progress['today_status']);
+        $this->assertSame('not_required', $progress['week_status']);
     }
 
     public function test_progress_is_empty_without_internship_profile(): void
@@ -98,7 +103,7 @@ class LogbookProgressTest extends TestCase
 
         $progress = app(LogbookProgressService::class)->for($student);
 
-        $this->assertSame('no_profile', $progress['today_status']);
+        $this->assertSame('no_profile', $progress['week_status']);
         $this->assertSame(0, $progress['expected']);
         $this->assertNull($progress['percentage']);
     }
@@ -111,28 +116,42 @@ class LogbookProgressTest extends TestCase
 
         $progress = app(LogbookProgressService::class)->for($student);
 
-        $this->assertSame('not_started', $progress['today_status']);
+        $this->assertSame('not_started', $progress['week_status']);
         $this->assertSame(0, $progress['expected']);
     }
 
-    public function test_progress_after_internship_ends_includes_all_attended_days(): void
+    public function test_progress_after_internship_ends_includes_all_attended_weeks(): void
     {
         $this->travelTo(Carbon::parse('2026-12-05 10:00:00', 'Asia/Jakarta'));
 
         $student = $this->makeStudent();
         $this->attendance($student, '2026-11-02', AttendanceStatus::Hadir);
-        $this->attendance($student, '2026-11-03', AttendanceStatus::Hadir);
+        $this->attendance($student, '2026-11-09', AttendanceStatus::Hadir);
         Logbook::factory()->for($student)->create(['date' => '2026-11-02']);
 
         $progress = app(LogbookProgressService::class)->for($student);
 
         $this->assertSame(2, $progress['expected']);
         $this->assertSame(1, $progress['filled']);
-        $this->assertSame(['2026-11-03'], $progress['missing_dates']);
-        $this->assertSame('outside', $progress['today_status']);
+        $this->assertCount(1, $progress['missing_weeks']);
+        $this->assertSame(2, $progress['missing_weeks'][0]['number']);
+        $this->assertSame('outside', $progress['week_status']);
     }
 
-    public function test_logbook_page_renders_progress_and_missing_dates(): void
+    public function test_weeks_are_anchored_to_the_internship_start_date(): void
+    {
+        $student = $this->makeStudent();
+        $profile = $student->internProfile;
+        $weeks = app(InternshipWeekService::class);
+
+        $this->assertSame(5, $weeks->count($profile));
+        $this->assertSame(1, $weeks->number($profile, Carbon::parse('2026-11-08')));
+        $this->assertSame(2, $weeks->number($profile, Carbon::parse('2026-11-09')));
+        $this->assertSame('Pekan 1 · 02 Nov–08 Nov 2026', $weeks->labelForWeek($profile, 1));
+        $this->assertSame('Pekan 5 · 30 Nov–30 Nov 2026', $weeks->labelForWeek($profile, 5));
+    }
+
+    public function test_logbook_page_renders_weekly_progress_and_missing_weeks(): void
     {
         $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
 
@@ -141,12 +160,12 @@ class LogbookProgressTest extends TestCase
 
         Livewire::actingAs($student)
             ->test(StudentLogbookIndex::class)
-            ->assertSee('Ada 1 hari kerja yang belum diisi logbook.')
-            ->assertSee('03 Nov')
-            ->assertSee('Belum absen');
+            ->assertSee('Ada 1 pekan yang belum diisi logbook.')
+            ->assertSee('Pekan 1 · 02 Nov–08 Nov 2026')
+            ->assertSee('Belum perlu');
     }
 
-    public function test_dashboard_renders_logbook_progress_and_alert(): void
+    public function test_dashboard_renders_weekly_logbook_progress_and_alert(): void
     {
         $this->travelTo(Carbon::parse('2026-11-10 10:00:00', 'Asia/Jakarta'));
 
@@ -156,7 +175,7 @@ class LogbookProgressTest extends TestCase
         Livewire::actingAs($student)
             ->test(StudentDashboard::class)
             ->assertSee('Progres Logbook')
-            ->assertSee('Ada 1 hari kerja yang belum diisi logbook.');
+            ->assertSee('Ada 1 pekan yang belum diisi logbook.');
     }
 
     private function makeStudent(): User
