@@ -168,19 +168,10 @@
         <div class="divide-y divide-slate-100 sm:hidden">
             @forelse ($logbooks as $logbook)
                 <div class="space-y-3 p-4">
-                    <div class="flex items-start justify-between gap-3">
-                        <div class="min-w-0">
-                            <p class="text-sm font-semibold text-slate-800">{{ $logbook->date?->translatedFormat('d M Y') }}</p>
-                            <p class="mt-0.5 text-xs text-slate-400">{{ $logbook->date?->translatedFormat('l') }}</p>
-                        </div>
-                        @if ($logbook->start_time && $logbook->end_time)
-                            <span class="badge-slate badge-compact shrink-0">{{ $logbook->duration }}</span>
-                        @endif
+                    <div>
+                        <p class="text-sm font-semibold text-slate-800">{{ $logbook->date?->translatedFormat('d M Y') }}</p>
+                        <p class="mt-0.5 text-xs text-slate-400">{{ $logbook->date?->translatedFormat('l') }}</p>
                     </div>
-
-                    @if ($logbook->start_time && $logbook->end_time)
-                        <p class="text-xs font-medium text-slate-600">{{ substr($logbook->start_time, 0, 5) }} — {{ substr($logbook->end_time, 0, 5) }}</p>
-                    @endif
 
                     <div>
                         <p class="text-sm font-semibold text-slate-800">{{ $logbook->activity }}</p>
@@ -237,7 +228,6 @@
                     <tr class="border-b border-slate-100 bg-slate-50/80">
                         <th class="table-th">Tanggal</th>
                         <th class="table-th">Aktivitas</th>
-                        <th class="table-th">Durasi</th>
                         <th class="table-th text-right">Aksi</th>
                     </tr>
                 </thead>
@@ -258,14 +248,6 @@
                                         <x-icon name="camera" class="h-3.5 w-3.5" />
                                         Foto kegiatan
                                     </a>
-                                @endif
-                            </td>
-                            <td class="table-td whitespace-nowrap text-xs text-slate-500">
-                                @if ($logbook->start_time && $logbook->end_time)
-                                    <p>{{ substr($logbook->start_time, 0, 5) }} — {{ substr($logbook->end_time, 0, 5) }}</p>
-                                    <p class="mt-0.5 font-medium text-slate-600">{{ $logbook->duration }}</p>
-                                @else
-                                    —
                                 @endif
                             </td>
                             <td class="table-td">
@@ -296,7 +278,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="4" class="px-5 py-16 text-center">
+                            <td colspan="3" class="px-5 py-16 text-center">
                                 <span class="mx-auto flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-slate-400">
                                     <x-icon name="book" class="h-6 w-6" />
                                 </span>
