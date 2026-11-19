@@ -14,7 +14,7 @@ class LogbookExportController extends Controller
 {
     public function word(LogbookExportService $exportService)
     {
-        ['user' => $user, 'profile' => $profile, 'logbooks' => $logbooks, 'officeName' => $officeName] = $this->exportData($exportService);
+        ['user' => $user, 'profile' => $profile, 'rows' => $rows, 'officeName' => $officeName] = $this->exportData($exportService);
 
         $phpWord = new PhpWord;
         $section = $phpWord->addSection([
@@ -27,6 +27,7 @@ class LogbookExportController extends Controller
 
         $section->addText('LOGBOOK MAGANG', ['bold' => true, 'size' => 16], ['alignment' => Jc::CENTER]);
         $section->addText($officeName, ['bold' => true, 'size' => 12], ['alignment' => Jc::CENTER]);
+        $section->addText('Tabel Logbook Kegiatan', ['bold' => true, 'size' => 11], ['alignment' => Jc::CENTER]);
         $section->addTextBreak(1);
 
         $identity = $section->addTable([
@@ -51,23 +52,33 @@ class LogbookExportController extends Controller
             'unit' => 'pct',
         ]);
 
-        $headers = ['No', 'Tanggal', 'Kegiatan', 'Uraian Kegiatan'];
-        $table->addRow();
-        foreach ($headers as $header) {
-            $table->addCell(1200, ['bgColor' => '1E3A8A'])->addText($header, ['bold' => true, 'color' => 'FFFFFF', 'size' => 9]);
+        $headers = ['No', 'Pekan', 'Kegiatan', 'Uraian Kegiatan', 'Dokumentasi'];
+        $widths = [600, 2200, 2600, 7000, 2000];
+        $table->addRow(null, ['tblHeader' => true]);
+
+        foreach ($headers as $index => $header) {
+            $table->addCell($widths[$index], ['bgColor' => '1E3A8A'])->addText($header, ['bold' => true, 'color' => 'FFFFFF', 'size' => 9]);
         }
 
-        foreach ($logbooks as $index => $logbook) {
+        foreach ($rows as $row) {
             $table->addRow();
-            $table->addCell(500)->addText((string) ($index + 1), ['size' => 8], ['alignment' => Jc::CENTER]);
-            $table->addCell(1200)->addText($logbook->date?->translatedFormat('d M Y') ?? '-', ['size' => 8]);
-            $table->addCell(1800)->addText($logbook->activity ?: '-', ['size' => 8]);
-            $table->addCell(2800)->addText($logbook->description ?: '-', ['size' => 8]);
+            $table->addCell(600)->addText((string) $row['number'], ['size' => 8], ['alignment' => Jc::CENTER]);
+            $table->addCell(2200)->addText($row['week'], ['size' => 8]);
+            $table->addCell(2600)->addText($row['activity'], ['size' => 8]);
+            $table->addCell(7000)->addText($row['description'], ['size' => 8]);
+
+            $photoCell = $table->addCell(2000);
+
+            if ($row['photo_binary']) {
+                $photoCell->addImage($row['photo_binary'], ['width' => 80, 'height' => 60]);
+            } else {
+                $photoCell->addText('-', ['size' => 8], ['alignment' => Jc::CENTER]);
+            }
         }
 
-        if ($logbooks->isEmpty()) {
+        if ($rows->isEmpty()) {
             $table->addRow();
-            $table->addCell(11200, ['gridSpan' => 4])->addText('Belum ada logbook pada periode magang.', ['size' => 9], ['alignment' => Jc::CENTER]);
+            $table->addCell(14400, ['gridSpan' => 5])->addText('Belum ada logbook pada periode magang.', ['size' => 9], ['alignment' => Jc::CENTER]);
         }
 
         $section->addTextBreak(2);
@@ -87,12 +98,12 @@ class LogbookExportController extends Controller
 
     public function pdf(LogbookExportService $exportService)
     {
-        ['user' => $user, 'profile' => $profile, 'logbooks' => $logbooks, 'officeName' => $officeName] = $this->exportData($exportService);
+        ['user' => $user, 'profile' => $profile, 'rows' => $rows, 'officeName' => $officeName] = $this->exportData($exportService);
 
         $pdf = Pdf::loadView('exports.logbook-pdf', [
             'user' => $user,
             'profile' => $profile,
-            'logbooks' => $logbooks,
+            'rows' => $rows,
             'office_name' => $officeName,
             'office_address' => Setting::get('office_address', ''),
             'generated_at' => now(),
@@ -112,7 +123,7 @@ class LogbookExportController extends Controller
         return [
             'user' => $user,
             'profile' => $profile,
-            'logbooks' => $exportService->logbooksFor($user),
+            'rows' => $exportService->rowsFor($user),
             'officeName' => Setting::get('office_name', 'BMKG Banyuwangi'),
         ];
     }

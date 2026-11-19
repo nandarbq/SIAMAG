@@ -9,7 +9,9 @@ use App\Models\User;
 use App\Services\LogbookExportService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Storage;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -65,6 +67,59 @@ class LogbookExportTest extends TestCase
 
         Setting::put('logbook_export_lead_days', '99');
         $this->assertSame(30, $service->leadDays());
+    }
+
+    public function test_export_rows_are_sorted_with_week_labels_and_thumbnails(): void
+    {
+        Storage::fake('local');
+
+        $student = $this->makeStudent('2026-11-02', '2026-11-30');
+        Logbook::factory()->for($student)->create([
+            'date' => '2026-11-10',
+            'activity' => 'Kegiatan kedua',
+        ]);
+        $earlier = Logbook::factory()->for($student)->create([
+            'date' => '2026-11-03',
+            'activity' => 'Kegiatan pertama',
+        ]);
+
+        $path = 'logbook-photos/'.$student->id.'/foto.jpg';
+        Storage::disk('local')->put($path, UploadedFile::fake()->image('foto.jpg', 640, 480)->getContent());
+        $earlier->update(['attachment_path' => $path]);
+
+        $rows = app(LogbookExportService::class)->rowsFor($student);
+
+        $this->assertSame([1, 2], $rows->pluck('number')->all());
+        $this->assertSame(['Kegiatan pertama', 'Kegiatan kedua'], $rows->pluck('activity')->all());
+        $this->assertSame('Pekan 1 · 02 Nov–08 Nov 2026', $rows[0]['week']);
+        $this->assertSame('Pekan 2 · 09 Nov–15 Nov 2026', $rows[1]['week']);
+        $this->assertNotNull($rows[0]['photo_binary']);
+        $this->assertStringStartsWith('data:image/jpeg;base64,', $rows[0]['photo_data_uri']);
+        $this->assertNull($rows[1]['photo_binary']);
+        $this->assertNull($rows[1]['photo_data_uri']);
+    }
+
+    public function test_export_rows_use_fallback_when_photo_is_missing_or_unreadable(): void
+    {
+        Storage::fake('local');
+
+        $student = $this->makeStudent('2026-11-02', '2026-11-30');
+        Logbook::factory()->for($student)->create([
+            'date' => '2026-11-03',
+            'attachment_path' => 'missing.jpg',
+        ]);
+        Logbook::factory()->for($student)->create([
+            'date' => '2026-11-04',
+            'attachment_path' => 'broken.jpg',
+        ]);
+        Storage::disk('local')->put('broken.jpg', 'not-an-image');
+
+        $rows = app(LogbookExportService::class)->rowsFor($student);
+
+        $this->assertNull($rows[0]['photo_binary']);
+        $this->assertNull($rows[0]['photo_data_uri']);
+        $this->assertNull($rows[1]['photo_binary']);
+        $this->assertNull($rows[1]['photo_data_uri']);
     }
 
     public function test_student_can_download_logbook_as_word_when_window_is_open(): void

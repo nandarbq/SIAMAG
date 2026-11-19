@@ -14,10 +14,13 @@
         .meta .label { width: 90px; color: #64748b; }
         .meta .colon { width: 10px; color: #64748b; }
         table.data { width: 100%; border-collapse: collapse; }
+        table.data thead { display: table-header-group; }
+        table.data tr { page-break-inside: avoid; }
         table.data th { background: #1e3a8a; color: #fff; font-size: 8px; padding: 6px 4px; text-align: left; }
         table.data td { border-bottom: 1px solid #e2e8f0; padding: 5px 4px; font-size: 8px; vertical-align: top; }
         table.data tr:nth-child(even) td { background: #f8fafc; }
         table.data .center { text-align: center; }
+        img.doc { width: 64px; height: 48px; object-fit: cover; border-radius: 3px; }
         .empty { text-align: center; padding: 16px; color: #94a3b8; }
         .signature { width: 100%; margin-top: 28px; font-size: 9px; }
         .signature td { width: 50%; vertical-align: top; }
@@ -30,6 +33,7 @@
     <div class="header">
         <h1>LOGBOOK MAGANG</h1>
         <p>{{ $office_name }}</p>
+        <p><strong>Tabel Logbook Kegiatan</strong></p>
         @if ($office_address)
             <p>{{ $office_address }}</p>
         @endif
@@ -65,23 +69,31 @@
     <table class="data">
         <thead>
             <tr>
-                <th class="center" style="width: 5%;">No</th>
-                <th style="width: 15%;">Tanggal</th>
-                <th style="width: 25%;">Kegiatan</th>
-                <th style="width: 55%;">Uraian Kegiatan</th>
+                <th class="center" style="width: 4%;">No</th>
+                <th style="width: 21%;">Pekan</th>
+                <th style="width: 20%;">Kegiatan</th>
+                <th style="width: 37%;">Uraian Kegiatan</th>
+                <th class="center" style="width: 18%;">Dokumentasi</th>
             </tr>
         </thead>
         <tbody>
-            @forelse ($logbooks as $index => $logbook)
+            @forelse ($rows as $row)
                 <tr>
-                    <td class="center">{{ $index + 1 }}</td>
-                    <td>{{ $logbook->date?->translatedFormat('d M Y') ?? '-' }}</td>
-                    <td>{{ $logbook->activity ?: '-' }}</td>
-                    <td>{!! nl2br(e($logbook->description ?: '-')) !!}</td>
+                    <td class="center">{{ $row['number'] }}</td>
+                    <td>{{ $row['week'] }}</td>
+                    <td>{{ $row['activity'] }}</td>
+                    <td>{!! nl2br(e($row['description'])) !!}</td>
+                    <td class="center">
+                        @if ($row['photo_data_uri'])
+                            <img src="{{ $row['photo_data_uri'] }}" alt="Dokumentasi" class="doc">
+                        @else
+                            -
+                        @endif
+                    </td>
                 </tr>
             @empty
                 <tr>
-                    <td colspan="4" class="empty">Belum ada logbook pada periode magang.</td>
+                    <td colspan="5" class="empty">Belum ada logbook pada periode magang.</td>
                 </tr>
             @endforelse
         </tbody>
