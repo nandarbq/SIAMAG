@@ -381,130 +381,67 @@
     background: linear-gradient(135deg, #fcd34d, #fbbf24);
 }
 
-.auth-radar {
-    position: relative;
-    width: 100%;
-    aspect-ratio: 1;
-    border-radius: 9999px;
-    border: 1px solid rgb(147 197 253 / 0.14);
-    background:
-        repeating-radial-gradient(circle, transparent 0 40px, rgb(147 197 253 / 0.07) 40px 41px),
-        radial-gradient(circle, rgb(37 99 235 / 0.16), transparent 70%);
-    box-shadow: inset 0 0 90px rgb(37 99 235 / 0.12);
+.auth-radar-device {
+    overflow: visible;
+}
+
+.auth-radar-art {
+    background: linear-gradient(135deg, #dbeafe 0%, #60a5fa 34%, #2563eb 68%, #172554 100%);
+    filter:
+        drop-shadow(0 0 22px rgb(59 130 246 / 0.3))
+        drop-shadow(0 24px 44px rgb(2 6 23 / 0.55));
+    -webkit-mask-image: var(--radar-art);
+    mask-image: var(--radar-art);
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+.auth-radar-art::after {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgb(255 255 255 / 0.22), transparent 42%, rgb(2 6 23 / 0.32));
+    content: "";
+    -webkit-mask-image: var(--radar-art);
+    mask-image: var(--radar-art);
+    -webkit-mask-position: center;
+    mask-position: center;
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+    -webkit-mask-size: contain;
+    mask-size: contain;
+}
+
+.auth-radar-waves {
     pointer-events: none;
+    overflow: visible;
 }
 
-.auth-radar::before {
-    content: "";
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: conic-gradient(
-        from 0deg,
-        transparent 0deg 280deg,
-        rgb(56 189 248 / 0.06) 300deg,
-        rgb(56 189 248 / 0.35) 344deg,
-        rgb(125 211 252 / 0.75) 360deg
-    );
-    -webkit-mask: radial-gradient(circle, transparent 0 10%, #000 10% 100%);
-    mask: radial-gradient(circle, transparent 0 10%, #000 10% 100%);
-    animation: auth-spin 10s linear infinite;
+.auth-radar-wave {
+    transform-box: view-box;
+    transform-origin: 214px 335px;
+    animation: auth-radar-wave 4.6s cubic-bezier(0.25, 0.8, 0.25, 1) infinite;
+    animation-delay: var(--wave-delay, 0s);
+    will-change: transform, opacity;
 }
 
-.auth-radar::after {
-    content: "";
-    position: absolute;
-    inset: 24%;
-    border-radius: inherit;
-    border: 1px dashed rgb(147 197 253 / 0.16);
-    animation: auth-spin 24s linear infinite reverse;
+.auth-radar-wave-static {
+    opacity: 0.22;
 }
 
-.auth-radar-ticks {
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background: repeating-conic-gradient(
-        from 0deg,
-        rgb(147 197 253 / 0.24) 0deg 0.6deg,
-        transparent 0.6deg 15deg
-    );
-    -webkit-mask: radial-gradient(circle, transparent 0 90%, #000 90% 100%);
-    mask: radial-gradient(circle, transparent 0 90%, #000 90% 100%);
-    opacity: 0.7;
+.auth-radar-blip-ring {
+    transform-box: view-box;
+    transform-origin: 214px 335px;
+    animation: auth-radar-blip-ring 3.6s ease-out infinite;
 }
 
-.auth-radar-cross {
-    position: absolute;
-    inset: 0;
-    border-radius: inherit;
-    background:
-        linear-gradient(transparent calc(50% - 0.5px), rgb(147 197 253 / 0.12) 50%, transparent calc(50% + 0.5px)),
-        linear-gradient(90deg, transparent calc(50% - 0.5px), rgb(147 197 253 / 0.12) 50%, transparent calc(50% + 0.5px));
-}
-
-.auth-radar-label {
-    position: absolute;
-    z-index: 2;
-    font-size: 0.6rem;
-    font-weight: 700;
-    letter-spacing: 0.12em;
-    color: rgb(186 230 253 / 0.5);
-}
-
-.auth-radar-blip {
-    position: absolute;
-    z-index: 2;
-    height: 0.4rem;
-    width: 0.4rem;
-    border-radius: 9999px;
-    background: #7dd3fc;
-    box-shadow:
-        0 0 0 4px rgb(125 211 252 / 0.1),
-        0 0 18px rgb(125 211 252 / 0.65);
-    opacity: 0;
-    animation: auth-blip 4.8s ease-out infinite;
-    animation-delay: var(--blip-delay, 0s);
-}
-
-.auth-radar-blip::after {
-    content: "";
-    position: absolute;
-    inset: -0.35rem;
-    border: 1px solid rgb(125 211 252 / 0.4);
-    border-radius: inherit;
-    opacity: 0;
-    animation: auth-blip-ring 4.8s ease-out infinite;
-    animation-delay: var(--blip-delay, 0s);
-}
-
-.auth-radar-center {
-    position: absolute;
-    left: 50%;
-    top: 50%;
-    z-index: 2;
-    display: flex;
-    align-items: center;
-    gap: 0.35rem;
-    transform: translate(-50%, -50%);
-}
-
-.auth-radar-center-dot {
-    height: 0.45rem;
-    width: 0.45rem;
-    border-radius: 9999px;
-    background: #fbbf24;
-    box-shadow:
-        0 0 0 4px rgb(251 191 36 / 0.12),
-        0 0 18px rgb(251 191 36 / 0.45);
-}
-
-.auth-radar-center-label {
-    font-size: 0.55rem;
-    font-weight: 700;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-    color: rgb(253 230 138 / 0.65);
+.auth-radar-blip-core {
+    transform-box: view-box;
+    transform-origin: 214px 335px;
+    animation: auth-radar-blip 3.6s ease-out infinite;
 }
 
 .auth-card {
@@ -645,47 +582,57 @@
 }
 }
 
-@keyframes auth-spin {
-    to {
-        transform: rotate(360deg);
-    }
-}
-
-@keyframes auth-blip {
-    0%,
-    12% {
+@keyframes auth-radar-wave {
+    0% {
         opacity: 0;
-        transform: scale(0.7);
+        transform: scale(0.78);
     }
 
     18% {
+        opacity: 0.95;
+    }
+
+    100% {
+        opacity: 0;
+        transform: scale(1.24);
+    }
+}
+
+@keyframes auth-radar-blip {
+    0%,
+    20% {
+        opacity: 0;
+        transform: scale(0.6);
+    }
+
+    32% {
         opacity: 1;
         transform: scale(1);
     }
 
-    42%,
+    70%,
     100% {
-        opacity: 0.18;
+        opacity: 0.35;
         transform: scale(1);
     }
 }
 
-@keyframes auth-blip-ring {
+@keyframes auth-radar-blip-ring {
     0%,
-    12% {
+    20% {
         opacity: 0;
         transform: scale(0.5);
     }
 
-    18% {
-        opacity: 0.7;
-        transform: scale(0.8);
+    32% {
+        opacity: 0.8;
+        transform: scale(0.9);
     }
 
-    55%,
+    70%,
     100% {
         opacity: 0;
-        transform: scale(1.8);
+        transform: scale(2.1);
     }
 }
 
@@ -701,15 +648,14 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    .auth-radar::before,
-    .auth-radar::after,
-    .auth-radar-blip,
-    .auth-radar-blip::after,
+    .auth-radar-wave,
+    .auth-radar-blip-ring,
+    .auth-radar-blip-core,
     .auth-reveal {
         animation: none !important;
     }
 
-    .auth-radar-blip {
-        opacity: 0.7;
+    .auth-radar-wave {
+        opacity: 0.55;
     }
 }

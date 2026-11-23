@@ -1,11 +1,6 @@
 <section class="auth-reveal relative w-full">
-    <div class="pointer-events-none absolute -right-28 top-0 h-64 w-64 opacity-25 lg:hidden" aria-hidden="true">
-        <div class="auth-radar h-full w-full">
-            <div class="auth-radar-ticks"></div>
-            <div class="auth-radar-cross"></div>
-            <span class="auth-radar-blip left-[62%] top-[28%]"></span>
-            <span class="auth-radar-blip left-[38%] top-[64%]" style="--blip-delay: 1.4s"></span>
-        </div>
+    <div class="pointer-events-none absolute -right-8 top-6 h-56 w-56 opacity-40 lg:hidden" aria-hidden="true">
+        @include('auth.partials.radar', ['id' => 'auth-radar-mobile'])
     </div>
 
     <div class="relative z-10 grid items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(20rem,32rem)] lg:gap-8 xl:gap-16">
@@ -75,25 +70,8 @@
         </div>
 
         <div class="relative hidden items-center justify-center lg:flex" aria-hidden="true">
-            <div class="w-full max-w-[30rem]">
-                <div class="auth-radar w-full">
-                    <div class="auth-radar-ticks"></div>
-                    <div class="auth-radar-cross"></div>
-
-                    <span class="auth-radar-label left-1/2 top-3 -translate-x-1/2">U</span>
-                    <span class="auth-radar-label right-3 top-1/2 -translate-y-1/2">T</span>
-                    <span class="auth-radar-label bottom-3 left-1/2 -translate-x-1/2">S</span>
-                    <span class="auth-radar-label left-3 top-1/2 -translate-y-1/2">B</span>
-
-                    <span class="auth-radar-blip left-[62%] top-[28%]"></span>
-                    <span class="auth-radar-blip left-[38%] top-[64%]" style="--blip-delay: 1.4s"></span>
-                    <span class="auth-radar-blip left-[72%] top-[58%]" style="--blip-delay: 2.8s"></span>
-
-                    <span class="auth-radar-center">
-                        <span class="auth-radar-center-dot"></span>
-                        <span class="auth-radar-center-label">Stasiun</span>
-                    </span>
-                </div>
+            <div class="w-full max-w-[29rem]">
+                @include('auth.partials.radar', ['id' => 'auth-radar-desktop'])
 
                 <div class="mt-5 flex items-center justify-between gap-4 text-[10px] font-medium uppercase tracking-[0.14em] text-slate-500">
                     <span>Stasiun Banyuwangi</span>
