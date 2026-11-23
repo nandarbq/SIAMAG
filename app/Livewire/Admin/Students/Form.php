@@ -124,6 +124,18 @@ class Form extends Component
 
         $group = InternGroup::query()->findOrFail($this->intern_group_id);
 
+        $otherMembers = $group->internProfiles();
+
+        if ($this->user) {
+            $otherMembers->where('user_id', '!=', $this->user->id);
+        }
+
+        if ($group->is_individual && $otherMembers->exists()) {
+            $this->addError('intern_group_id', 'Kelompok mandiri hanya bisa memiliki satu mahasiswa. Pilih kelompok lain.');
+
+            return;
+        }
+
         $userData = [
             'name' => $validated['name'],
             'email' => $validated['email'],
@@ -168,7 +180,7 @@ class Form extends Component
                 ->where('is_active', true)
                 ->orWhere('id', $this->intern_group_id))
             ->orderBy('name')
-            ->get(['id', 'code', 'name']);
+            ->get(['id', 'code', 'name', 'is_individual']);
 
         return view('livewire.admin.students.form', compact('groups'));
     }

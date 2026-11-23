@@ -1,7 +1,7 @@
 <div class="space-y-5">
     <div class="card card-body">
-        <div class="grid gap-3 sm:grid-cols-[minmax(0,1fr)_160px]">
-            <div class="relative">
+        <div class="grid grid-cols-2 gap-3 sm:grid-cols-[minmax(0,1fr)_150px_150px]">
+            <div class="relative col-span-2 sm:col-span-1">
                 <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
                     <x-icon name="search" class="h-4 w-4" />
                 </span>
@@ -11,6 +11,12 @@
                 <option value="">Semua status</option>
                 <option value="active">Aktif</option>
                 <option value="inactive">Nonaktif</option>
+                <option value="completed">Selesai</option>
+            </select>
+            <select wire:model.live="type" class="input">
+                <option value="">Semua jenis</option>
+                <option value="group">Kelompok</option>
+                <option value="individual">Mandiri</option>
             </select>
         </div>
     </div>
@@ -41,7 +47,12 @@
                                 <td class="table-td">
                                     <div class="min-w-0">
                                         <p class="truncate font-semibold text-slate-900">{{ $group->name }}</p>
-                                        <p class="text-[11px] font-medium uppercase tracking-wide text-slate-400">{{ $group->code }}</p>
+                                        <div class="mt-1 flex items-center gap-1.5">
+                                            <span class="text-[11px] font-medium uppercase tracking-wide text-slate-400">{{ $group->code }}</span>
+                                            @if ($group->is_individual)
+                                                <span class="badge-slate badge-compact">Mandiri</span>
+                                            @endif
+                                        </div>
                                     </div>
                                 </td>
                                 <td class="table-td">
@@ -58,11 +69,16 @@
                                     <span class="badge-slate badge-compact">{{ $group->students_count }} mahasiswa</span>
                                 </td>
                                 <td class="table-td">
-                                    @if ($group->is_active)
-                                        <span class="badge-green badge-compact">Aktif</span>
-                                    @else
-                                        <span class="badge-slate badge-compact">Nonaktif</span>
-                                    @endif
+                                    <div class="flex flex-wrap items-center gap-1">
+                                        @if ($group->is_active)
+                                            <span class="badge-green badge-compact">Aktif</span>
+                                        @else
+                                            <span class="badge-slate badge-compact">Nonaktif</span>
+                                        @endif
+                                        @if ($group->isCompleted())
+                                            <span class="badge-amber badge-compact">Selesai</span>
+                                        @endif
+                                    </div>
                                 </td>
                                 <td class="table-td">
                                     <div class="flex items-center justify-center gap-1">

@@ -48,6 +48,7 @@ class Show extends Component
                 ->with('internProfile')
                 ->orderBy('name')
                 ->get(),
+            'hasMember' => $this->group->internProfiles()->exists(),
         ]);
     }
 }

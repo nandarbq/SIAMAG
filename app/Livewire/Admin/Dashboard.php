@@ -5,13 +5,14 @@ namespace App\Livewire\Admin;
 use App\Enums\AttendanceStatus;
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
-use App\Enums\UserRole;
 use App\Models\Announcement;
 use App\Models\Attendance;
 use App\Models\LeaveRequest;
 use App\Models\Logbook;
+use App\Models\Setting;
 use App\Models\User;
 use App\Services\AttendanceService;
+use App\Services\WorkdayService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -23,10 +24,7 @@ class Dashboard extends Component
 {
     public function render()
     {
-        $studentIds = User::query()
-            ->where('role', UserRole::Mahasiswa)
-            ->where('is_active', true)
-            ->pluck('id');
+        $studentIds = User::currentInterns()->pluck('id');
 
         $totalStudents = $studentIds->count();
         $today = now()->toDateString();
@@ -47,7 +45,16 @@ class Dashboard extends Component
 
         $chart = $this->buildChart($studentIds, $totalStudents, $attendanceService);
 
+        $workdays = app(WorkdayService::class);
+        $todayDate = now()->startOfDay();
+
         return view('livewire.admin.dashboard', [
+            'greeting' => $this->greeting(),
+            'isWorkday' => $workdays->isWorkday($todayDate),
+            'nonWorkingLabel' => $workdays->nonWorkingLabel($todayDate),
+            'officeName' => (string) Setting::get('office_name', 'BMKG Banyuwangi'),
+            'workStart' => Setting::get('work_start', '07:30'),
+            'workEnd' => Setting::get('work_end', '16:00'),
             'totalStudents' => $totalStudents,
             'present' => $present,
             'late' => $late,
@@ -79,6 +86,16 @@ class Dashboard extends Component
                 ->limit(3)
                 ->get(),
         ]);
+    }
+
+    private function greeting(): string
+    {
+        return match (true) {
+            now()->hour < 11 => 'Selamat pagi',
+            now()->hour < 15 => 'Selamat siang',
+            now()->hour < 18 => 'Selamat sore',
+            default => 'Selamat malam',
+        };
     }
 
     private function buildChart($studentIds, int $totalStudents, AttendanceService $attendanceService): array

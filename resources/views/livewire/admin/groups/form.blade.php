@@ -59,10 +59,20 @@
             </div>
         </div>
 
-        <label class="flex items-center gap-2.5 text-sm font-medium text-slate-700">
-            <input wire:model="is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30">
-            Kelompok aktif
-        </label>
+        <div class="flex flex-col gap-3">
+            <label class="flex items-center gap-2.5 text-sm font-medium text-slate-700">
+                <input wire:model="is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30">
+                Kelompok aktif
+            </label>
+            <div>
+                <label class="flex items-center gap-2.5 text-sm font-medium text-slate-700">
+                    <input wire:model.live="is_individual" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30">
+                    Magang mandiri (1 mahasiswa)
+                </label>
+                <p class="mt-1.5 text-xs text-slate-500">Centang jika kelompok ini hanya diisi satu mahasiswa. Kode otomatis akan memakai penanda IND.</p>
+                @error('is_individual') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
+            </div>
+        </div>
 
         <div class="flex flex-col-reverse gap-3 border-t border-slate-100 pt-4 sm:flex-row sm:justify-end">
             @if ($embedded)

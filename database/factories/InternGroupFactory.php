@@ -31,6 +31,7 @@ class InternGroupFactory extends Factory
             'start_date' => now()->subMonths(2)->startOfMonth(),
             'end_date' => now()->addMonths(2)->endOfMonth(),
             'is_active' => true,
+            'is_individual' => false,
         ];
     }
 
@@ -38,6 +39,13 @@ class InternGroupFactory extends Factory
     {
         return $this->state(fn () => [
             'is_active' => false,
+        ]);
+    }
+
+    public function individual(): static
+    {
+        return $this->state(fn () => [
+            'is_individual' => true,
         ]);
     }
 }

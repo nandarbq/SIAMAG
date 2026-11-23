@@ -7,7 +7,7 @@
             <div>
                 <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">Profil Mahasiswa</p>
                 <h1 class="page-title mt-1">{{ $student->name }}</h1>
-                <p class="page-subtitle">{{ $student->email }} · NIM {{ $student->nim ?: '-' }}</p>
+                <p class="page-subtitle">{{ $student->email }} · NIM {{ $student->maskedNim() ?? '-' }}</p>
             </div>
         </div>
         <div class="flex flex-wrap gap-2">
@@ -33,20 +33,30 @@
                     <span class="inline-flex rounded-full bg-white p-1 shadow-lg ring-1 ring-slate-200/70">
                         <x-user-avatar :user="$student" size="xl" />
                     </span>
-                    @if ($student->is_active)
-                        <span class="badge-green mb-1">Akun Aktif</span>
-                    @else
-                        <span class="badge-slate mb-1">Nonaktif</span>
-                    @endif
+                    <div class="mb-1 flex flex-wrap items-center justify-end gap-1">
+                        @if ($student->is_active)
+                            <span class="badge-green">Akun Aktif</span>
+                        @else
+                            <span class="badge-slate">Nonaktif</span>
+                        @endif
+                        @if ($profile?->isCompleted())
+                            <span class="badge-amber">Selesai</span>
+                        @endif
+                    </div>
                 </div>
 
                 <h2 class="mt-4 text-xl font-bold text-slate-900">{{ $student->name }}</h2>
                 <p class="text-sm text-slate-500">{{ $profile?->institution ?? 'Institusi belum diisi' }}</p>
                 @if ($profile?->group)
-                    <a href="{{ route('admin.students', ['tab' => 'groups', 'group' => $profile->group->id]) }}" class="mt-1 inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700">
-                        <x-icon name="building" class="h-3.5 w-3.5" />
-                        {{ $profile->group->code }} · {{ $profile->group->name }}
-                    </a>
+                    <div class="mt-1 flex flex-wrap items-center gap-1.5">
+                        <a href="{{ route('admin.students', ['tab' => 'groups', 'group' => $profile->group->id]) }}" class="inline-flex items-center gap-1 text-xs font-semibold text-brand-600 hover:text-brand-700">
+                            <x-icon name="building" class="h-3.5 w-3.5" />
+                            {{ $profile->group->code }} · {{ $profile->group->name }}
+                        </a>
+                        @if ($profile->group->is_individual)
+                            <span class="badge-slate badge-compact">Mandiri</span>
+                        @endif
+                    </div>
                 @endif
 
                 <div class="mt-5 grid gap-4 border-t border-slate-100 pt-5 sm:grid-cols-2">
@@ -135,7 +145,7 @@
                                 <td class="table-td font-medium text-slate-700">{{ $attendance->date?->translatedFormat('d M Y') }}</td>
                                 <td class="table-td">{{ $attendance->check_in_at?->format('H:i') ?? '-' }}</td>
                                 <td class="table-td">{{ $attendance->check_out_at?->format('H:i') ?? '-' }}</td>
-                                <td class="table-td"><x-attendance-status :status="$attendance->status" /></td>
+                                <td class="table-td"><x-attendance-status-admin :status="$attendance->status" /></td>
                             </tr>
                         @empty
                             <tr><td colspan="4" class="empty-state">Belum ada absensi.</td></tr>

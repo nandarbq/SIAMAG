@@ -63,6 +63,11 @@ class InternProfile extends Model
         return (int) round(($elapsed / max($total, 1)) * 100);
     }
 
+    public function isCompleted(): bool
+    {
+        return $this->end_date?->lessThan(today()) ?? false;
+    }
+
     public function remainingDays(): int
     {
         if (! $this->end_date) {

@@ -4,6 +4,7 @@ namespace Tests\Feature;
 
 use App\Livewire\Admin\Groups\Form as GroupForm;
 use App\Livewire\Admin\Groups\Index as GroupIndex;
+use App\Livewire\Admin\Groups\Show as GroupShow;
 use App\Livewire\Admin\Students\Index as StudentIndex;
 use App\Models\InternGroup;
 use App\Models\InternProfile;
@@ -206,5 +207,139 @@ class InternGroupTest extends TestCase
             ->get(route('admin.students', ['tab' => 'groups', 'new' => 1]))
             ->assertOk()
             ->assertSee('Tambah Kelompok');
+    }
+
+    public function test_admin_can_mark_a_new_group_as_individual(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(GroupForm::class, ['embedded' => true])
+            ->set('name', 'Kelompok Tunggal')
+            ->set('institution', 'Politeknik Negeri Banyuwangi')
+            ->set('is_individual', true)
+            ->set('start_date', '2026-11-01')
+            ->set('end_date', '2026-12-31')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertDispatched('group-saved');
+
+        $this->assertDatabaseHas('intern_groups', [
+            'code' => 'MAG-2026-IND-001',
+            'is_individual' => true,
+        ]);
+    }
+
+    public function test_group_with_one_member_can_be_marked_individual(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $group = InternGroup::factory()->create();
+        InternProfile::factory()->for(User::factory()->mahasiswa())->create([
+            'intern_group_id' => $group->id,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(GroupForm::class, ['group' => $group])
+            ->set('is_individual', true)
+            ->call('save')
+            ->assertHasNoErrors();
+
+        $this->assertTrue($group->fresh()->is_individual);
+    }
+
+    public function test_group_with_multiple_members_cannot_be_marked_individual(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $group = InternGroup::factory()->create();
+        InternProfile::factory()->for(User::factory()->mahasiswa())->create([
+            'intern_group_id' => $group->id,
+        ]);
+        InternProfile::factory()->for(User::factory()->mahasiswa())->create([
+            'intern_group_id' => $group->id,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(GroupForm::class, ['group' => $group])
+            ->set('is_individual', true)
+            ->call('save')
+            ->assertHasErrors(['is_individual' => 'Kelompok dengan lebih dari satu anggota tidak bisa ditandai sebagai magang mandiri.']);
+
+        $this->assertFalse($group->fresh()->is_individual);
+    }
+
+    public function test_individual_filter_only_returns_individual_groups(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $individualGroup = InternGroup::factory()->individual()->create(['name' => 'Kelompok Tunggal']);
+        InternGroup::factory()->create(['name' => 'Kelompok Biasa']);
+
+        Livewire::actingAs($admin)
+            ->test(GroupIndex::class)
+            ->set('type', 'individual')
+            ->assertViewHas('groups', fn ($groups) => $groups->total() === 1 && $groups->first()->is($individualGroup))
+            ->assertSee('Mandiri');
+
+        Livewire::actingAs($admin)
+            ->test(GroupIndex::class)
+            ->set('type', 'group')
+            ->assertViewHas('groups', fn ($groups) => $groups->total() === 1 && ! $groups->first()->is_individual);
+    }
+
+    public function test_group_search_changes_reset_the_type_filter(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(GroupIndex::class)
+            ->set('type', 'individual')
+            ->set('search', 'Poliwangi')
+            ->assertSet('type', '');
+    }
+
+    public function test_group_completion_is_derived_from_end_date(): void
+    {
+        $ongoing = InternGroup::factory()->create(['end_date' => '2026-12-31']);
+        $endingToday = InternGroup::factory()->create(['end_date' => '2026-11-17']);
+        $finished = InternGroup::factory()->create(['end_date' => '2026-11-16']);
+
+        $this->assertFalse($ongoing->isCompleted());
+        $this->assertFalse($endingToday->isCompleted());
+        $this->assertTrue($finished->isCompleted());
+    }
+
+    public function test_completed_groups_remain_listed_and_can_be_filtered(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $finished = InternGroup::factory()->create([
+            'name' => 'Kelompok Selesai',
+            'end_date' => '2026-11-16',
+        ]);
+        InternGroup::factory()->create([
+            'name' => 'Kelompok Berjalan',
+            'end_date' => '2026-12-31',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(GroupIndex::class)
+            ->assertViewHas('groups', fn ($groups) => $groups->total() === 2)
+            ->assertSee('Selesai');
+
+        Livewire::actingAs($admin)
+            ->test(GroupIndex::class)
+            ->set('status', 'completed')
+            ->assertViewHas('groups', fn ($groups) => $groups->total() === 1
+                && $groups->first()->is($finished));
+    }
+
+    public function test_completed_group_detail_shows_selesai_badge(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $group = InternGroup::factory()->create(['end_date' => '2026-11-16']);
+
+        Livewire::actingAs($admin)
+            ->test(GroupShow::class, ['group' => $group])
+            ->assertSee('Selesai')
+            ->assertSee('Aktif');
     }
 }

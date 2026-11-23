@@ -84,7 +84,7 @@
                     <select wire:model.live="intern_group_id" class="input">
                         <option value="">Pilih kelompok magang</option>
                         @foreach ($groups as $groupOption)
-                            <option value="{{ $groupOption->id }}">{{ $groupOption->code }} — {{ $groupOption->name }}</option>
+                            <option value="{{ $groupOption->id }}">{{ $groupOption->code }} — {{ $groupOption->name }}{{ $groupOption->is_individual ? ' · Mandiri' : '' }}</option>
                         @endforeach
                     </select>
                     @error('intern_group_id') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror

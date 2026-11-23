@@ -65,6 +65,7 @@
                     <option value="">Semua status</option>
                     <option value="active">Aktif</option>
                     <option value="inactive">Nonaktif</option>
+                    <option value="completed">Selesai</option>
                 </select>
             </div>
         </div>
@@ -97,7 +98,7 @@
                                             <div class="min-w-0">
                                                 <p class="truncate font-semibold text-slate-900">{{ $student->name }}</p>
                                                 <p class="truncate text-xs text-slate-500">{{ $student->email }}</p>
-                                                <p class="text-[11px] text-slate-400">NIM {{ $student->nim ?: '-' }}</p>
+                                                <p class="text-[11px] text-slate-400">NIM {{ $student->maskedNim() ?? '-' }}</p>
                                             </div>
                                         </div>
                                     </td>
@@ -105,9 +106,14 @@
                                         <p class="font-medium text-slate-700">{{ $student->internProfile?->institution ?? '-' }}</p>
                                         <p class="text-xs text-slate-400">{{ $student->internProfile?->major ?? '-' }}</p>
                                         @if ($student->internProfile?->group)
-                                            <a href="{{ route('admin.students', ['tab' => 'groups', 'group' => $student->internProfile->group->id]) }}" class="mt-1 inline-flex text-[11px] font-semibold text-brand-600 hover:text-brand-700">
-                                                {{ $student->internProfile->group->code }}
-                                            </a>
+                                            <div class="mt-1 flex items-center gap-1.5">
+                                                <a href="{{ route('admin.students', ['tab' => 'groups', 'group' => $student->internProfile->group->id]) }}" class="text-[11px] font-semibold text-brand-600 hover:text-brand-700">
+                                                    {{ $student->internProfile->group->code }}
+                                                </a>
+                                                @if ($student->internProfile->group->is_individual)
+                                                    <span class="badge-slate badge-compact">Mandiri</span>
+                                                @endif
+                                            </div>
                                         @endif
                                     </td>
                                     <td class="table-td">
@@ -125,11 +131,16 @@
                                         @endif
                                     </td>
                                     <td class="table-td">
-                                        @if ($student->is_active)
-                                            <span class="badge-green">Aktif</span>
-                                        @else
-                                            <span class="badge-slate">Nonaktif</span>
-                                        @endif
+                                        <div class="flex flex-wrap items-center gap-1">
+                                            @if ($student->is_active)
+                                                <span class="badge-green">Aktif</span>
+                                            @else
+                                                <span class="badge-slate">Nonaktif</span>
+                                            @endif
+                                            @if ($student->internProfile?->isCompleted())
+                                                <span class="badge-amber">Selesai</span>
+                                            @endif
+                                        </div>
                                     </td>
                                     <td class="table-td">
                                         <div class="flex items-center justify-center gap-1">

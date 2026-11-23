@@ -3,6 +3,8 @@
 namespace App\Models;
 
 use Database\Factories\InternGroupFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -23,6 +25,7 @@ class InternGroup extends Model
         'start_date',
         'end_date',
         'is_active',
+        'is_individual',
     ];
 
     protected function casts(): array
@@ -31,6 +34,7 @@ class InternGroup extends Model
             'start_date' => 'date',
             'end_date' => 'date',
             'is_active' => 'boolean',
+            'is_individual' => 'boolean',
         ];
     }
 
@@ -81,6 +85,17 @@ class InternGroup extends Model
     public function students(): HasManyThrough
     {
         return $this->hasManyThrough(User::class, InternProfile::class, 'intern_group_id', 'id', 'id', 'user_id');
+    }
+
+    public function isCompleted(): bool
+    {
+        return $this->end_date?->lessThan(today()) ?? false;
+    }
+
+    #[Scope]
+    protected function completed(Builder $query): Builder
+    {
+        return $query->whereDate('end_date', '<', today()->toDateString());
     }
 
     public function periodLabel(): string

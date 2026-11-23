@@ -8,6 +8,7 @@ use App\Enums\LeaveType;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
 use App\Models\Attendance;
 use App\Models\Holiday;
+use App\Models\InternProfile;
 use App\Models\LeaveRequest;
 use App\Models\User;
 use Carbon\Carbon;
@@ -44,6 +45,31 @@ class AdminDashboardTest extends TestCase
             ->test(AdminDashboard::class)
             ->assertViewHas('alpha', 0)
             ->assertViewHas('chart', fn (array $chart) => end($chart['alpha']) === 0);
+    }
+
+    public function test_dashboard_excludes_finished_internships_from_active_students_and_alpha(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-09 10:00:00', 'Asia/Jakarta'));
+
+        $admin = User::factory()->admin()->create();
+
+        $ongoing = User::factory()->mahasiswa()->create(['is_active' => true]);
+        InternProfile::factory()->for($ongoing)->create([
+            'start_date' => '2026-11-01',
+            'end_date' => '2026-11-30',
+        ]);
+
+        $finished = User::factory()->mahasiswa()->create(['is_active' => true]);
+        InternProfile::factory()->for($finished)->create([
+            'start_date' => '2026-10-01',
+            'end_date' => '2026-10-31',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminDashboard::class)
+            ->assertViewHas('totalStudents', 1)
+            ->assertViewHas('alpha', 1)
+            ->assertViewHas('chart', fn (array $chart) => end($chart['alpha']) === 1);
     }
 
     public function test_dashboard_shows_today_leave_and_ongoing_sick_monitoring(): void

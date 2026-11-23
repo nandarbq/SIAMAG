@@ -11,7 +11,12 @@
                 </a>
             @endif
             <div>
-                <p class="text-[11px] font-bold uppercase tracking-wide text-brand-600">{{ $group->code }}</p>
+                <div class="flex items-center gap-1.5">
+                    <p class="text-[11px] font-bold uppercase tracking-wide text-brand-600">{{ $group->code }}</p>
+                    @if ($group->is_individual)
+                        <span class="badge-slate badge-compact">Mandiri</span>
+                    @endif
+                </div>
                 <h2 class="text-lg font-bold text-slate-900">{{ $group->name }}</h2>
                 <p class="text-xs text-slate-500">{{ $group->institution }}</p>
             </div>
@@ -28,10 +33,14 @@
                     Edit
                 </a>
             @endif
-            <a href="{{ route('admin.students.create', ['group' => $group->id]) }}" class="btn-primary">
-                <x-icon name="plus" class="h-4 w-4" />
-                Tambah Mahasiswa
-            </a>
+            @if ($group->is_individual && $hasMember)
+                <p class="text-xs font-medium text-slate-500">Kelompok mandiri hanya bisa memiliki 1 mahasiswa.</p>
+            @else
+                <a href="{{ route('admin.students.create', ['group' => $group->id]) }}" class="btn-primary">
+                    <x-icon name="plus" class="h-4 w-4" />
+                    Tambah Mahasiswa
+                </a>
+            @endif
         </div>
     </div>
 
@@ -39,13 +48,16 @@
         <div class="grid gap-4 sm:grid-cols-2">
             <div>
                 <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Status</p>
-                <p class="mt-1">
+                <div class="mt-1 flex flex-wrap items-center gap-1">
                     @if ($group->is_active)
                         <span class="badge-green badge-compact">Aktif</span>
                     @else
                         <span class="badge-slate badge-compact">Nonaktif</span>
                     @endif
-                </p>
+                    @if ($group->isCompleted())
+                        <span class="badge-amber badge-compact">Selesai</span>
+                    @endif
+                </div>
             </div>
             <div>
                 <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Periode</p>
@@ -87,7 +99,7 @@
                                 <p class="font-semibold text-slate-800">{{ $student->name }}</p>
                                 <p class="text-xs text-slate-400">{{ $student->email }}</p>
                             </td>
-                            <td class="table-td text-sm text-slate-600">{{ $student->nim ?: '-' }}</td>
+                            <td class="table-td text-sm text-slate-600">{{ $student->maskedNim() ?? '-' }}</td>
                             <td class="table-td text-sm text-slate-600">{{ $student->internProfile?->major ?? '-' }}</td>
                             <td class="table-td">
                                 <div class="flex justify-center">

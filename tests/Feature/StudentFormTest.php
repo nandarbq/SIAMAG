@@ -5,6 +5,7 @@ namespace Tests\Feature;
 use App\Enums\UserRole;
 use App\Livewire\Admin\Students\Form as StudentForm;
 use App\Models\InternGroup;
+use App\Models\InternProfile;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -155,5 +156,63 @@ class StudentFormTest extends TestCase
             ->assertSet('supervisor_phone', '082222222222')
             ->assertSet('start_date', '2026-01-05')
             ->assertSet('end_date', '2026-04-30');
+    }
+
+    public function test_individual_group_rejects_a_second_student(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $group = InternGroup::factory()->individual()->create();
+        InternProfile::factory()->for(User::factory()->mahasiswa())->create([
+            'intern_group_id' => $group->id,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(StudentForm::class)
+            ->set('name', 'Budi Santoso')
+            ->set('email', 'budi@example.com')
+            ->set('password', 'secret-password')
+            ->set('nim', '20260001')
+            ->set('intern_group_id', $group->id)
+            ->set('major', 'Teknik Informatika')
+            ->set('semester', '6')
+            ->call('save')
+            ->assertHasErrors(['intern_group_id' => 'Kelompok mandiri hanya bisa memiliki satu mahasiswa. Pilih kelompok lain.']);
+
+        $this->assertDatabaseMissing('users', ['email' => 'budi@example.com']);
+    }
+
+    public function test_editing_the_only_member_of_an_individual_group_keeps_its_group(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $group = InternGroup::factory()->individual()->create();
+        $student = User::factory()->mahasiswa()->create();
+        $student->internProfile()->create(array_merge($group->profileAttributes(), [
+            'intern_group_id' => $group->id,
+            'major' => 'Sistem Informasi',
+            'semester' => '4',
+        ]));
+
+        Livewire::actingAs($admin)
+            ->test(StudentForm::class, ['user' => $student])
+            ->set('semester', '5')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('admin.students'));
+
+        $this->assertSame($group->id, $student->fresh()->internProfile->intern_group_id);
+        $this->assertSame('5', $student->fresh()->internProfile->semester);
+    }
+
+    public function test_student_form_labels_individual_groups(): void
+    {
+        $admin = User::factory()->admin()->create();
+        InternGroup::factory()->individual()->create([
+            'code' => 'MAG-2026-IND-777',
+            'name' => 'Kelompok Tunggal',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(StudentForm::class)
+            ->assertSee('MAG-2026-IND-777 — Kelompok Tunggal · Mandiri');
     }
 }

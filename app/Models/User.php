@@ -4,6 +4,8 @@ namespace App\Models;
 
 use App\Enums\UserRole;
 use Database\Factories\UserFactory;
+use Illuminate\Database\Eloquent\Attributes\Scope;
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -67,6 +69,41 @@ class User extends Authenticatable
     public function isMahasiswa(): bool
     {
         return $this->role === UserRole::Mahasiswa;
+    }
+
+    #[Scope]
+    protected function currentInterns(Builder $query): Builder
+    {
+        return $query
+            ->where('role', UserRole::Mahasiswa)
+            ->where('is_active', true)
+            ->whereDoesntHave('internProfile', fn (Builder $query): Builder => $query
+                ->whereDate('end_date', '<', today()->toDateString()));
+    }
+
+    #[Scope]
+    protected function completedInterns(Builder $query): Builder
+    {
+        return $query
+            ->where('role', UserRole::Mahasiswa)
+            ->whereHas('internProfile', fn (Builder $query): Builder => $query
+                ->whereDate('end_date', '<', today()->toDateString()));
+    }
+
+    public function maskedNim(): ?string
+    {
+        if (! $this->nim) {
+            return null;
+        }
+
+        $nim = (string) $this->nim;
+        $length = mb_strlen($nim);
+
+        if ($length <= 4) {
+            return str_repeat('•', $length);
+        }
+
+        return mb_substr($nim, 0, 2).str_repeat('•', $length - 4).mb_substr($nim, -2);
     }
 
     public function initials(): string

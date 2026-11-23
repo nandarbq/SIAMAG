@@ -165,6 +165,7 @@ class Index extends Component
             })
             ->when($this->status === 'active', fn ($q) => $q->where('is_active', true))
             ->when($this->status === 'inactive', fn ($q) => $q->where('is_active', false))
+            ->when($this->status === 'completed', fn ($q) => $q->completedInterns())
             ->latest()
             ->orderByDesc('id')
             ->paginate($this->perPage);

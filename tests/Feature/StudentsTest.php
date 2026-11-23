@@ -8,6 +8,7 @@ use App\Models\InternProfile;
 use App\Models\LeaveRequest;
 use App\Models\Logbook;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Database\QueryException;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Storage;
@@ -136,5 +137,74 @@ class StudentsTest extends TestCase
             ->assertViewHas('students', function ($students) {
                 return $students->total() === 1 && $students->first()->name === 'Budi Santoso';
             });
+    }
+
+    public function test_admin_student_views_mask_the_nim(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create(['nim' => '20260001']);
+
+        $this->actingAs($admin)
+            ->get(route('admin.students'))
+            ->assertOk()
+            ->assertSee('20••••01')
+            ->assertDontSee('NIM 20260001');
+
+        $this->actingAs($admin)
+            ->get(route('admin.students.show', $student))
+            ->assertOk()
+            ->assertSee('20••••01')
+            ->assertDontSee('NIM 20260001');
+    }
+
+    public function test_completed_students_remain_listed_and_can_be_filtered(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-23 10:00:00', 'Asia/Jakarta'));
+
+        $admin = User::factory()->admin()->create();
+
+        $finished = User::factory()->mahasiswa()->create([
+            'name' => 'Mahasiswa Selesai',
+            'is_active' => true,
+        ]);
+        InternProfile::factory()->for($finished)->create([
+            'start_date' => '2026-10-01',
+            'end_date' => '2026-10-31',
+        ]);
+
+        $ongoing = User::factory()->mahasiswa()->create(['name' => 'Mahasiswa Berjalan']);
+        InternProfile::factory()->for($ongoing)->create([
+            'start_date' => '2026-11-01',
+            'end_date' => '2026-12-31',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(StudentIndex::class)
+            ->assertViewHas('students', fn ($students) => $students->total() === 2)
+            ->assertSee('Selesai');
+
+        Livewire::actingAs($admin)
+            ->test(StudentIndex::class)
+            ->set('status', 'completed')
+            ->assertViewHas('students', fn ($students) => $students->total() === 1
+                && $students->first()->is($finished));
+    }
+
+    public function test_completed_student_detail_shows_selesai_badge(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-23 10:00:00', 'Asia/Jakarta'));
+
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create(['is_active' => true]);
+        InternProfile::factory()->for($student)->create([
+            'start_date' => '2026-10-01',
+            'end_date' => '2026-10-31',
+        ]);
+
+        $this->actingAs($admin)
+            ->get(route('admin.students.show', $student))
+            ->assertOk()
+            ->assertSee('Selesai')
+            ->assertSee('Akun Aktif');
     }
 }

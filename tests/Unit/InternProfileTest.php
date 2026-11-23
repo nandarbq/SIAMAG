@@ -57,6 +57,27 @@ class InternProfileTest extends TestCase
         $this->assertSame(100, $profile->progressPercent());
     }
 
+    public function test_completion_is_true_only_after_end_date(): void
+    {
+        $ongoing = new InternProfile([
+            'start_date' => '2026-11-01',
+            'end_date' => '2026-11-30',
+        ]);
+        $endingToday = new InternProfile([
+            'start_date' => '2026-10-01',
+            'end_date' => '2026-11-06',
+        ]);
+        $finished = new InternProfile([
+            'start_date' => '2026-10-01',
+            'end_date' => '2026-11-05',
+        ]);
+
+        $this->assertFalse($ongoing->isCompleted());
+        $this->assertFalse($endingToday->isCompleted());
+        $this->assertTrue($finished->isCompleted());
+        $this->assertFalse((new InternProfile)->isCompleted());
+    }
+
     public function test_remaining_days_are_calculated_and_never_negative(): void
     {
         $profile = new InternProfile([

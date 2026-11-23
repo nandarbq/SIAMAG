@@ -14,11 +14,13 @@ class Index extends Component
 
     public string $status = '';
 
+    public string $type = '';
+
     public int $perPage = 10;
 
     public function updating(string $property): void
     {
-        if (in_array($property, ['search', 'status', 'perPage'], true)) {
+        if (in_array($property, ['search', 'status', 'type', 'perPage'], true)) {
             $this->resetPage();
         }
     }
@@ -26,6 +28,7 @@ class Index extends Component
     public function updatedSearch(mixed $value): void
     {
         $this->status = '';
+        $this->type = '';
     }
 
     public function delete(InternGroup $group): void
@@ -56,6 +59,9 @@ class Index extends Component
             })
             ->when($this->status === 'active', fn ($q) => $q->where('is_active', true))
             ->when($this->status === 'inactive', fn ($q) => $q->where('is_active', false))
+            ->when($this->status === 'completed', fn ($q) => $q->completed())
+            ->when($this->type === 'group', fn ($q) => $q->where('is_individual', false))
+            ->when($this->type === 'individual', fn ($q) => $q->where('is_individual', true))
             ->latest()
             ->orderByDesc('id')
             ->paginate($this->perPage);

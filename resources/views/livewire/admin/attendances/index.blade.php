@@ -30,11 +30,14 @@
 
         <div class="mt-4 flex flex-wrap gap-2">
             @foreach ($statuses as $statusOption)
-                @php($count = (int) ($summary[$statusOption->value] ?? 0))
-                <span class="inline-flex items-center gap-2 rounded-full bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-600 ring-1 ring-inset ring-slate-200">
-                    {{ $statusOption->label() }}
-                    <span class="rounded-full bg-white px-1.5 py-0.5 text-[10px] font-bold text-slate-700">{{ $count }}</span>
-                </span>
+                <x-attendance-status-admin
+                    :status="$statusOption"
+                    :count="(int) ($summary[$statusOption->value] ?? 0)"
+                    @class([
+                        'px-3 py-1.5',
+                        'outline-2 outline-solid outline-offset-2 outline-current' => $status === $statusOption->value,
+                    ])
+                />
             @endforeach
         </div>
     </div>
@@ -100,7 +103,7 @@
                                     @endif
                                 </div>
                             </td>
-                            <td class="table-td"><x-attendance-status :status="$attendance->status" /></td>
+                            <td class="table-td"><x-attendance-status-admin :status="$attendance->status" /></td>
                             <td class="table-td">
                                 <div class="flex justify-center">
                                     <button type="button" wire:click="openCorrect({{ $attendance->id }})" class="btn-ghost btn-sm">

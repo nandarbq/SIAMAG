@@ -30,6 +30,8 @@ class Form extends Component
 
     public bool $is_active = true;
 
+    public bool $is_individual = false;
+
     public function mount(?InternGroup $group = null, bool $embedded = false): void
     {
         $this->embedded = $embedded;
@@ -45,6 +47,7 @@ class Form extends Component
             $this->start_date = $group->start_date?->format('Y-m-d') ?? '';
             $this->end_date = $group->end_date?->format('Y-m-d') ?? '';
             $this->is_active = (bool) $group->is_active;
+            $this->is_individual = (bool) $group->is_individual;
 
             return;
         }
@@ -52,6 +55,11 @@ class Form extends Component
         $this->start_date = now()->toDateString();
         $this->end_date = now()->addMonths(4)->toDateString();
         $this->code = sprintf('MAG-%d-%03d', now()->year, InternGroup::query()->count() + 1);
+    }
+
+    public function updatedIsIndividual(): void
+    {
+        $this->code = $this->withIndividualMarker($this->code, $this->is_individual);
     }
 
     public function save()
@@ -79,6 +87,13 @@ class Form extends Component
         $validated['field_supervisor'] = $validated['field_supervisor'] ?: null;
         $validated['supervisor_phone'] = $validated['supervisor_phone'] ?: null;
         $validated['is_active'] = $this->is_active;
+        $validated['is_individual'] = $this->is_individual;
+
+        if ($this->is_individual && $this->group && $this->group->internProfiles()->count() > 1) {
+            $this->addError('is_individual', 'Kelompok dengan lebih dari satu anggota tidak bisa ditandai sebagai magang mandiri.');
+
+            return;
+        }
 
         $message = $this->group
             ? 'Kelompok magang berhasil diperbarui.'
@@ -104,5 +119,18 @@ class Form extends Component
     public function render()
     {
         return view('livewire.admin.groups.form');
+    }
+
+    private function withIndividualMarker(string $code, bool $isIndividual): string
+    {
+        if ($isIndividual && preg_match('/^MAG-(\d{4})-(\d{3})$/', $code, $matches)) {
+            return sprintf('MAG-%s-IND-%s', $matches[1], $matches[2]);
+        }
+
+        if (! $isIndividual && preg_match('/^MAG-(\d{4})-IND-(\d{3})$/', $code, $matches)) {
+            return sprintf('MAG-%s-%s', $matches[1], $matches[2]);
+        }
+
+        return $code;
     }
 }
