@@ -1,4 +1,8 @@
-<div class="space-y-6">
+<div
+    class="space-y-6"
+    x-data
+    x-effect="document.documentElement.classList.toggle('overflow-hidden', $wire.reviewingId !== null)"
+>
     <div>
         <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">Monitoring</p>
         <h1 class="page-title mt-1">Izin & Sakit</h1>
@@ -86,7 +90,7 @@
 
     @if ($reviewing)
         <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 p-4 backdrop-blur-sm sm:items-center">
-            <div class="w-full max-w-lg animate-fade-up rounded-3xl bg-white p-6 shadow-2xl">
+            <div class="max-h-[calc(100dvh-2rem)] w-full max-w-lg animate-fade-up overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <h2 class="text-lg font-bold text-slate-900">Detail Pengajuan</h2>

@@ -1,4 +1,8 @@
-<div class="space-y-6">
+<div
+    class="space-y-6"
+    x-data
+    x-effect="document.documentElement.classList.toggle('overflow-hidden', Boolean($wire.showForm))"
+>
     <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
             <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">Kalender Kerja</p>
@@ -95,7 +99,7 @@
 
     @if ($showForm)
         <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 p-4 backdrop-blur-sm sm:items-center">
-            <div class="w-full max-w-md animate-fade-up rounded-3xl bg-white p-6 shadow-2xl">
+            <div class="max-h-[calc(100dvh-2rem)] w-full max-w-md animate-fade-up overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl">
                 <div class="flex items-start justify-between gap-4">
                     <div>
                         <h2 class="text-lg font-bold text-slate-900">{{ $editingId ? 'Edit Hari Libur' : 'Tambah Hari Libur' }}</h2>
