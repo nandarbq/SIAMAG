@@ -1,4 +1,8 @@
-<div class="space-y-6">
+<div
+    class="space-y-6"
+    x-data
+    x-effect="document.documentElement.classList.toggle('overflow-hidden', $wire.viewingId !== null)"
+>
     <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
             <p class="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">Monitoring</p>
@@ -21,6 +25,7 @@
     </div>
 
     <div class="card overflow-hidden">
+        <x-table-scroll-hint />
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-100">
                 <thead class="bg-slate-50/60">
@@ -81,7 +86,7 @@
 
     @if ($viewing)
         <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 p-4 backdrop-blur-sm sm:items-center">
-            <div class="max-h-[92vh] w-full max-w-2xl animate-fade-up overflow-y-auto rounded-3xl bg-white shadow-2xl">
+            <div class="max-h-[calc(100dvh-2rem)] w-full max-w-2xl animate-fade-up overflow-y-auto overscroll-contain rounded-3xl bg-white pb-[env(safe-area-inset-bottom)] shadow-2xl">
                 <div class="flex items-start justify-between gap-4 border-b border-slate-100 p-6">
                     <div>
                         <span class="text-xs text-slate-400">{{ $viewing->date?->translatedFormat('l, d F Y') }}</span>
@@ -96,12 +101,12 @@
                 <div class="space-y-5 p-6">
                     <div>
                         <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Aktivitas</p>
-                        <p class="mt-1 text-sm font-semibold text-slate-900">{{ $viewing->activity }}</p>
+                        <p class="mt-1 break-words text-sm font-semibold text-slate-900">{{ $viewing->activity }}</p>
                     </div>
 
                     <div>
                         <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Uraian Kegiatan</p>
-                        <p class="mt-1 whitespace-pre-line text-sm leading-relaxed text-slate-600">{{ $viewing->description }}</p>
+                        <p class="mt-1 whitespace-pre-line break-words text-sm leading-relaxed text-slate-600">{{ $viewing->description }}</p>
                     </div>
 
                     @if ($viewing->attachment_path)

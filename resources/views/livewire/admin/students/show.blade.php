@@ -129,6 +129,7 @@
                 </div>
                 <a href="{{ route('admin.attendances') }}" class="btn-secondary btn-sm">Semua</a>
             </div>
+            <x-table-scroll-hint />
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-100">
                     <thead class="bg-slate-50/60">

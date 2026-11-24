@@ -27,6 +27,7 @@
     </div>
 
     <div class="card overflow-hidden">
+        <x-table-scroll-hint />
         <div class="overflow-x-auto">
             <table class="min-w-full divide-y divide-slate-100">
                 <thead class="bg-slate-50/60">
@@ -125,7 +126,7 @@
 
                     <div>
                         <p class="text-[11px] font-bold uppercase tracking-wide text-slate-400">Alasan</p>
-                        <p class="mt-1 whitespace-pre-line text-sm leading-relaxed text-slate-600">{{ $reviewing->reason }}</p>
+                        <p class="mt-1 whitespace-pre-line break-words text-sm leading-relaxed text-slate-600">{{ $reviewing->reason }}</p>
                     </div>
 
                     @if ($reviewing->attachment_path)

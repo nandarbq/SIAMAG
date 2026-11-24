@@ -50,13 +50,13 @@
         @forelse ($holidays as $holiday)
             <div class="card card-body animate-fade-up">
                 <div class="flex items-start justify-between gap-3">
-                    <div class="flex items-center gap-3">
+                    <div class="flex min-w-0 items-center gap-3">
                         <div class="flex h-12 w-12 flex-col items-center justify-center rounded-xl bg-brand-50 text-brand-700">
                             <span class="text-[10px] font-bold uppercase">{{ $holiday->date->translatedFormat('M') }}</span>
                             <span class="text-lg font-bold leading-none">{{ $holiday->date->format('d') }}</span>
                         </div>
-                        <div>
-                            <p class="font-semibold text-slate-900">{{ $holiday->name }}</p>
+                        <div class="min-w-0">
+                            <p class="truncate font-semibold text-slate-900" title="{{ $holiday->name }}">{{ $holiday->name }}</p>
                             <div class="mt-1 flex flex-wrap items-center gap-1.5">
                                 <p class="text-xs text-slate-500">{{ $holiday->date->translatedFormat('l, d F Y') }}</p>
                                 @if ($holiday->source === \App\Models\Holiday::SOURCE_AUTO)
@@ -67,7 +67,7 @@
                             </div>
                         </div>
                     </div>
-                    <div class="flex gap-1">
+                    <div class="flex shrink-0 gap-1">
                         <button type="button" wire:click="openEdit({{ $holiday->id }})" class="btn-ghost btn-sm" title="Edit">
                             <x-icon name="pencil" class="h-4 w-4" />
                         </button>

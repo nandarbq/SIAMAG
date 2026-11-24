@@ -29,6 +29,7 @@
                 <p class="text-xs text-slate-500">Buat kelompok baru agar mahasiswa bisa dikelompokkan.</p>
             </div>
         @else
+            <x-table-scroll-hint />
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-slate-100">
                     <thead class="bg-slate-50/60">

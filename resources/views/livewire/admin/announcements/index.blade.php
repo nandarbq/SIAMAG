@@ -32,9 +32,9 @@
                         <span class="stat-icon shrink-0 bg-brand-50 text-brand-600">
                             <x-icon name="megaphone" class="h-5 w-5" />
                         </span>
-                        <div>
+                        <div class="min-w-0">
                             <div class="flex flex-wrap items-center gap-2">
-                                <h2 class="text-base font-bold text-slate-900">{{ $announcement->title }}</h2>
+                                <h2 class="break-words text-base font-bold text-slate-900">{{ $announcement->title }}</h2>
                                 @if ($announcement->is_active)
                                     <span class="badge-green">Aktif</span>
                                 @else
@@ -46,7 +46,7 @@
                     </div>
                 </div>
 
-                <p class="mt-4 text-sm leading-relaxed text-slate-600">{{ Str::limit($announcement->body, 220) }}</p>
+                <p class="mt-4 break-words text-sm leading-relaxed text-slate-600">{{ Str::limit($announcement->body, 220) }}</p>
 
                 <div class="mt-5 flex items-center justify-between border-t border-slate-100 pt-4">
                     <button type="button" wire:click="toggleActive({{ $announcement->id }})" class="text-xs font-semibold text-brand-600 hover:text-brand-700">

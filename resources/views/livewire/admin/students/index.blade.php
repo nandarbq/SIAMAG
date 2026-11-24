@@ -78,6 +78,7 @@
                     <p class="text-xs text-slate-500">Coba ubah kata kunci atau tambah mahasiswa baru.</p>
                 </div>
             @else
+                <x-table-scroll-hint />
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-slate-100">
                         <thead class="bg-slate-50/60">
