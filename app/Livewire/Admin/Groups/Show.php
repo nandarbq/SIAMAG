@@ -19,7 +19,7 @@ class Show extends Component
 
     public function delete()
     {
-        if ($this->group->students()->exists()) {
+        if ($this->group->internProfiles()->exists()) {
             $this->dispatch('group-delete-failed', message: "Kelompok {$this->group->code} masih memiliki anggota. Pindahkan anggota terlebih dahulu.");
 
             return;

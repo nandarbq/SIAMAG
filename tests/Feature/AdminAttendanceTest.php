@@ -6,8 +6,10 @@ use App\Enums\AttendanceStatus;
 use App\Livewire\Admin\Attendances\Index as AdminAttendanceIndex;
 use App\Models\Attendance;
 use App\Models\User;
+use App\Services\AttendanceService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Validation\ValidationException;
 use Livewire\Livewire;
 use Tests\TestCase;
 
@@ -38,7 +40,7 @@ class AdminAttendanceTest extends TestCase
             ->test(AdminAttendanceIndex::class)
             ->call('openCorrect', $attendance->id)
             ->assertSet('editStatus', AttendanceStatus::Hadir->value)
-            ->set('editStatus', AttendanceStatus::Izin->value)
+            ->set('editStatus', AttendanceStatus::Terlambat->value)
             ->set('editNote', 'Koreksi oleh admin.')
             ->set('editCheckIn', '08:00')
             ->set('editCheckOut', '15:00')
@@ -47,7 +49,7 @@ class AdminAttendanceTest extends TestCase
 
         $attendance->refresh();
 
-        $this->assertSame(AttendanceStatus::Izin, $attendance->status);
+        $this->assertSame(AttendanceStatus::Terlambat, $attendance->status);
         $this->assertSame('Koreksi oleh admin.', $attendance->note);
         $this->assertSame('08:00', $attendance->check_in_at->format('H:i'));
         $this->assertSame('15:00', $attendance->check_out_at->format('H:i'));
@@ -136,7 +138,7 @@ class AdminAttendanceTest extends TestCase
         Livewire::actingAs($admin)
             ->test(AdminAttendanceIndex::class)
             ->call('openCorrect', $attendance->id)
-            ->set('editStatus', AttendanceStatus::Hadir->value)
+            ->set('editStatus', AttendanceStatus::Alpha->value)
             ->set('editCheckIn', '')
             ->set('editCheckOut', '')
             ->call('saveCorrect')
@@ -144,7 +146,7 @@ class AdminAttendanceTest extends TestCase
 
         $attendance->refresh();
 
-        $this->assertSame(AttendanceStatus::Hadir, $attendance->status);
+        $this->assertSame(AttendanceStatus::Alpha, $attendance->status);
         $this->assertNull($attendance->check_in_at);
         $this->assertNull($attendance->check_out_at);
         $this->assertSame(0, $attendance->late_minutes);
@@ -168,6 +170,95 @@ class AdminAttendanceTest extends TestCase
             ->set('editCheckIn', '25:99')
             ->call('saveCorrect')
             ->assertHasErrors(['editCheckIn']);
+    }
+
+    public function test_admin_correction_rejects_check_out_before_check_in(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create();
+
+        $attendance = Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'status' => AttendanceStatus::Hadir,
+            'check_in_at' => Carbon::parse('2026-11-09 07:30:00'),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminAttendanceIndex::class)
+            ->call('openCorrect', $attendance->id)
+            ->set('editCheckIn', '16:00')
+            ->set('editCheckOut', '15:00')
+            ->call('saveCorrect')
+            ->assertHasErrors(['editCheckOut' => 'Jam pulang harus setelah jam masuk.']);
+
+        $this->assertSame('07:30', $attendance->fresh()->check_in_at->format('H:i'));
+    }
+
+    public function test_admin_correction_requires_check_in_for_present_status(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create();
+
+        $attendance = Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'status' => AttendanceStatus::Hadir,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminAttendanceIndex::class)
+            ->call('openCorrect', $attendance->id)
+            ->call('saveCorrect')
+            ->assertHasErrors(['editCheckIn' => 'Jam masuk wajib diisi untuk status Hadir atau Terlambat.']);
+    }
+
+    public function test_admin_correction_rejects_times_for_leave_status(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create();
+
+        $attendance = Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'status' => AttendanceStatus::Hadir,
+            'check_in_at' => Carbon::parse('2026-11-09 07:30:00'),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminAttendanceIndex::class)
+            ->call('openCorrect', $attendance->id)
+            ->set('editStatus', AttendanceStatus::Izin->value)
+            ->call('saveCorrect')
+            ->assertHasErrors(['editCheckIn']);
+
+        $this->assertSame(AttendanceStatus::Hadir, $attendance->fresh()->status);
+    }
+
+    public function test_attendance_service_rejects_inconsistent_correction(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        $attendance = Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'status' => AttendanceStatus::Izin,
+        ]);
+
+        try {
+            app(AttendanceService::class)->correct($attendance, [
+                'status' => AttendanceStatus::Hadir,
+                'note' => null,
+                'check_in_at' => null,
+                'check_out_at' => null,
+            ]);
+
+            $this->fail('Koreksi tanpa jam masuk untuk status Hadir seharusnya ditolak.');
+        } catch (ValidationException $exception) {
+            $this->assertArrayHasKey('check_in_at', $exception->errors());
+        }
+
+        $this->assertSame(AttendanceStatus::Izin, $attendance->fresh()->status);
     }
 
     public function test_search_changes_reset_the_date_and_status_filters(): void

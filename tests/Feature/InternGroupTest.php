@@ -332,6 +332,36 @@ class InternGroupTest extends TestCase
                 && $groups->first()->is($finished));
     }
 
+    public function test_new_group_code_continues_the_highest_current_year_sequence(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        InternGroup::factory()->create(['code' => 'MAG-2026-001']);
+        InternGroup::factory()->individual()->create(['code' => 'MAG-2026-IND-003']);
+        InternGroup::factory()->create(['code' => 'MAG-2025-099']);
+        InternGroup::factory()->create(['code' => 'MAG-2026-005'])->delete();
+
+        Livewire::actingAs($admin)
+            ->test(GroupForm::class)
+            ->assertSet('code', 'MAG-2026-004');
+    }
+
+    public function test_group_detail_cannot_delete_a_group_with_members(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $group = InternGroup::factory()->create();
+        InternProfile::factory()->for(User::factory()->mahasiswa())->create([
+            'intern_group_id' => $group->id,
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(GroupShow::class, ['group' => $group])
+            ->call('delete')
+            ->assertDispatched('group-delete-failed');
+
+        $this->assertModelExists($group);
+    }
+
     public function test_completed_group_detail_shows_selesai_badge(): void
     {
         $admin = User::factory()->admin()->create();

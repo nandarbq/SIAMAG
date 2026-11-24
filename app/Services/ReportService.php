@@ -9,10 +9,42 @@ use App\Models\Logbook;
 use App\Models\Setting;
 use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Validation\Rule;
 
 class ReportService
 {
     public function __construct(private readonly WorkdayService $workdays) {}
+
+    /**
+     * @return array<string, array<int, mixed>>
+     */
+    public static function filterRules(string $studentField = 'student_id'): array
+    {
+        return [
+            'month' => ['nullable', 'integer', 'between:1,12'],
+            'year' => ['nullable', 'integer', 'between:2000,2100'],
+            $studentField => [
+                'nullable',
+                'integer',
+                Rule::exists('users', 'id')->where(
+                    fn ($query) => $query->where('role', UserRole::Mahasiswa->value),
+                ),
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, string>
+     */
+    public static function filterMessages(string $studentField = 'student_id'): array
+    {
+        return [
+            'month.between' => 'Bulan laporan tidak valid.',
+            'year.between' => 'Tahun laporan tidak valid.',
+            "$studentField.integer" => 'Mahasiswa tidak valid.',
+            "$studentField.exists" => 'Mahasiswa tidak ditemukan.',
+        ];
+    }
 
     public function recap(int $month, int $year, ?int $studentId = null): array
     {

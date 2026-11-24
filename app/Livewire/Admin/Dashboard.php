@@ -11,9 +11,7 @@ use App\Models\LeaveRequest;
 use App\Models\Logbook;
 use App\Models\Setting;
 use App\Models\User;
-use App\Services\AttendanceService;
 use App\Services\WorkdayService;
-use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
 use Livewire\Component;
@@ -38,15 +36,15 @@ class Dashboard extends Component
         $permit = (clone $todayQuery)->whereIn('status', [AttendanceStatus::Izin, AttendanceStatus::Sakit])->count();
         $recorded = (clone $todayQuery)->distinct('user_id')->count('user_id');
 
-        $attendanceService = app(AttendanceService::class);
-        $alpha = $attendanceService->isWorkday(now()->startOfDay())
+        $workdays = app(WorkdayService::class);
+        $todayDate = now()->startOfDay();
+        $holidayDates = $workdays->holidayDatesBetween($todayDate->copy()->subDays(6), $todayDate);
+
+        $alpha = $workdays->isWorkday($todayDate, $holidayDates)
             ? max(0, $totalStudents - $recorded)
             : 0;
 
-        $chart = $this->buildChart($studentIds, $totalStudents, $attendanceService);
-
-        $workdays = app(WorkdayService::class);
-        $todayDate = now()->startOfDay();
+        $chart = $this->buildChart($studentIds, $totalStudents, $workdays, $holidayDates);
 
         return view('livewire.admin.dashboard', [
             'greeting' => $this->greeting(),
@@ -98,35 +96,43 @@ class Dashboard extends Component
         };
     }
 
-    private function buildChart($studentIds, int $totalStudents, AttendanceService $attendanceService): array
+    private function buildChart($studentIds, int $totalStudents, WorkdayService $workdays, array $holidayDates): array
     {
+        $dates = collect(range(0, 6))
+            ->map(fn (int $daysAgo) => now()->subDays($daysAgo))
+            ->reverse()
+            ->values();
+
+        $counts = Attendance::query()
+            ->whereIn('user_id', $studentIds)
+            ->whereBetween('date', [$dates->first()->toDateString(), $dates->last()->toDateString()])
+            ->selectRaw('date, status, count(*) as total')
+            ->groupBy('date', 'status')
+            ->get()
+            ->mapWithKeys(function (Attendance $attendance) {
+                return [$attendance->date->toDateString().'|'.$attendance->status->value => (int) $attendance->total];
+            });
+
         $labels = [];
         $present = [];
         $late = [];
         $permit = [];
         $alpha = [];
 
-        for ($i = 6; $i >= 0; $i--) {
-            $date = now()->subDays($i);
-            $labels[] = Carbon::parse($date)->translatedFormat('D, d/m');
+        foreach ($dates as $date) {
+            $labels[] = $date->translatedFormat('D, d/m');
 
-            $counts = Attendance::query()
-                ->whereIn('user_id', $studentIds)
-                ->whereDate('date', $date->toDateString())
-                ->selectRaw('status, count(*) as total')
-                ->groupBy('status')
-                ->pluck('total', 'status');
-
-            $hadir = (int) ($counts[AttendanceStatus::Hadir->value] ?? 0);
-            $terlambat = (int) ($counts[AttendanceStatus::Terlambat->value] ?? 0);
-            $izin = (int) ($counts[AttendanceStatus::Izin->value] ?? 0);
-            $sakit = (int) ($counts[AttendanceStatus::Sakit->value] ?? 0);
+            $key = $date->toDateString();
+            $hadir = (int) ($counts[$key.'|'.AttendanceStatus::Hadir->value] ?? 0);
+            $terlambat = (int) ($counts[$key.'|'.AttendanceStatus::Terlambat->value] ?? 0);
+            $izin = (int) ($counts[$key.'|'.AttendanceStatus::Izin->value] ?? 0);
+            $sakit = (int) ($counts[$key.'|'.AttendanceStatus::Sakit->value] ?? 0);
             $recorded = $hadir + $terlambat + $izin + $sakit;
 
             $present[] = $hadir;
             $late[] = $terlambat;
             $permit[] = $izin + $sakit;
-            $alpha[] = $attendanceService->isWorkday($date->copy()->startOfDay())
+            $alpha[] = $workdays->isWorkday($date->copy()->startOfDay(), $holidayDates)
                 ? max(0, $totalStudents - $recorded)
                 : 0;
         }

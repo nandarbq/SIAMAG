@@ -54,7 +54,7 @@ class Form extends Component
 
         $this->start_date = now()->toDateString();
         $this->end_date = now()->addMonths(4)->toDateString();
-        $this->code = sprintf('MAG-%d-%03d', now()->year, InternGroup::query()->count() + 1);
+        $this->code = $this->nextGroupCode();
     }
 
     public function updatedIsIndividual(): void
@@ -119,6 +119,29 @@ class Form extends Component
     public function render()
     {
         return view('livewire.admin.groups.form');
+    }
+
+    private function nextGroupCode(): string
+    {
+        $year = now()->year;
+
+        $lastSequence = InternGroup::query()
+            ->where('code', 'like', sprintf('MAG-%d-%%', $year))
+            ->pluck('code')
+            ->map(fn (string $code) => $this->codeSequence($code, $year))
+            ->filter(fn (?int $sequence) => $sequence !== null)
+            ->max() ?? 0;
+
+        return sprintf('MAG-%d-%03d', $year, $lastSequence + 1);
+    }
+
+    private function codeSequence(string $code, int $year): ?int
+    {
+        if (! preg_match(sprintf('/^MAG-%d-(?:IND-)?(\d{3})$/', $year), $code, $matches)) {
+            return null;
+        }
+
+        return (int) $matches[1];
     }
 
     private function withIndividualMarker(string $code, bool $isIndividual): string

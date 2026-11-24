@@ -117,24 +117,90 @@ class StudentFormTest extends TestCase
         $this->assertTrue(Hash::check('old-password', $student->fresh()->password));
     }
 
-    public function test_end_date_must_not_be_before_start_date(): void
+    public function test_student_profile_uses_group_data_for_shared_fields(): void
     {
         $admin = User::factory()->admin()->create();
-        $group = InternGroup::factory()->create();
+        $group = InternGroup::factory()->create([
+            'code' => 'MAG-2026-902',
+            'institution' => 'Universitas Jember',
+            'field_supervisor' => 'Pak Slamet',
+            'start_date' => Carbon::parse('2026-11-01'),
+            'end_date' => Carbon::parse('2026-12-31'),
+        ]);
 
         Livewire::actingAs($admin)
             ->test(StudentForm::class)
             ->set('name', 'Budi Santoso')
             ->set('email', 'budi@example.com')
             ->set('password', 'secret-password')
-            ->set('nim', '20260001')
+            ->set('nim', '20260002')
             ->set('intern_group_id', $group->id)
             ->set('major', 'Teknik Informatika')
             ->set('semester', '6')
-            ->set('start_date', '2026-12-31')
-            ->set('end_date', '2026-11-01')
+            ->set('institution', 'Institusi Buatan')
+            ->set('start_date', '2026-01-01')
+            ->set('end_date', '2026-01-31')
             ->call('save')
-            ->assertHasErrors(['end_date']);
+            ->assertHasNoErrors()
+            ->assertRedirect(route('admin.students'));
+
+        $profile = User::query()->where('email', 'budi@example.com')->firstOrFail()->internProfile;
+
+        $this->assertSame('Universitas Jember', $profile->institution);
+        $this->assertSame('Pak Slamet', $profile->field_supervisor);
+        $this->assertSame('2026-11-01', $profile->start_date->toDateString());
+        $this->assertSame('2026-12-31', $profile->end_date->toDateString());
+    }
+
+    public function test_inactive_group_cannot_be_assigned_to_student(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $group = InternGroup::factory()->inactive()->create();
+
+        Livewire::actingAs($admin)
+            ->test(StudentForm::class)
+            ->set('name', 'Budi Santoso')
+            ->set('email', 'budi@example.com')
+            ->set('password', 'secret-password')
+            ->set('nim', '20260003')
+            ->set('intern_group_id', $group->id)
+            ->set('major', 'Teknik Informatika')
+            ->set('semester', '6')
+            ->call('save')
+            ->assertHasErrors(['intern_group_id']);
+
+        $this->assertDatabaseMissing('users', ['email' => 'budi@example.com']);
+    }
+
+    public function test_deep_link_to_inactive_group_is_rejected(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $group = InternGroup::factory()->inactive()->create();
+
+        $this->actingAs($admin)
+            ->get(route('admin.students.create', ['group' => $group->id]))
+            ->assertNotFound();
+    }
+
+    public function test_editing_student_can_keep_their_inactive_group(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $group = InternGroup::factory()->inactive()->create();
+        $student = User::factory()->mahasiswa()->create();
+        $student->internProfile()->create(array_merge($group->profileAttributes(), [
+            'intern_group_id' => $group->id,
+            'major' => 'Sistem Informasi',
+            'semester' => '4',
+        ]));
+
+        Livewire::actingAs($admin)
+            ->test(StudentForm::class, ['user' => $student])
+            ->set('semester', '5')
+            ->call('save')
+            ->assertHasNoErrors()
+            ->assertRedirect(route('admin.students'));
+
+        $this->assertSame($group->id, $student->fresh()->internProfile->intern_group_id);
     }
 
     public function test_selecting_group_fills_shared_profile_fields(): void

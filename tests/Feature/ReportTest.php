@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Enums\AttendanceStatus;
+use App\Livewire\Admin\Reports\Index as ReportIndex;
 use App\Models\Attendance;
 use App\Models\Holiday;
 use App\Models\Logbook;
@@ -11,6 +12,7 @@ use App\Models\User;
 use App\Services\ReportService;
 use Carbon\Carbon;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Livewire\Livewire;
 use Tests\TestCase;
 
 class ReportTest extends TestCase
@@ -96,6 +98,49 @@ class ReportTest extends TestCase
         $this->assertCount(1, $report['rows']);
         $this->assertSame($second->id, $report['rows']->first()['id']);
         $this->assertNotSame($first->id, $report['rows']->first()['id']);
+    }
+
+    public function test_report_page_rejects_invalid_month(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(ReportIndex::class)
+            ->set('month', '13')
+            ->assertHasErrors(['month' => 'Bulan laporan tidak valid.']);
+    }
+
+    public function test_report_page_rejects_invalid_year(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(ReportIndex::class)
+            ->set('year', '99999')
+            ->assertHasErrors(['year' => 'Tahun laporan tidak valid.']);
+    }
+
+    public function test_report_page_rejects_admin_as_student_filter(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(ReportIndex::class)
+            ->set('studentId', (string) $admin->id)
+            ->assertHasErrors(['studentId' => 'Mahasiswa tidak ditemukan.']);
+    }
+
+    public function test_report_page_filters_by_valid_student(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = $this->makeStudent();
+
+        Livewire::actingAs($admin)
+            ->test(ReportIndex::class)
+            ->set('studentId', (string) $student->id)
+            ->assertHasNoErrors()
+            ->assertViewHas('report', fn (array $report) => $report['summary']['students'] === 1
+                && $report['rows']->first()['id'] === $student->id);
     }
 
     private function makeStudent(string $name = 'Student'): User

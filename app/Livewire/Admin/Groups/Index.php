@@ -33,7 +33,7 @@ class Index extends Component
 
     public function delete(InternGroup $group): void
     {
-        if ($group->students()->exists()) {
+        if ($group->internProfiles()->exists()) {
             $this->dispatch('group-delete-failed', message: "Kelompok {$group->code} masih memiliki anggota. Pindahkan anggota terlebih dahulu.");
 
             return;

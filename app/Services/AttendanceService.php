@@ -146,6 +146,8 @@ class AttendanceService
 
     public function correct(Attendance $attendance, array $data): Attendance
     {
+        $status = $data['status'];
+
         $checkInAt = array_key_exists('check_in_at', $data)
             ? $data['check_in_at']
             : $attendance->check_in_at;
@@ -154,9 +156,11 @@ class AttendanceService
             ? $data['check_out_at']
             : $attendance->check_out_at;
 
+        $this->ensureCorrectionIsConsistent($status, $checkInAt, $checkOutAt);
+
         $lateMinutes = 0;
 
-        if ($data['status'] === AttendanceStatus::Terlambat && $checkInAt) {
+        if ($status === AttendanceStatus::Terlambat && $checkInAt) {
             $workStart = Carbon::parse($checkInAt->toDateString().' '.Setting::get('work_start', '07:30'));
             $threshold = $workStart->copy()->addMinutes(Setting::getInt('late_tolerance_min', 15));
 
@@ -176,7 +180,7 @@ class AttendanceService
         }
 
         $attendance->update([
-            'status' => $data['status'],
+            'status' => $status,
             'note' => $data['note'] ?? null,
             'check_in_at' => $checkInAt,
             'check_out_at' => $checkOutAt,
@@ -185,6 +189,29 @@ class AttendanceService
         ]);
 
         return $attendance->refresh();
+    }
+
+    private function ensureCorrectionIsConsistent(AttendanceStatus $status, ?Carbon $checkInAt, ?Carbon $checkOutAt): void
+    {
+        $usesTimes = in_array($status, [AttendanceStatus::Hadir, AttendanceStatus::Terlambat], true);
+
+        if ($usesTimes && ! $checkInAt) {
+            throw ValidationException::withMessages([
+                'check_in_at' => 'Jam masuk wajib diisi untuk status Hadir atau Terlambat.',
+            ]);
+        }
+
+        if (! $usesTimes && ($checkInAt || $checkOutAt)) {
+            throw ValidationException::withMessages([
+                'check_in_at' => 'Jam masuk dan jam pulang tidak boleh diisi untuk status ini.',
+            ]);
+        }
+
+        if ($checkInAt && $checkOutAt && $checkOutAt->lessThanOrEqualTo($checkInAt)) {
+            throw ValidationException::withMessages([
+                'check_out_at' => 'Jam pulang harus setelah jam masuk.',
+            ]);
+        }
     }
 
     public function markLeave(LeaveRequest $leave): void

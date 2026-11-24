@@ -95,7 +95,6 @@
                 <div>
                     <label class="label">Institusi / Kampus</label>
                     <input wire:model="institution" type="text" class="input" placeholder="Nama universitas atau politeknik" @if ($intern_group_id) readonly @endif>
-                    @error('institution') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="label">Jurusan / Program Studi</label>
@@ -110,17 +109,14 @@
                 <div>
                     <label class="label">Pembimbing Lapangan</label>
                     <input wire:model="field_supervisor" type="text" class="input" placeholder="Nama pembimbing di BMKG" @if ($intern_group_id) readonly @endif>
-                    @error('field_supervisor') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="label">Tanggal Mulai</label>
                     <input wire:model="start_date" type="date" class="input" @if ($intern_group_id) readonly @endif>
-                    @error('start_date') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="label">Tanggal Selesai</label>
                     <input wire:model="end_date" type="date" class="input" @if ($intern_group_id) readonly @endif>
-                    @error('end_date') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="label">No. HP Pembimbing</label>

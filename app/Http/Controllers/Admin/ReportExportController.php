@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Services\ReportService;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use PhpOffice\PhpSpreadsheet\Spreadsheet;
 use PhpOffice\PhpSpreadsheet\Style\Alignment;
 use PhpOffice\PhpSpreadsheet\Style\Border;
@@ -166,15 +167,17 @@ class ReportExportController extends Controller
 
     private function reportData(Request $request, ReportService $reportService): array
     {
-        $validated = $request->validate([
-            'month' => ['nullable', 'integer', 'between:1,12'],
-            'year' => ['nullable', 'integer', 'between:2000,2100'],
-            'student_id' => ['nullable', 'integer', 'exists:users,id'],
-        ], [
-            'month.between' => 'Bulan laporan tidak valid.',
-            'year.between' => 'Tahun laporan tidak valid.',
-            'student_id.exists' => 'Mahasiswa tidak ditemukan.',
-        ]);
+        $input = $request->all();
+
+        if (($input['student_id'] ?? null) === '') {
+            $input['student_id'] = null;
+        }
+
+        $validated = Validator::make(
+            $input,
+            ReportService::filterRules(),
+            ReportService::filterMessages(),
+        )->validate();
 
         $month = (int) ($validated['month'] ?? now()->month);
         $year = (int) ($validated['year'] ?? now()->year);

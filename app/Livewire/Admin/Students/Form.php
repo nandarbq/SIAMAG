@@ -78,13 +78,20 @@ class Form extends Component
         $groupId = request()->integer('group');
 
         if ($groupId > 0) {
-            $this->applyGroup(InternGroup::query()->findOrFail($groupId));
+            $group = InternGroup::query()
+                ->where('is_active', true)
+                ->findOrFail($groupId);
+
+            $this->intern_group_id = $group->id;
+            $this->applyGroup($group);
         }
     }
 
     public function updatedInternGroupId(mixed $value): void
     {
-        $group = $value ? InternGroup::query()->find((int) $value) : null;
+        $group = $value
+            ? InternGroup::query()->where('is_active', true)->find((int) $value)
+            : null;
 
         $this->applyGroup($group);
     }
@@ -97,13 +104,18 @@ class Form extends Component
             'password' => [$this->user ? 'nullable' : 'required', 'string', 'min:8'],
             'nim' => ['required', 'string', 'max:30', Rule::unique('users', 'nim')->ignore($this->user?->id)],
             'phone' => ['nullable', 'string', 'max:20'],
-            'intern_group_id' => ['required', Rule::exists('intern_groups', 'id')],
-            'institution' => ['required', 'string', 'max:255'],
+            'intern_group_id' => [
+                'required',
+                Rule::exists('intern_groups', 'id')->where(function ($query) {
+                    $query->where('is_active', true);
+
+                    if ($this->user?->internProfile?->intern_group_id) {
+                        $query->orWhere('id', $this->user->internProfile->intern_group_id);
+                    }
+                }),
+            ],
             'major' => ['required', 'string', 'max:255'],
             'semester' => ['required', 'integer', 'min:1', 'max:14'],
-            'start_date' => ['required', 'date'],
-            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
-            'field_supervisor' => ['nullable', 'string', 'max:255'],
             'supervisor_phone' => ['nullable', 'string', 'max:20'],
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
@@ -114,12 +126,9 @@ class Form extends Component
             'password.required' => 'Password wajib diisi untuk akun baru.',
             'password.min' => 'Password minimal 8 karakter.',
             'intern_group_id.required' => 'Kelompok magang wajib dipilih.',
-            'institution.required' => 'Institusi wajib diisi.',
+            'intern_group_id.exists' => 'Kelompok magang tidak ditemukan atau tidak aktif.',
             'major.required' => 'Jurusan wajib diisi.',
             'semester.required' => 'Semester wajib diisi.',
-            'start_date.required' => 'Tanggal mulai wajib diisi.',
-            'end_date.required' => 'Tanggal selesai wajib diisi.',
-            'end_date.after_or_equal' => 'Tanggal selesai harus setelah tanggal mulai.',
         ]);
 
         $group = InternGroup::query()->findOrFail($this->intern_group_id);

@@ -6,6 +6,7 @@ use App\Enums\AttendanceStatus;
 use App\Models\Attendance;
 use App\Services\AttendanceService;
 use Carbon\Carbon;
+use Closure;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Attributes\Title;
@@ -76,8 +77,48 @@ class Index extends Component
         $validated = $this->validate([
             'editStatus' => ['required', Rule::enum(AttendanceStatus::class)],
             'editNote' => ['nullable', 'string', 'max:500'],
-            'editCheckIn' => ['nullable', 'date_format:H:i'],
-            'editCheckOut' => ['nullable', 'date_format:H:i'],
+            'editCheckIn' => [
+                'nullable',
+                'bail',
+                'required_if:editStatus,'.AttendanceStatus::Hadir->value,
+                'required_if:editStatus,'.AttendanceStatus::Terlambat->value,
+                'date_format:H:i',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    $status = AttendanceStatus::tryFrom($this->editStatus);
+
+                    if ($status === null || $this->statusUsesTimes($status) || blank($value)) {
+                        return;
+                    }
+
+                    $fail('Jam masuk tidak boleh diisi untuk status '.$status->label().'.');
+                },
+            ],
+            'editCheckOut' => [
+                'nullable',
+                'bail',
+                'date_format:H:i',
+                function (string $attribute, mixed $value, Closure $fail): void {
+                    $status = AttendanceStatus::tryFrom($this->editStatus);
+
+                    if ($status === null) {
+                        return;
+                    }
+
+                    if (! $this->statusUsesTimes($status) && filled($value)) {
+                        $fail('Jam pulang tidak boleh diisi untuk status '.$status->label().'.');
+                    }
+
+                    if (blank($value) || blank($this->editCheckIn)) {
+                        return;
+                    }
+
+                    if (Carbon::parse($this->editCheckIn)->greaterThanOrEqualTo(Carbon::parse($value))) {
+                        $fail('Jam pulang harus setelah jam masuk.');
+                    }
+                },
+            ],
+        ], [
+            'editCheckIn.required_if' => 'Jam masuk wajib diisi untuk status Hadir atau Terlambat.',
         ]);
 
         $attendance = Attendance::query()->findOrFail($this->editingId);
@@ -122,5 +163,10 @@ class Index extends Component
             'summary' => $summary,
             'statuses' => AttendanceStatus::cases(),
         ]);
+    }
+
+    private function statusUsesTimes(AttendanceStatus $status): bool
+    {
+        return in_array($status, [AttendanceStatus::Hadir, AttendanceStatus::Terlambat], true);
     }
 }

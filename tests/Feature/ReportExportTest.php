@@ -58,6 +58,17 @@ class ReportExportTest extends TestCase
             ->assertSessionHasErrors('month');
     }
 
+    public function test_report_export_rejects_non_student_filter(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        $this->actingAs($admin)
+            ->from(route('admin.reports'))
+            ->get(route('admin.reports.pdf', ['student_id' => $admin->id]))
+            ->assertRedirect(route('admin.reports'))
+            ->assertSessionHasErrors('student_id');
+    }
+
     public function test_students_cannot_download_reports(): void
     {
         $student = User::factory()->mahasiswa()->create();
