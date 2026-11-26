@@ -430,6 +430,12 @@
     overflow: visible;
 }
 
+.auth-radar-wave-field {
+    transform-box: view-box;
+    transform-origin: 214px 335px;
+    transform: rotate(20deg) scale(2);
+}
+
 .auth-radar-wave {
     transform-box: view-box;
     transform-origin: 214px 335px;
