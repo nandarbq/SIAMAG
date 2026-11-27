@@ -142,21 +142,26 @@
                 </div>
 
                 <form wire:submit="updatePassword" class="card-body space-y-5">
-                    <div>
-                        <label class="form-label">Password Saat Ini</label>
-                        <input type="password" wire:model="currentPassword" class="input" autocomplete="current-password">
-                        @error('currentPassword') <p class="form-error">{{ $message }}</p> @enderror
-                    </div>
+                    <x-password-input
+                        label="Password Saat Ini"
+                        name="currentPassword"
+                        wire:model="currentPassword"
+                        autocomplete="current-password"
+                        label-class="form-label"
+                    />
                     <div class="grid gap-4 sm:grid-cols-2">
-                        <div>
-                            <label class="form-label">Password Baru</label>
-                            <input type="password" wire:model="password" class="input" autocomplete="new-password">
-                            @error('password') <p class="form-error">{{ $message }}</p> @enderror
-                        </div>
-                        <div>
-                            <label class="form-label">Konfirmasi Password Baru</label>
-                            <input type="password" wire:model="passwordConfirmation" class="input" autocomplete="new-password">
-                        </div>
+                        <x-password-input
+                            label="Password Baru"
+                            name="password"
+                            wire:model="password"
+                            label-class="form-label"
+                        />
+                        <x-password-input
+                            label="Konfirmasi Password Baru"
+                            name="passwordConfirmation"
+                            wire:model="passwordConfirmation"
+                            label-class="form-label"
+                        />
                     </div>
 
                     <div class="flex justify-end border-t border-slate-100 pt-5">

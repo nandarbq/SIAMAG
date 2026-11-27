@@ -23,6 +23,18 @@ class ProfileTest extends TestCase
         Storage::fake('local');
     }
 
+    public function test_profile_renders_password_visibility_toggles(): void
+    {
+        $student = User::factory()->mahasiswa()->create();
+
+        Livewire::actingAs($student)
+            ->test(Profile::class)
+            ->assertSee('Tampilkan password', false)
+            ->assertSee('x-data="{ show: false }"', false)
+            ->assertSee('wire:model="currentPassword"', false)
+            ->assertSee('wire:model="passwordConfirmation"', false);
+    }
+
     public function test_student_can_update_profile_information(): void
     {
         $student = User::factory()->mahasiswa()->create([

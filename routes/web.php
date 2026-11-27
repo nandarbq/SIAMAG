@@ -15,6 +15,7 @@ use App\Livewire\Admin\Holidays\Index as HolidayIndex;
 use App\Livewire\Admin\Leaves\Index as LeaveIndex;
 use App\Livewire\Admin\Logbooks\Index as LogbookIndex;
 use App\Livewire\Admin\Reports\Index as ReportIndex;
+use App\Livewire\Admin\Settings\AdminForm;
 use App\Livewire\Admin\Settings\Index as SettingIndex;
 use App\Livewire\Admin\Students\Form as StudentForm;
 use App\Livewire\Admin\Students\Index as StudentIndex;
@@ -85,6 +86,9 @@ Route::middleware(['auth', 'role:admin'])
         Route::get('/holidays', HolidayIndex::class)->name('holidays');
 
         Route::get('/announcements', AnnouncementIndex::class)->name('announcements');
+
+        Route::get('/settings/admins/create', AdminForm::class)->name('settings.admins.create');
+        Route::get('/settings/admins/{admin}/edit', AdminForm::class)->name('settings.admins.edit');
 
         Route::get('/settings', SettingIndex::class)->name('settings');
 

@@ -44,11 +44,12 @@
                     <input wire:model="phone" type="text" class="input" placeholder="08xxxxxxxxxx">
                     @error('phone') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
-                <div>
-                    <label class="label">Password {{ $user ? '(opsional)' : '' }}</label>
-                    <input wire:model="password" type="password" class="input" placeholder="{{ $user ? 'Kosongkan jika tidak diubah' : 'Minimal 8 karakter' }}">
-                    @error('password') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
-                </div>
+                <x-password-input
+                    :label="$user ? 'Password (opsional)' : 'Password'"
+                    name="password"
+                    wire:model="password"
+                    :placeholder="$user ? 'Kosongkan jika tidak diubah' : 'Minimal 8 karakter'"
+                />
                 <div class="flex items-end">
                     <label class="flex w-full items-center gap-3 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
                         <input wire:model="is_active" type="checkbox" class="h-4 w-4 rounded border-slate-300 text-brand-600 focus:ring-brand-500/30">

@@ -24,6 +24,17 @@ class StudentFormTest extends TestCase
         $this->travelTo(Carbon::parse('2026-11-09 10:00:00', 'Asia/Jakarta'));
     }
 
+    public function test_student_form_renders_password_visibility_toggle(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(StudentForm::class)
+            ->assertSee('Tampilkan password', false)
+            ->assertSee('x-data="{ show: false }"', false)
+            ->assertSee('wire:model="password"', false);
+    }
+
     public function test_admin_can_create_a_student_with_internship_profile(): void
     {
         $admin = User::factory()->admin()->create();
