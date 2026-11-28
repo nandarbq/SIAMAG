@@ -143,9 +143,13 @@ class Form extends Component
                     }
                 }),
             ],
+            'institution' => ['required', 'string', 'max:255'],
             'major' => ['required', 'string', 'max:255'],
             'semester' => ['required', 'integer', 'min:1', 'max:14'],
-            'supervisor_phone' => ['nullable', 'string', 'max:20'],
+            'start_date' => ['required', 'date'],
+            'end_date' => ['required', 'date', 'after_or_equal:start_date'],
+            'field_supervisor' => ['nullable', 'string', 'max:255'],
+            'supervisor_phone' => ['nullable', 'string', 'max:30'],
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
             'email.required' => 'Email wajib diisi.',
@@ -156,8 +160,12 @@ class Form extends Component
             'password.min' => 'Password minimal 8 karakter.',
             'intern_group_id.required' => 'Kelompok magang wajib dipilih.',
             'intern_group_id.exists' => 'Kelompok magang tidak ditemukan atau tidak aktif.',
+            'institution.required' => 'Institusi / kampus wajib diisi.',
             'major.required' => 'Jurusan wajib diisi.',
             'semester.required' => 'Semester wajib diisi.',
+            'start_date.required' => 'Tanggal mulai wajib diisi.',
+            'end_date.required' => 'Tanggal selesai wajib diisi.',
+            'end_date.after_or_equal' => 'Tanggal selesai harus setelah tanggal mulai.',
         ]);
 
         $group = InternGroup::query()->findOrFail($this->intern_group_id);
@@ -197,11 +205,16 @@ class Form extends Component
 
         $user->internProfile()->updateOrCreate(
             ['user_id' => $user->id],
-            array_merge($group->profileAttributes(), [
+            [
                 'intern_group_id' => $group->id,
+                'institution' => $validated['institution'],
                 'major' => $validated['major'],
                 'semester' => $validated['semester'],
-            ]),
+                'start_date' => $validated['start_date'],
+                'end_date' => $validated['end_date'],
+                'field_supervisor' => $validated['field_supervisor'] ?: null,
+                'supervisor_phone' => $validated['supervisor_phone'] ?: null,
+            ],
         );
 
         session()->flash('success', $this->user

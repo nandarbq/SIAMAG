@@ -55,6 +55,66 @@ class AdminAttendanceTest extends TestCase
         $this->assertSame('15:00', $attendance->check_out_at->format('H:i'));
     }
 
+    public function test_admin_can_view_attendance_detail_with_photo_location_and_gps_data(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create(['name' => 'Siswa Detail']);
+
+        $attendance = Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'status' => AttendanceStatus::Hadir,
+            'check_in_at' => Carbon::parse('2026-11-09 07:30:00'),
+            'check_out_at' => Carbon::parse('2026-11-09 16:00:00'),
+            'check_in_photo' => 'attendances/check-in.jpg',
+            'check_in_lat' => -8.1234567,
+            'check_in_lng' => 114.1234567,
+            'check_in_distance' => 125,
+            'check_in_accuracy' => 12,
+            'note' => 'Catatan koreksi admin.',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminAttendanceIndex::class)
+            ->call('openDetail', $attendance->id)
+            ->assertSet('viewingId', $attendance->id)
+            ->assertSee('Detail Absensi')
+            ->assertSee('Siswa Detail')
+            ->assertSee('07:30')
+            ->assertSee('125 m')
+            ->assertSee('12 m')
+            ->assertSee('-8.1234567, 114.1234567')
+            ->assertSee('https://www.google.com/maps?q=-8.1234567,114.1234567')
+            ->assertSee('Catatan koreksi admin.');
+    }
+
+    public function test_opening_correction_closes_attendance_detail_and_vice_versa(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $student = User::factory()->mahasiswa()->create();
+
+        $attendance = Attendance::query()->create([
+            'user_id' => $student->id,
+            'date' => '2026-11-09',
+            'status' => AttendanceStatus::Hadir,
+            'check_in_at' => Carbon::parse('2026-11-09 07:30:00'),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(AdminAttendanceIndex::class)
+            ->call('openDetail', $attendance->id)
+            ->assertSet('viewingId', $attendance->id)
+            ->assertSet('editingId', null)
+            ->call('openCorrect', $attendance->id)
+            ->assertSet('viewingId', null)
+            ->assertSet('editingId', $attendance->id)
+            ->call('openDetail', $attendance->id)
+            ->assertSet('viewingId', $attendance->id)
+            ->assertSet('editingId', null)
+            ->call('closeDetail')
+            ->assertSet('viewingId', null);
+    }
+
     public function test_admin_correction_recalculates_late_minutes(): void
     {
         $admin = User::factory()->admin()->create();

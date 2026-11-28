@@ -89,7 +89,7 @@
                                     :aria-expanded="open"
                                     class="inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white ring-1 ring-inset ring-white/15 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
                                 >
-                                    <span x-text="open ? 'Tutup' : 'Lihat semua'"></span>
+                                    <span x-text="open ? 'Tutup' : 'Lihat lainnya'"></span>
                                     <span class="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-slate-300">{{ $announcements->count() }}</span>
                                     <x-icon name="chevron-down" class="h-3.5 w-3.5 transition-transform" x-bind:class="open ? 'rotate-180' : ''" />
                                 </button>

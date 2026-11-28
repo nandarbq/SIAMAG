@@ -6,6 +6,7 @@ use App\Enums\AttendanceStatus;
 use App\Enums\LeaveStatus;
 use App\Enums\LeaveType;
 use App\Livewire\Admin\Dashboard as AdminDashboard;
+use App\Models\Announcement;
 use App\Models\Attendance;
 use App\Models\Holiday;
 use App\Models\InternProfile;
@@ -19,6 +20,17 @@ use Tests\TestCase;
 class AdminDashboardTest extends TestCase
 {
     use RefreshDatabase;
+
+    public function test_dashboard_labels_additional_announcements_as_lihat_lainnya(): void
+    {
+        $admin = User::factory()->admin()->create();
+        Announcement::factory()->count(2)->create();
+
+        Livewire::actingAs($admin)
+            ->test(AdminDashboard::class)
+            ->assertSee('Lihat lainnya')
+            ->assertDontSee('Lihat semua');
+    }
 
     public function test_dashboard_does_not_count_missing_attendance_on_weekends(): void
     {

@@ -78,4 +78,10 @@
             </tbody>
         </table>
     </div>
+
+    @if ($admins->hasPages())
+        <div class="border-t border-slate-100 px-5 py-4">
+            {{ $admins->links() }}
+        </div>
+    @endif
 </div>

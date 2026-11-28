@@ -1,7 +1,7 @@
 <div
     class="space-y-6"
     x-data
-    x-effect="document.documentElement.classList.toggle('overflow-hidden', $wire.editingId !== null)"
+    x-effect="document.documentElement.classList.toggle('overflow-hidden', $wire.editingId !== null || $wire.viewingId !== null)"
 >
     <div class="flex flex-col justify-between gap-4 sm:flex-row sm:items-end">
         <div>
@@ -110,7 +110,11 @@
                             </td>
                             <td class="table-td"><x-attendance-status-admin :status="$attendance->status" /></td>
                             <td class="table-td">
-                                <div class="flex justify-center">
+                                <div class="flex justify-center gap-1">
+                                    <button type="button" wire:click="openDetail({{ $attendance->id }})" class="btn-ghost btn-sm">
+                                        <x-icon name="eye" class="h-4 w-4" />
+                                        Detail
+                                    </button>
                                     <button type="button" wire:click="openCorrect({{ $attendance->id }})" class="btn-ghost btn-sm">
                                         <x-icon name="pencil" class="h-4 w-4" />
                                         Koreksi
@@ -139,6 +143,134 @@
             </div>
         @endif
     </div>
+
+    @if ($viewingId && $viewing)
+        @php
+            $phases = [
+                [
+                    'label' => 'Masuk',
+                    'time' => $viewing->check_in_at?->format('H:i'),
+                    'photo' => $viewing->check_in_photo,
+                    'photoUrl' => route('attendance.photo', [$viewing, 'in']),
+                    'lat' => $viewing->check_in_lat,
+                    'lng' => $viewing->check_in_lng,
+                    'distance' => $viewing->check_in_distance,
+                    'accuracy' => $viewing->check_in_accuracy,
+                ],
+                [
+                    'label' => 'Pulang',
+                    'time' => $viewing->check_out_at?->format('H:i'),
+                    'photo' => $viewing->check_out_photo,
+                    'photoUrl' => route('attendance.photo', [$viewing, 'out']),
+                    'lat' => $viewing->check_out_lat,
+                    'lng' => $viewing->check_out_lng,
+                    'distance' => $viewing->check_out_distance,
+                    'accuracy' => $viewing->check_out_accuracy,
+                ],
+            ];
+        @endphp
+        <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 p-4 backdrop-blur-sm sm:items-center">
+            <div class="max-h-[calc(100dvh-2rem)] w-full max-w-2xl animate-fade-up overflow-y-auto overscroll-contain rounded-3xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-2xl">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <h2 class="text-lg font-bold text-slate-900">Detail Absensi</h2>
+                        <p class="mt-1 text-sm text-slate-500">
+                            {{ $viewing->user?->name ?? '-' }} · NIM {{ $viewing->user?->nim ?: '-' }} · {{ $viewing->date?->translatedFormat('d M Y') }}
+                        </p>
+                    </div>
+                    <button type="button" wire:click="closeDetail" class="btn-ghost px-2 py-2">
+                        <x-icon name="x" class="h-5 w-5" />
+                    </button>
+                </div>
+
+                <div class="mt-5 flex flex-wrap items-center gap-3 rounded-2xl bg-slate-50 px-4 py-3">
+                    <x-attendance-status-admin :status="$viewing->status" />
+                    @if ($viewing->late_minutes > 0)
+                        <span class="text-xs font-medium text-amber-700">Terlambat {{ $viewing->late_duration }}</span>
+                    @endif
+                    @if ($viewing->early_leave_minutes > 0)
+                        <span class="text-xs font-medium text-amber-700">Pulang lebih awal {{ $viewing->early_leave_duration }}</span>
+                    @endif
+                    @if ($viewing->work_duration)
+                        <span class="text-xs font-medium text-slate-600">Durasi kerja {{ $viewing->work_duration }}</span>
+                    @endif
+                </div>
+
+                <div class="mt-4 grid gap-4 sm:grid-cols-2">
+                    @foreach ($phases as $phase)
+                        <section class="rounded-2xl border border-slate-200 p-4">
+                            <div class="flex items-center justify-between gap-2">
+                                <h3 class="text-sm font-bold text-slate-800">{{ $phase['label'] }}</h3>
+                                <span class="inline-flex items-center gap-1.5 text-sm font-semibold text-slate-700">
+                                    <x-icon name="clock" class="h-4 w-4 text-slate-400" />
+                                    {{ $phase['time'] ?? '-' }}
+                                </span>
+                            </div>
+
+                            <dl class="mt-4 space-y-3 text-xs">
+                                <div class="flex items-start justify-between gap-3">
+                                    <dt class="flex items-center gap-1.5 text-slate-500">
+                                        <x-icon name="map-pin" class="h-3.5 w-3.5 shrink-0" />
+                                        Jarak dari kantor
+                                    </dt>
+                                    <dd class="text-right font-semibold text-slate-800">{{ $phase['distance'] !== null ? $phase['distance'].' m' : '-' }}</dd>
+                                </div>
+                                <div class="flex items-start justify-between gap-3">
+                                    <dt class="text-slate-500">Akurasi GPS</dt>
+                                    <dd class="text-right font-semibold text-slate-800">{{ $phase['accuracy'] !== null ? $phase['accuracy'].' m' : '-' }}</dd>
+                                </div>
+                                <div class="flex items-start justify-between gap-3">
+                                    <dt class="text-slate-500">Koordinat</dt>
+                                    <dd class="text-right font-semibold text-slate-800">
+                                        @if ($phase['lat'] !== null && $phase['lng'] !== null)
+                                            {{ number_format($phase['lat'], 7, '.', '') }}, {{ number_format($phase['lng'], 7, '.', '') }}
+                                        @else
+                                            -
+                                        @endif
+                                    </dd>
+                                </div>
+                            </dl>
+
+                            @if ($phase['lat'] !== null && $phase['lng'] !== null)
+                                <a
+                                    href="https://www.google.com/maps?q={{ $phase['lat'] }},{{ $phase['lng'] }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-brand-700 hover:underline"
+                                >
+                                    <x-icon name="map-pin" class="h-3.5 w-3.5" />
+                                    Buka di Google Maps
+                                </a>
+                            @endif
+
+                            @if ($phase['photo'])
+                                <a href="{{ $phase['photoUrl'] }}" target="_blank" rel="noopener noreferrer" class="mt-3 block overflow-hidden rounded-xl ring-1 ring-slate-200">
+                                    <img src="{{ $phase['photoUrl'] }}" alt="Selfie {{ strtolower($phase['label']) }}" class="h-40 w-full object-cover">
+                                </a>
+                            @else
+                                <div class="mt-3 flex h-24 items-center justify-center rounded-xl border border-dashed border-slate-200 text-xs text-slate-400">
+                                    Tidak ada selfie
+                                </div>
+                            @endif
+                        </section>
+                    @endforeach
+                </div>
+
+                <div class="mt-4 rounded-2xl border border-slate-200 p-4">
+                    <p class="text-xs font-bold uppercase tracking-wide text-slate-500">Catatan</p>
+                    <p class="mt-1.5 text-sm text-slate-700">{{ $viewing->note ?: 'Tidak ada catatan.' }}</p>
+                </div>
+
+                <div class="mt-5 flex justify-end gap-2">
+                    <button type="button" wire:click="closeDetail" class="btn-secondary">Tutup</button>
+                    <button type="button" wire:click="openCorrect({{ $viewing->id }})" class="btn-primary">
+                        <x-icon name="pencil" class="h-4 w-4" />
+                        Koreksi Absensi
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 
     @if ($editingId)
         <div class="fixed inset-0 z-50 flex items-end justify-center bg-slate-950/50 p-4 backdrop-blur-sm sm:items-center">

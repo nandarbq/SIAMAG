@@ -29,6 +29,8 @@ class Index extends Component
 
     public ?int $editingId = null;
 
+    public ?int $viewingId = null;
+
     public string $editStatus = '';
 
     public string $editNote = '';
@@ -59,6 +61,7 @@ class Index extends Component
     {
         $attendance = Attendance::query()->findOrFail($attendanceId);
 
+        $this->viewingId = null;
         $this->editingId = $attendance->id;
         $this->editStatus = $attendance->status->value;
         $this->editNote = $attendance->note ?? '';
@@ -70,6 +73,19 @@ class Index extends Component
     {
         $this->reset(['editingId', 'editStatus', 'editNote', 'editCheckIn', 'editCheckOut']);
         $this->resetValidation();
+    }
+
+    public function openDetail(int $attendanceId): void
+    {
+        $attendance = Attendance::query()->findOrFail($attendanceId);
+
+        $this->editingId = null;
+        $this->viewingId = $attendance->id;
+    }
+
+    public function closeDetail(): void
+    {
+        $this->reset('viewingId');
     }
 
     public function saveCorrect(AttendanceService $service): void
@@ -162,6 +178,9 @@ class Index extends Component
             'attendances' => $attendances,
             'summary' => $summary,
             'statuses' => AttendanceStatus::cases(),
+            'viewing' => $this->viewingId
+                ? Attendance::query()->with('user')->find($this->viewingId)
+                : null,
         ]);
     }
 

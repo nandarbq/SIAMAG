@@ -241,6 +241,23 @@ class AdminAccountsTest extends TestCase
         $this->assertTrue($admin->fresh()->is_active);
     }
 
+    public function test_admin_accounts_are_paginated(): void
+    {
+        $admin = User::factory()->admin()->create(['name' => 'Admin 00']);
+
+        foreach (range(1, 11) as $number) {
+            User::factory()->admin()->create(['name' => sprintf('Admin %02d', $number)]);
+        }
+
+        Livewire::actingAs($admin)
+            ->test(AdminAccounts::class)
+            ->assertSee('Admin 00')
+            ->assertDontSee('Admin 11')
+            ->call('gotoPage', 2)
+            ->assertSee('Admin 11')
+            ->assertDontSee('Admin 00');
+    }
+
     public function test_settings_page_links_to_admin_form_and_lists_admins(): void
     {
         $admin = User::factory()->admin()->create();

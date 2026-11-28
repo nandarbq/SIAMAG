@@ -14,7 +14,7 @@
         <span class="shrink-0 rounded-full bg-brand-600 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Alur</span>
         <p class="text-sm text-brand-900">
             <span class="font-semibold">Buat atau pilih kelompok magang lebih dulu</span>, lalu isi data mahasiswa.
-            <span class="text-brand-700">Kampus, pembimbing, dan periode akan terisi otomatis dari kelompok.</span>
+            <span class="text-brand-700">Kampus, pembimbing, dan periode terisi otomatis dari kelompok, tetapi dapat disesuaikan per mahasiswa.</span>
         </p>
     </div>
 
@@ -108,12 +108,13 @@
                         </p>
                     @endif
                     @if ($intern_group_id)
-                        <p class="mt-1.5 text-xs text-slate-500">Kampus, pembimbing, dan periode diisi otomatis dari kelompok.</p>
+                        <p class="mt-1.5 text-xs text-slate-500">Nilai awal kampus, pembimbing, dan periode diambil dari kelompok. Anda dapat menyesuaikannya untuk mahasiswa ini.</p>
                     @endif
                 </div>
                 <div>
-                    <label class="label">Institusi / Kampus</label>
-                    <input wire:model="institution" type="text" class="input" placeholder="Nama universitas atau politeknik" @if ($intern_group_id) readonly @endif>
+                    <label class="label">Institusi / Kampus <span class="font-normal text-rose-500">*</span></label>
+                    <input wire:model="institution" type="text" class="input" placeholder="Nama universitas atau politeknik">
+                    @error('institution') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="label">Jurusan / Program Studi <span class="font-normal text-rose-500">*</span></label>
@@ -127,19 +128,22 @@
                 </div>
                 <div>
                     <label class="label">Pembimbing Lapangan</label>
-                    <input wire:model="field_supervisor" type="text" class="input" placeholder="Nama pembimbing di BMKG" @if ($intern_group_id) readonly @endif>
+                    <input wire:model="field_supervisor" type="text" class="input" placeholder="Nama pembimbing di BMKG">
+                    @error('field_supervisor') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="label">Tanggal Mulai</label>
-                    <input wire:model="start_date" type="date" class="input" @if ($intern_group_id) readonly @endif>
+                    <label class="label">Tanggal Mulai <span class="font-normal text-rose-500">*</span></label>
+                    <input wire:model="start_date" type="date" class="input">
+                    @error('start_date') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="label">Tanggal Selesai</label>
-                    <input wire:model="end_date" type="date" class="input" @if ($intern_group_id) readonly @endif>
+                    <label class="label">Tanggal Selesai <span class="font-normal text-rose-500">*</span></label>
+                    <input wire:model="end_date" type="date" class="input">
+                    @error('end_date') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
                     <label class="label">No. HP Pembimbing</label>
-                    <input wire:model="supervisor_phone" type="text" class="input" placeholder="08xxxxxxxxxx" @if ($intern_group_id) readonly @endif>
+                    <input wire:model="supervisor_phone" type="text" class="input" placeholder="08xxxxxxxxxx">
                     @error('supervisor_phone') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
             </div>

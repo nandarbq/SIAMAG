@@ -5,9 +5,12 @@ namespace App\Livewire\Admin\Settings;
 use App\Enums\UserRole;
 use App\Models\User;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 class AdminAccounts extends Component
 {
+    use WithPagination;
+
     public string $notice = '';
 
     public string $noticeType = 'success';
@@ -37,7 +40,7 @@ class AdminAccounts extends Component
                 ->where('role', UserRole::Admin)
                 ->orderBy('name')
                 ->orderByDesc('id')
-                ->get(),
+                ->paginate(10),
         ]);
     }
 

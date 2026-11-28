@@ -42,7 +42,7 @@ class StudentFormTest extends TestCase
         Livewire::actingAs($admin)
             ->test(StudentForm::class)
             ->assertSee('Buat atau pilih kelompok magang lebih dulu', false)
-            ->assertSee('Kampus, pembimbing, dan periode akan terisi otomatis dari kelompok.', false)
+            ->assertSee('Kampus, pembimbing, dan periode terisi otomatis dari kelompok, tetapi dapat disesuaikan per mahasiswa.', false)
             ->assertSee('Belum ada kelompok aktif.', false)
             ->assertSee('Buat kelompok sekarang', false);
     }
@@ -179,13 +179,14 @@ class StudentFormTest extends TestCase
         $this->assertTrue(Hash::check('old-password', $student->fresh()->password));
     }
 
-    public function test_student_profile_uses_group_data_for_shared_fields(): void
+    public function test_admin_can_customize_group_profile_fields_for_student(): void
     {
         $admin = User::factory()->admin()->create();
         $group = InternGroup::factory()->create([
             'code' => 'MAG-2026-902',
             'institution' => 'Universitas Jember',
             'field_supervisor' => 'Pak Slamet',
+            'supervisor_phone' => '081111111111',
             'start_date' => Carbon::parse('2026-11-01'),
             'end_date' => Carbon::parse('2026-12-31'),
         ]);
@@ -200,6 +201,8 @@ class StudentFormTest extends TestCase
             ->set('major', 'Teknik Informatika')
             ->set('semester', '6')
             ->set('institution', 'Institusi Buatan')
+            ->set('field_supervisor', 'Ibu Sari')
+            ->set('supervisor_phone', '082222222222')
             ->set('start_date', '2026-01-01')
             ->set('end_date', '2026-01-31')
             ->call('save')
@@ -208,10 +211,35 @@ class StudentFormTest extends TestCase
 
         $profile = User::query()->where('email', 'budi@example.com')->firstOrFail()->internProfile;
 
-        $this->assertSame('Universitas Jember', $profile->institution);
-        $this->assertSame('Pak Slamet', $profile->field_supervisor);
-        $this->assertSame('2026-11-01', $profile->start_date->toDateString());
-        $this->assertSame('2026-12-31', $profile->end_date->toDateString());
+        $this->assertSame($group->id, $profile->intern_group_id);
+        $this->assertSame('Institusi Buatan', $profile->institution);
+        $this->assertSame('Ibu Sari', $profile->field_supervisor);
+        $this->assertSame('082222222222', $profile->supervisor_phone);
+        $this->assertSame('2026-01-01', $profile->start_date->toDateString());
+        $this->assertSame('2026-01-31', $profile->end_date->toDateString());
+    }
+
+    public function test_internship_profile_fields_are_required_and_dates_must_be_ordered(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $group = InternGroup::factory()->create();
+
+        Livewire::actingAs($admin)
+            ->test(StudentForm::class)
+            ->set('name', 'Budi Santoso')
+            ->set('email', 'budi@example.com')
+            ->set('password', 'secret-password')
+            ->set('nim', '20260004')
+            ->set('intern_group_id', $group->id)
+            ->set('major', 'Teknik Informatika')
+            ->set('semester', '6')
+            ->set('institution', '')
+            ->set('start_date', '2026-03-01')
+            ->set('end_date', '2026-02-01')
+            ->call('save')
+            ->assertHasErrors(['institution' => 'required', 'end_date' => 'after_or_equal']);
+
+        $this->assertDatabaseMissing('users', ['email' => 'budi@example.com']);
     }
 
     public function test_inactive_group_cannot_be_assigned_to_student(): void
