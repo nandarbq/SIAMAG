@@ -7,6 +7,7 @@ use App\Models\InternGroup;
 use App\Models\User;
 use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
+use Livewire\Attributes\On;
 use Livewire\Attributes\Title;
 use Livewire\Component;
 
@@ -29,6 +30,10 @@ class Form extends Component
     public bool $is_active = true;
 
     public ?int $intern_group_id = null;
+
+    public bool $groupModalOpen = false;
+
+    public string $groupNotice = '';
 
     public string $institution = '';
 
@@ -94,6 +99,30 @@ class Form extends Component
             : null;
 
         $this->applyGroup($group);
+    }
+
+    public function openGroupModal(): void
+    {
+        $this->groupModalOpen = true;
+    }
+
+    #[On('back-to-groups')]
+    public function closeGroupModal(): void
+    {
+        $this->groupModalOpen = false;
+    }
+
+    #[On('group-saved')]
+    public function selectCreatedGroup(string $message, ?int $groupId = null): void
+    {
+        if (! $groupId) {
+            return;
+        }
+
+        $this->groupModalOpen = false;
+        $this->groupNotice = $message;
+        $this->intern_group_id = $groupId;
+        $this->updatedInternGroupId($groupId);
     }
 
     public function save()

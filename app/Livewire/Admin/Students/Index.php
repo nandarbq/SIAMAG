@@ -88,7 +88,7 @@ class Index extends Component
     }
 
     #[On('group-saved')]
-    public function groupSaved(string $message): void
+    public function groupSaved(string $message, ?int $groupId = null): void
     {
         $this->groupView = 'list';
         $this->groupId = null;
@@ -163,6 +163,9 @@ class Index extends Component
                     ->orWhere('email', 'like', $search)
                     ->orWhere('nim', 'like', $search));
             })
+            ->when(in_array($this->status, ['active', 'inactive'], true), fn ($q) => $q
+                ->whereDoesntHave('internProfile', fn ($query) => $query
+                    ->whereDate('end_date', '<', today()->toDateString())))
             ->when($this->status === 'active', fn ($q) => $q->where('is_active', true))
             ->when($this->status === 'inactive', fn ($q) => $q->where('is_active', false))
             ->when($this->status === 'completed', fn ($q) => $q->completedInterns())

@@ -35,7 +35,7 @@
                     <thead class="bg-slate-50/60">
                         <tr>
                             <th class="table-th">Kelompok</th>
-                            <th class="table-th">Kampus &amp; Pembimbing</th>
+                            <th class="table-th">Kampus</th>
                             <th class="table-th">Periode</th>
                             <th class="table-th">Anggota</th>
                             <th class="table-th">Status</th>
@@ -48,36 +48,30 @@
                                 <td class="table-td">
                                     <div class="min-w-0">
                                         <p class="truncate font-semibold text-slate-900">{{ $group->name }}</p>
-                                        <div class="mt-1 flex items-center gap-1.5">
-                                            <span class="text-[11px] font-medium uppercase tracking-wide text-slate-400">{{ $group->code }}</span>
-                                            @if ($group->is_individual)
+                                        @if ($group->is_individual)
+                                            <div class="mt-1">
                                                 <span class="badge-slate badge-compact">Mandiri</span>
-                                            @endif
-                                        </div>
+                                            </div>
+                                        @endif
                                     </div>
                                 </td>
                                 <td class="table-td">
                                     <p class="font-medium text-slate-700">{{ $group->institution }}</p>
-                                    <p class="text-xs text-slate-400">{{ $group->field_supervisor ?: 'Pembimbing belum diisi' }}</p>
                                 </td>
                                 <td class="table-td">
                                     <p class="text-xs font-medium text-slate-700">{{ $group->periodLabel() }}</p>
-                                    @if ($group->division)
-                                        <p class="mt-1 text-[11px] text-slate-400">{{ $group->division }}</p>
-                                    @endif
                                 </td>
                                 <td class="table-td">
                                     <span class="badge-slate badge-compact">{{ $group->students_count }} mahasiswa</span>
                                 </td>
                                 <td class="table-td">
                                     <div class="flex flex-wrap items-center gap-1">
-                                        @if ($group->is_active)
+                                        @if ($group->isCompleted())
+                                            <span class="badge-amber badge-compact">Selesai</span>
+                                        @elseif ($group->is_active)
                                             <span class="badge-green badge-compact">Aktif</span>
                                         @else
                                             <span class="badge-slate badge-compact">Nonaktif</span>
-                                        @endif
-                                        @if ($group->isCompleted())
-                                            <span class="badge-amber badge-compact">Selesai</span>
                                         @endif
                                     </div>
                                 </td>

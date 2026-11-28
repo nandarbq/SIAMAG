@@ -57,6 +57,7 @@ class Index extends Component
                     ->orWhere('code', 'like', $search)
                     ->orWhere('institution', 'like', $search));
             })
+            ->when(in_array($this->status, ['active', 'inactive'], true), fn ($q) => $q->current())
             ->when($this->status === 'active', fn ($q) => $q->where('is_active', true))
             ->when($this->status === 'inactive', fn ($q) => $q->where('is_active', false))
             ->when($this->status === 'completed', fn ($q) => $q->completed())

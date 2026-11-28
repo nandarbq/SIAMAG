@@ -4,6 +4,7 @@
     'hint' => null,
     'placeholder' => null,
     'autocomplete' => 'new-password',
+    'required' => false,
     'labelClass' => 'label',
     'inputClass' => '',
 ])
@@ -18,7 +19,7 @@
 @endphp
 
 <div class="w-full" x-data="{ show: false }">
-    <label class="{{ $labelClass }}">{{ $label }}</label>
+    <label class="{{ $labelClass }}">{{ $label }}@if ($required) <span class="font-normal text-rose-500">*</span>@endif</label>
     <div class="relative">
         <input {{ $inputAttributes }}>
         <button

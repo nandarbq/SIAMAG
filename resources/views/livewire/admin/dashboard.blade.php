@@ -1,161 +1,122 @@
 <div class="space-y-6">
-    <section x-data="{ open: false }" class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-card">
-        <div class="grid lg:grid-cols-[minmax(0,1fr)_400px]">
-            <div class="relative overflow-hidden bg-linear-to-br from-white via-white to-brand-50/70 p-6 sm:p-8">
-                <div class="pointer-events-none absolute -right-24 top-1/2 hidden h-80 w-80 -translate-y-1/2 rounded-full border border-brand-100/70 sm:block"></div>
-                <x-banyuwangi-ornament variant="gandrung" class="pointer-events-none absolute -right-4 bottom-0 hidden h-full w-auto select-none opacity-[0.08] sm:block" />
+    <section x-data="{ open: false }" class="relative overflow-hidden rounded-3xl bg-brand-950 shadow-card">
+        <x-banyuwangi-ornament variant="gajah-oling" class="pointer-events-none absolute inset-0 h-full w-full select-none opacity-[0.08]" />
+        <x-banyuwangi-ornament variant="gandrung" class="pointer-events-none absolute -right-8 bottom-0 hidden h-[26rem] w-auto select-none opacity-[0.12] lg:block" />
 
-                <div class="relative">
-                    <p class="page-eyebrow">Portal Admin Magang</p>
-                    <h1 class="mt-3 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+        <div class="relative p-6 sm:p-8">
+            <div class="flex flex-wrap items-start justify-between gap-4">
+                <div class="min-w-0 max-w-2xl">
+                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-300">Pusat kendali · Portal Admin Magang</p>
+                    <h1 class="mt-3 text-2xl font-bold tracking-tight text-white sm:text-3xl">
                         {{ $greeting }}, {{ auth()->user()->name }}.
                     </h1>
-                    <p class="mt-2 max-w-xl text-sm leading-relaxed text-slate-600">
-                        Pantau kehadiran, monitoring logbook, dan kelola data mahasiswa magang
-                        <span class="font-semibold text-slate-800">{{ $officeName }}</span> dalam satu tampilan.
+                    <p class="mt-2 text-sm leading-relaxed text-slate-300">
+                        Kelola data magang, pantau kehadiran, dan tinjau laporan
+                        <span class="font-semibold text-white">{{ $officeName }}</span> dari satu tempat.
                     </p>
+                </div>
 
-                    <div class="mt-4 flex flex-wrap items-center gap-2">
-                        <span class="badge-slate">
-                            <x-icon name="building" class="h-3.5 w-3.5" />
-                            {{ $officeName }}
-                        </span>
-                        <span class="badge-slate">
-                            <x-icon name="calendar" class="h-3.5 w-3.5" />
-                            {{ now()->translatedFormat('l, d F Y') }}
-                        </span>
-                    </div>
-
-                    <div class="mt-5 flex flex-wrap items-center gap-2">
-                        @if (! $isWorkday)
-                            <span class="badge-blue">{{ $nonWorkingLabel ?? 'Hari libur' }}</span>
-                        @else
-                            <span class="badge-green">Hari kerja · {{ $workStart }} — {{ $workEnd }} WIB</span>
-                        @endif
-                        <a href="{{ route('admin.students.create') }}" class="btn-primary">
-                            <x-icon name="plus" class="h-4 w-4" />
-                            Tambah Mahasiswa
-                        </a>
-                        <a href="{{ route('admin.reports') }}" class="btn-secondary">
-                            <x-icon name="chart" class="h-4 w-4" />
-                            Lihat Laporan
-                        </a>
-                    </div>
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-inset ring-white/15">
+                        <x-icon name="building" class="h-3.5 w-3.5" />
+                        {{ $officeName }}
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 rounded-full bg-white/10 px-3 py-1.5 text-xs font-medium text-white ring-1 ring-inset ring-white/15">
+                        <x-icon name="calendar" class="h-3.5 w-3.5" />
+                        {{ now()->translatedFormat('l, d F Y') }}
+                    </span>
+                    @if (! $isWorkday)
+                        <span class="badge-blue">{{ $nonWorkingLabel ?? 'Hari libur' }}</span>
+                    @else
+                        <span class="badge-green">Hari kerja · {{ $workStart }} — {{ $workEnd }} WIB</span>
+                    @endif
                 </div>
             </div>
 
-            <div class="relative overflow-hidden bg-brand-950 p-6 text-white sm:p-7">
-                <x-banyuwangi-ornament variant="gajah-oling" class="pointer-events-none absolute inset-0 h-full w-full select-none opacity-[0.10]" />
+            @php
+                $quickActions = [
+                    ['label' => 'Tambah Mahasiswa', 'hint' => 'Daftarkan mahasiswa baru', 'icon' => 'plus', 'route' => route('admin.students.create')],
+                    ['label' => 'Kelola Kelompok', 'hint' => 'Atur kelompok & pembimbing', 'icon' => 'users', 'route' => route('admin.groups')],
+                    ['label' => 'Pantau Absensi', 'hint' => 'Cek kehadiran hari ini', 'icon' => 'camera', 'route' => route('admin.attendances')],
+                    ['label' => 'Lihat Laporan', 'hint' => 'Rekap & ekspor data', 'icon' => 'chart', 'route' => route('admin.reports')],
+                ];
+            @endphp
 
-                <div class="relative">
-                    @if ($announcements->isNotEmpty())
-                        @php
-                            $latestAnnouncement = $announcements->first();
-                            $isLatestNew = $latestAnnouncement->published_at?->gte(now()->subDays(7)) ?? false;
-                        @endphp
+            <div class="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                @foreach ($quickActions as $action)
+                    <a href="{{ $action['route'] }}" class="group flex items-center gap-3 rounded-2xl bg-white/5 p-4 ring-1 ring-inset ring-white/10 transition hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/50">
+                        <span class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-white/10 text-brand-200 ring-1 ring-inset ring-white/15">
+                            <x-icon :name="$action['icon']" class="h-5 w-5" />
+                        </span>
+                        <span class="min-w-0 flex-1">
+                            <span class="block truncate text-sm font-semibold text-white">{{ $action['label'] }}</span>
+                            <span class="mt-0.5 block truncate text-[11px] text-slate-400">{{ $action['hint'] }}</span>
+                        </span>
+                        <x-icon name="arrow-right" class="h-4 w-4 shrink-0 text-slate-500 transition group-hover:translate-x-0.5 group-hover:text-white" />
+                    </a>
+                @endforeach
+            </div>
 
-                        <div class="flex items-center justify-between gap-3">
-                            <div class="flex items-center gap-2">
-                                <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-accent-300 ring-1 ring-inset ring-white/15">
-                                    <x-icon name="megaphone" class="h-5 w-5" />
-                                </span>
-                                <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-200">Pengumuman terbaru</p>
+            @if ($announcements->isNotEmpty())
+                @php
+                    $latestAnnouncement = $announcements->first();
+                    $isLatestNew = $latestAnnouncement->published_at?->gte(now()->subDays(7)) ?? false;
+                @endphp
+
+                <div class="mt-6 rounded-2xl bg-white/5 p-4 ring-1 ring-inset ring-white/10">
+                    <div class="flex flex-wrap items-start justify-between gap-3">
+                        <div class="flex min-w-0 items-start gap-3">
+                            <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-white/10 text-accent-300 ring-1 ring-inset ring-white/15">
+                                <x-icon name="megaphone" class="h-4 w-4" />
+                            </span>
+                            <div class="min-w-0">
+                                <div class="flex flex-wrap items-center gap-2">
+                                    <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-200">Pengumuman terbaru</p>
+                                    @if ($isLatestNew)
+                                        <span class="badge-amber badge-compact">Terbaru</span>
+                                    @endif
+                                    <span class="text-[11px] text-slate-400">{{ $latestAnnouncement->published_at?->translatedFormat('d F Y') }}</span>
+                                </div>
+                                <p class="mt-1 text-sm font-semibold text-white">{{ $latestAnnouncement->title }}</p>
                             </div>
-                            <a href="{{ route('admin.announcements') }}" class="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-white ring-1 ring-inset ring-white/15 transition hover:bg-white/15">
+                        </div>
+
+                        <div class="flex items-center gap-2">
+                            @if ($announcements->count() > 1)
+                                <button
+                                    type="button"
+                                    @click="open = !open"
+                                    :aria-expanded="open"
+                                    class="inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white ring-1 ring-inset ring-white/15 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
+                                >
+                                    <span x-text="open ? 'Tutup' : 'Lihat semua'"></span>
+                                    <span class="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-slate-300">{{ $announcements->count() }}</span>
+                                    <x-icon name="chevron-down" class="h-3.5 w-3.5 transition-transform" x-bind:class="open ? 'rotate-180' : ''" />
+                                </button>
+                            @endif
+                            <a href="{{ route('admin.announcements') }}" class="rounded-xl bg-white px-3 py-2 text-xs font-semibold text-slate-900 transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
                                 Kelola
                             </a>
                         </div>
+                    </div>
 
-                        <div class="mt-4">
-                            <div class="flex flex-wrap items-center gap-2">
-                                @if ($isLatestNew)
-                                    <span class="badge-amber badge-compact">Terbaru</span>
-                                @endif
-                                <p class="text-[11px] font-medium text-slate-400">{{ $latestAnnouncement->published_at?->translatedFormat('d F Y') }}</p>
-                            </div>
-                            <h2 class="mt-2 text-lg font-bold tracking-tight text-white sm:text-xl">{{ $latestAnnouncement->title }}</h2>
-                            <p class="mt-1.5 line-clamp-3 text-sm leading-relaxed text-slate-300">{{ $latestAnnouncement->body }}</p>
-                        </div>
+                    <p class="mt-2 line-clamp-2 text-xs leading-relaxed text-slate-300">{{ $latestAnnouncement->body }}</p>
 
-                        @if ($announcements->count() > 1)
-                            <button
-                                type="button"
-                                @click="open = !open"
-                                :aria-expanded="open"
-                                class="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-white/10 px-3 py-2 text-xs font-semibold text-white ring-1 ring-inset ring-white/15 transition hover:bg-white/15 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/40"
-                            >
-                                <span x-text="open ? 'Tutup' : 'Lihat semua'"></span>
-                                <span class="rounded-full bg-white/10 px-1.5 py-0.5 text-[10px] font-bold text-slate-300">{{ $announcements->count() }}</span>
-                                <x-icon name="chevron-down" class="h-3.5 w-3.5 transition-transform" x-bind:class="open ? 'rotate-180' : ''" />
-                            </button>
-
-                            <div x-cloak x-show="open" x-transition class="mt-4 divide-y divide-white/10 border-t border-white/10">
-                                @foreach ($announcements->skip(1) as $announcement)
-                                    <div wire:key="announcement-{{ $announcement->id }}" class="py-3">
-                                        <div class="flex flex-wrap items-center justify-between gap-2">
-                                            <p class="text-sm font-semibold text-white">{{ $announcement->title }}</p>
-                                            <span class="text-[11px] text-slate-400">{{ $announcement->published_at?->translatedFormat('d M Y') }}</span>
-                                        </div>
-                                        <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-400">{{ $announcement->body }}</p>
+                    @if ($announcements->count() > 1)
+                        <div x-cloak x-show="open" x-transition class="mt-3 divide-y divide-white/10 border-t border-white/10">
+                            @foreach ($announcements->skip(1) as $announcement)
+                                <div wire:key="announcement-{{ $announcement->id }}" class="py-3">
+                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                        <p class="text-sm font-semibold text-white">{{ $announcement->title }}</p>
+                                        <span class="text-[11px] text-slate-400">{{ $announcement->published_at?->translatedFormat('d M Y') }}</span>
                                     </div>
-                                @endforeach
-                            </div>
-                        @endif
-
-                        <div class="my-5 border-t border-white/10"></div>
-                    @endif
-
-                    <div class="flex items-center justify-between gap-3">
-                        <div class="flex items-center gap-2">
-                            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-accent-300 ring-1 ring-inset ring-white/15">
-                                <x-icon name="check-circle" class="h-5 w-5" />
-                            </span>
-                            <p class="text-[10px] font-bold uppercase tracking-[0.2em] text-brand-200">Fokus hari ini</p>
-                        </div>
-                        <span class="rounded-full bg-white/10 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-slate-300 ring-1 ring-inset ring-white/15">
-                            {{ now()->translatedFormat('d M') }}
-                        </span>
-                    </div>
-
-                    @php
-                        $focusItems = [
-                            ['label' => 'Mahasiswa Aktif', 'value' => number_format($totalStudents).' mahasiswa', 'hint' => 'Periode berjalan', 'icon' => 'users', 'tone' => 'bg-brand-400/15 text-brand-300 ring-brand-300/20'],
-                            ['label' => 'Hadir Hari Ini', 'value' => number_format($present).' hadir', 'hint' => $late.' terlambat', 'icon' => 'check-circle', 'tone' => 'bg-emerald-400/15 text-emerald-300 ring-emerald-300/20'],
-                            ['label' => 'Izin / Sakit', 'value' => number_format($permit).' tercatat', 'hint' => 'Hari ini', 'icon' => 'calendar', 'tone' => 'bg-amber-400/15 text-amber-300 ring-amber-300/20'],
-                            ['label' => 'Belum Absen', 'value' => number_format($alpha).' mahasiswa', 'hint' => $isWorkday ? 'Perlu ditindaklanjuti' : 'Hari libur', 'icon' => 'clock', 'tone' => 'bg-rose-400/15 text-rose-300 ring-rose-300/20'],
-                        ];
-                    @endphp
-
-                    <div class="mt-4">
-                        <h2 class="text-lg font-bold tracking-tight text-white sm:text-xl">
-                            {{ $isWorkday ? 'Ringkasan kehadiran hari ini.' : ($nonWorkingLabel ?? 'Hari ini libur').'.' }}
-                        </h2>
-                        <p class="mt-1.5 text-sm leading-relaxed text-slate-300">
-                            {{ $isWorkday ? 'Pastikan seluruh mahasiswa magang tercatat kehadirannya hari ini.' : 'Tidak ada kewajiban absensi hari ini. Pantau rekap pada hari kerja berikutnya.' }}
-                        </p>
-                    </div>
-
-                    <div class="mt-5 space-y-2.5">
-                        @foreach ($focusItems as $item)
-                            <div class="flex flex-wrap items-start gap-3 rounded-xl bg-white/5 p-3 ring-1 ring-inset ring-white/10 sm:flex-nowrap sm:items-center">
-                                <span class="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg ring-1 ring-inset {{ $item['tone'] }}">
-                                    <x-icon :name="$item['icon']" class="h-4 w-4" />
-                                </span>
-                                <div class="min-w-0 flex-1">
-                                    <p class="text-[10px] font-bold uppercase tracking-wide text-slate-400">{{ $item['label'] }}</p>
-                                    <p class="mt-0.5 truncate text-sm font-semibold text-white">{{ $item['value'] }}</p>
+                                    <p class="mt-1 line-clamp-2 text-xs leading-relaxed text-slate-400">{{ $announcement->body }}</p>
                                 </div>
-                                <p class="w-full pl-12 text-left text-[11px] text-slate-400 sm:w-auto sm:max-w-[7rem] sm:pl-0 sm:text-right">{{ $item['hint'] }}</p>
-                            </div>
-                        @endforeach
-                    </div>
-
-                    <a href="{{ route('admin.attendances') }}" class="mt-4 inline-flex items-center justify-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 shadow-sm transition hover:bg-slate-100 focus:outline-none focus-visible:ring-2 focus-visible:ring-white/60">
-                        Pantau Absensi
-                        <x-icon name="arrow-right" class="h-4 w-4" />
-                    </a>
+                            @endforeach
+                        </div>
+                    @endif
                 </div>
-            </div>
+            @endif
         </div>
     </section>
 

@@ -98,12 +98,12 @@
 
                 <form wire:submit="save" class="mt-5 space-y-4">
                     <div>
-                        <label class="label">Judul</label>
+                        <label class="label">Judul <span class="font-normal text-rose-500">*</span></label>
                         <input wire:model="title" type="text" class="input" placeholder="Judul pengumuman">
                         @error('title') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="label">Isi Pengumuman</label>
+                        <label class="label">Isi Pengumuman <span class="font-normal text-rose-500">*</span></label>
                         <textarea wire:model="body" rows="6" class="input" placeholder="Tulis informasi yang ingin disampaikan..."></textarea>
                         @error('body') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                     </div>

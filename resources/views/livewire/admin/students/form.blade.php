@@ -10,6 +10,14 @@
         </div>
     </div>
 
+    <div class="flex flex-col gap-2 rounded-xl border border-brand-200 bg-brand-50/70 px-4 py-3 sm:flex-row sm:items-center sm:gap-3">
+        <span class="shrink-0 rounded-full bg-brand-600 px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white">Alur</span>
+        <p class="text-sm text-brand-900">
+            <span class="font-semibold">Buat atau pilih kelompok magang lebih dulu</span>, lalu isi data mahasiswa.
+            <span class="text-brand-700">Kampus, pembimbing, dan periode akan terisi otomatis dari kelompok.</span>
+        </p>
+    </div>
+
     <form wire:submit="save" class="space-y-6">
         <div class="card">
             <div class="card-header">
@@ -25,17 +33,17 @@
             </div>
             <div class="card-body grid gap-5 sm:grid-cols-2">
                 <div>
-                    <label class="label">Nama lengkap</label>
+                    <label class="label">Nama lengkap <span class="font-normal text-rose-500">*</span></label>
                     <input wire:model="name" type="text" class="input" placeholder="Nama lengkap mahasiswa">
                     @error('name') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="label">NIM</label>
+                    <label class="label">NIM <span class="font-normal text-rose-500">*</span></label>
                     <input wire:model="nim" type="text" class="input" placeholder="Nomor induk mahasiswa">
                     @error('nim') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="label">Email</label>
+                    <label class="label">Email <span class="font-normal text-rose-500">*</span></label>
                     <input wire:model="email" type="email" class="input" placeholder="nama@kampus.ac.id">
                     @error('email') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
@@ -48,6 +56,7 @@
                     :label="$user ? 'Password (opsional)' : 'Password'"
                     name="password"
                     wire:model="password"
+                    :required="! $user"
                     :placeholder="$user ? 'Kosongkan jika tidak diubah' : 'Minimal 8 karakter'"
                 />
                 <div class="flex items-end">
@@ -77,10 +86,10 @@
             <div class="card-body grid gap-5 sm:grid-cols-2">
                 <div class="sm:col-span-2">
                     <div class="flex items-center justify-between gap-3">
-                        <label class="label">Kelompok Magang</label>
-                        <a href="{{ route('admin.students', ['tab' => 'groups', 'new' => 1]) }}" class="text-xs font-semibold text-brand-600 hover:text-brand-700">
+                        <label class="label">Kelompok Magang <span class="font-normal text-rose-500">*</span></label>
+                        <button type="button" wire:click="openGroupModal" class="text-xs font-semibold text-brand-600 hover:text-brand-700">
                             + Buat kelompok baru
-                        </a>
+                        </button>
                     </div>
                     <select wire:model.live="intern_group_id" class="input">
                         <option value="">Pilih kelompok magang</option>
@@ -89,6 +98,15 @@
                         @endforeach
                     </select>
                     @error('intern_group_id') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
+                    @if ($groupNotice)
+                        <p class="mt-1.5 text-xs font-medium text-emerald-600">{{ $groupNotice }}</p>
+                    @endif
+                    @if ($groups->isEmpty())
+                        <p class="mt-1.5 text-xs text-amber-700">
+                            Belum ada kelompok aktif.
+                            <button type="button" wire:click="openGroupModal" class="font-bold underline">Buat kelompok sekarang</button>
+                        </p>
+                    @endif
                     @if ($intern_group_id)
                         <p class="mt-1.5 text-xs text-slate-500">Kampus, pembimbing, dan periode diisi otomatis dari kelompok.</p>
                     @endif
@@ -98,12 +116,12 @@
                     <input wire:model="institution" type="text" class="input" placeholder="Nama universitas atau politeknik" @if ($intern_group_id) readonly @endif>
                 </div>
                 <div>
-                    <label class="label">Jurusan / Program Studi</label>
+                    <label class="label">Jurusan / Program Studi <span class="font-normal text-rose-500">*</span></label>
                     <input wire:model="major" type="text" class="input" placeholder="Contoh: Teknologi Informasi">
                     @error('major') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="label">Semester</label>
+                    <label class="label">Semester <span class="font-normal text-rose-500">*</span></label>
                     <input wire:model="semester" type="number" min="1" max="14" class="input" placeholder="6">
                     @error('semester') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                 </div>
@@ -136,4 +154,32 @@
             </button>
         </div>
     </form>
+
+    @if ($groupModalOpen)
+        <div
+            class="fixed inset-0 z-[60] overflow-y-auto overscroll-contain bg-slate-950/70 p-0 backdrop-blur-sm sm:p-4"
+            wire:click.self="closeGroupModal"
+            role="dialog"
+            aria-modal="true"
+            aria-label="Tambah kelompok magang"
+        >
+            <div class="mx-auto flex min-h-full w-full max-w-3xl items-end sm:items-center">
+                <div class="max-h-[calc(100dvh-1rem)] w-full overflow-y-auto overscroll-contain rounded-t-3xl bg-white shadow-2xl shadow-slate-950/30 sm:max-h-[calc(100dvh-2rem)] sm:rounded-3xl">
+                    <div class="sticky top-0 z-10 flex items-start justify-between gap-4 border-b border-slate-100 bg-white px-5 py-3 sm:px-6">
+                        <div>
+                            <p class="text-[11px] font-bold uppercase tracking-wide text-brand-600">Langkah 1</p>
+                            <h2 class="text-base font-bold text-slate-900">Buat kelompok magang</h2>
+                            <p class="mt-0.5 text-xs text-slate-500">Setelah disimpan, kelompok ini otomatis dipilih untuk mahasiswa.</p>
+                        </div>
+                        <button type="button" wire:click="closeGroupModal" class="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl text-slate-400 transition hover:bg-slate-100 hover:text-slate-700" aria-label="Tutup">
+                            <x-icon name="x" class="h-4 w-4" />
+                        </button>
+                    </div>
+                    <div class="p-5 sm:p-6">
+                        <livewire:admin.groups.form :embedded="true" :in-modal="true" wire:key="student-group-form" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>

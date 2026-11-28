@@ -35,6 +35,57 @@ class StudentFormTest extends TestCase
             ->assertSee('wire:model="password"', false);
     }
 
+    public function test_student_form_shows_group_first_workflow_and_prompt_when_no_group_exists(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(StudentForm::class)
+            ->assertSee('Buat atau pilih kelompok magang lebih dulu', false)
+            ->assertSee('Kampus, pembimbing, dan periode akan terisi otomatis dari kelompok.', false)
+            ->assertSee('Belum ada kelompok aktif.', false)
+            ->assertSee('Buat kelompok sekarang', false);
+    }
+
+    public function test_group_modal_opens_and_closes_without_leaving_the_student_form(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        Livewire::actingAs($admin)
+            ->test(StudentForm::class)
+            ->call('openGroupModal')
+            ->assertSet('groupModalOpen', true)
+            ->assertSee('Buat kelompok magang')
+            ->assertSee('Setelah disimpan, kelompok ini otomatis dipilih untuk mahasiswa.', false)
+            ->dispatch('back-to-groups')
+            ->assertSet('groupModalOpen', false);
+    }
+
+    public function test_created_group_is_selected_and_fills_shared_student_profile_fields(): void
+    {
+        $admin = User::factory()->admin()->create();
+        $group = InternGroup::factory()->create([
+            'institution' => 'Politeknik Negeri Banyuwangi',
+            'field_supervisor' => 'Ibu Dewi',
+            'supervisor_phone' => '082222222222',
+            'start_date' => Carbon::parse('2026-01-05'),
+            'end_date' => Carbon::parse('2026-04-30'),
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(StudentForm::class)
+            ->call('openGroupModal')
+            ->dispatch('group-saved', message: 'Kelompok magang berhasil ditambahkan.', groupId: $group->id)
+            ->assertSet('groupModalOpen', false)
+            ->assertSet('intern_group_id', $group->id)
+            ->assertSet('institution', 'Politeknik Negeri Banyuwangi')
+            ->assertSet('field_supervisor', 'Ibu Dewi')
+            ->assertSet('supervisor_phone', '082222222222')
+            ->assertSet('start_date', '2026-01-05')
+            ->assertSet('end_date', '2026-04-30')
+            ->assertSee('Kelompok magang berhasil ditambahkan.');
+    }
+
     public function test_admin_can_create_a_student_with_internship_profile(): void
     {
         $admin = User::factory()->admin()->create();

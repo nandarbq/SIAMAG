@@ -41,7 +41,10 @@ class InternGroupTest extends TestCase
             ->set('end_date', '2026-12-31')
             ->call('save')
             ->assertHasNoErrors()
-            ->assertDispatched('group-saved');
+            ->assertDispatched('group-saved', function (string $event, array $params): bool {
+                return isset($params['groupId'])
+                    && InternGroup::query()->whereKey($params['groupId'])->where('code', 'MAG-2026-001')->exists();
+            });
 
         $this->assertDatabaseHas('intern_groups', [
             'code' => 'MAG-2026-001',
@@ -330,6 +333,34 @@ class InternGroupTest extends TestCase
             ->set('status', 'completed')
             ->assertViewHas('groups', fn ($groups) => $groups->total() === 1
                 && $groups->first()->is($finished));
+
+        Livewire::actingAs($admin)
+            ->test(GroupIndex::class)
+            ->set('status', 'active')
+            ->assertViewHas('groups', fn ($groups) => $groups->total() === 1
+                && $groups->first()->name === 'Kelompok Berjalan');
+    }
+
+    public function test_inactive_filter_excludes_completed_groups(): void
+    {
+        $admin = User::factory()->admin()->create();
+
+        InternGroup::factory()->create([
+            'name' => 'Kelompok Selesai Nonaktif',
+            'is_active' => false,
+            'end_date' => '2026-11-16',
+        ]);
+        $ongoing = InternGroup::factory()->create([
+            'name' => 'Kelompok Berjalan Nonaktif',
+            'is_active' => false,
+            'end_date' => '2026-12-31',
+        ]);
+
+        Livewire::actingAs($admin)
+            ->test(GroupIndex::class)
+            ->set('status', 'inactive')
+            ->assertViewHas('groups', fn ($groups) => $groups->total() === 1
+                && $groups->first()->is($ongoing));
     }
 
     public function test_new_group_code_continues_the_highest_current_year_sequence(): void

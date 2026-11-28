@@ -61,7 +61,7 @@ Route::middleware(['auth', 'active'])->group(function () {
     Route::get('/users/{user}/photo', ProfilePhotoController::class)->name('user.photo');
 });
 
-Route::middleware(['auth', 'role:admin'])
+Route::middleware(['auth', 'role:admin', 'active'])
     ->prefix('admin')
     ->name('admin.')
     ->group(function () {

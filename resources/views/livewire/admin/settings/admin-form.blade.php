@@ -28,12 +28,12 @@
 
             <div class="card-body grid gap-5 sm:grid-cols-2">
                 <div>
-                    <label class="label">Nama Lengkap</label>
+                    <label class="label">Nama Lengkap <span class="font-normal text-rose-500">*</span></label>
                     <input wire:model.live.debounce.300ms="name" type="text" class="input" autocomplete="name" placeholder="Nama administrator">
                     @error('name') <p class="form-error">{{ $message }}</p> @enderror
                 </div>
                 <div>
-                    <label class="label">Email</label>
+                    <label class="label">Email <span class="font-normal text-rose-500">*</span></label>
                     <input wire:model.live.debounce.300ms="email" type="email" class="input" autocomplete="email" placeholder="admin@bmkg.go.id">
                     @error('email') <p class="form-error">{{ $message }}</p> @enderror
                 </div>
@@ -42,6 +42,7 @@
                     label="Password"
                     name="password"
                     wire:model="password"
+                    :required="! $admin"
                     :hint="$admin ? 'Kosongkan jika tidak ingin mengubah password.' : 'Minimal 8 karakter.'"
                 />
 

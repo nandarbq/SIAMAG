@@ -188,6 +188,37 @@ class StudentsTest extends TestCase
             ->set('status', 'completed')
             ->assertViewHas('students', fn ($students) => $students->total() === 1
                 && $students->first()->is($finished));
+
+        Livewire::actingAs($admin)
+            ->test(StudentIndex::class)
+            ->set('status', 'active')
+            ->assertViewHas('students', fn ($students) => $students->total() === 1
+                && $students->first()->is($ongoing));
+    }
+
+    public function test_inactive_filter_excludes_completed_students(): void
+    {
+        $this->travelTo(Carbon::parse('2026-11-23 10:00:00', 'Asia/Jakarta'));
+
+        $admin = User::factory()->admin()->create();
+
+        $finished = User::factory()->mahasiswa()->create([
+            'name' => 'Mahasiswa Selesai Nonaktif',
+            'is_active' => false,
+        ]);
+        InternProfile::factory()->for($finished)->create(['end_date' => '2026-10-31']);
+
+        $ongoing = User::factory()->mahasiswa()->create([
+            'name' => 'Mahasiswa Berjalan Nonaktif',
+            'is_active' => false,
+        ]);
+        InternProfile::factory()->for($ongoing)->create(['end_date' => '2026-12-31']);
+
+        Livewire::actingAs($admin)
+            ->test(StudentIndex::class)
+            ->set('status', 'inactive')
+            ->assertViewHas('students', fn ($students) => $students->total() === 1
+                && $students->first()->is($ongoing));
     }
 
     public function test_completed_student_detail_shows_selesai_badge(): void

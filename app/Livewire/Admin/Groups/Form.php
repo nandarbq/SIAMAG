@@ -12,6 +12,8 @@ class Form extends Component
 
     public bool $embedded = false;
 
+    public bool $inModal = false;
+
     public string $code = '';
 
     public string $name = '';
@@ -32,9 +34,10 @@ class Form extends Component
 
     public bool $is_individual = false;
 
-    public function mount(?InternGroup $group = null, bool $embedded = false): void
+    public function mount(?InternGroup $group = null, bool $embedded = false, bool $inModal = false): void
     {
         $this->embedded = $embedded;
+        $this->inModal = $inModal;
 
         if ($group && $group->exists) {
             $this->group = $group;
@@ -101,12 +104,13 @@ class Form extends Component
 
         if ($this->group) {
             $this->group->update($validated);
+            $savedGroup = $this->group;
         } else {
-            InternGroup::query()->create($validated);
+            $savedGroup = InternGroup::query()->create($validated);
         }
 
         if ($this->embedded) {
-            $this->dispatch('group-saved', message: $message);
+            $this->dispatch('group-saved', message: $message, groupId: $savedGroup->id);
 
             return;
         }

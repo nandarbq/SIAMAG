@@ -112,12 +112,12 @@
 
                 <form wire:submit="save" class="mt-5 space-y-4">
                     <div>
-                        <label class="label">Tanggal</label>
+                        <label class="label">Tanggal <span class="font-normal text-rose-500">*</span></label>
                         <input wire:model="date" type="date" class="input">
                         @error('date') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                     </div>
                     <div>
-                        <label class="label">Nama Hari Libur</label>
+                        <label class="label">Nama Hari Libur <span class="font-normal text-rose-500">*</span></label>
                         <input wire:model="name" type="text" class="input" placeholder="Contoh: Hari Kemerdekaan RI">
                         @error('name') <p class="mt-1.5 text-xs font-medium text-rose-600">{{ $message }}</p> @enderror
                     </div>

@@ -98,6 +98,14 @@ class InternGroup extends Model
         return $query->whereDate('end_date', '<', today()->toDateString());
     }
 
+    #[Scope]
+    protected function current(Builder $query): Builder
+    {
+        return $query->where(fn (Builder $query): Builder => $query
+            ->whereNull('end_date')
+            ->orWhereDate('end_date', '>=', today()->toDateString()));
+    }
+
     public function periodLabel(): string
     {
         return sprintf(
